@@ -15,15 +15,16 @@
   }
   .accent { color: {{ accent_color }}; }
   .primary { color: {{ primary_color }}; }
-  .header {
-    display: flex;
-    justify-content: {{ 'flex-end' if config.logo_position == 'right' else 'center' if config.logo_position == 'center' else 'space-between' }};
-    flex-direction: {{ 'row-reverse' if config.logo_position == 'right' else 'row' }};
-    align-items: flex-start;
-    border-bottom: 3px solid {{ primary_color }};
-    padding-bottom: 12px;
-    margin-bottom: 18px;
-  }
+
+  /* Header — a table, not flex: xhtml2pdf doesn't support flexbox, and a
+     two-column table is its strongest layout mode. Classic: white
+     background, colored heading text, bottom border. Modern: a full-width
+     colored band with white text — see the layout_preset block below for
+     the override. */
+  table.header { width: 100%; border-collapse: collapse; margin-bottom: 18px; border-bottom: 3px solid {{ primary_color }}; }
+  table.header td { vertical-align: top; padding-bottom: 12px; }
+  table.header td.header-right { text-align: right; }
+  .logo-line { margin: 0 0 4px; }
   .logo { max-height: 60px; max-width: 200px; object-fit: contain; }
   .biz-name { font-size: 1.4em; font-weight: bold; margin: 0 0 2px; }
   .biz-line { font-size: 0.85em; color: #475569; margin: 0; }
@@ -37,9 +38,26 @@
   }
   .doc-meta { font-size: 0.9em; text-align: right; color: #475569; }
   .doc-meta td { padding: 1px 0 1px 12px; text-align: right; }
-  .parties { display: flex; justify-content: space-between; margin-bottom: 18px; }
-  .party-block { width: 48%; }
-  .party-label { font-size: 0.76em; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 3px; }
+
+  {% if config.layout_preset == 'modern' %}
+  table.header { border-bottom: none; }
+  table.header td { background: {{ primary_color }}; padding: 16px 18px; }
+  table.header .biz-name, table.header .doc-title { color: white; }
+  table.header .biz-line, table.header .doc-meta, table.header .doc-meta td { color: #e2e8f0; }
+  table.header .status-badge { background: white; color: {{ primary_color }}; }
+  {% endif %}
+
+  /* Bill To / From — also a table now (was flex; xhtml2pdf renders it
+     stacked instead of side-by-side, which broke this block specifically). */
+  table.parties { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+  table.parties td { width: 50%; vertical-align: top; }
+  table.parties td.party-right { text-align: right; }
+  .party-label {
+    font-size: 0.76em; text-transform: uppercase; color: #94a3b8; font-weight: bold;
+    margin-bottom: 3px;
+    {% if config.layout_preset == 'modern' %}border-left: 3px solid {{ accent_color }}; padding-left: 6px;{% endif %}
+  }
+  .party-right .party-label { {% if config.layout_preset == 'modern' %}border-left: none; border-right: 3px solid {{ accent_color }}; padding-left: 0; padding-right: 6px;{% endif %} }
   .party-name { font-weight: bold; font-size: 1.05em; margin-bottom: 2px; }
   .party-line { font-size: 0.9em; color: #334155; margin: 0; }
   table.items { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
@@ -61,14 +79,26 @@
   table.items tbody tr:nth-child(even) { background: #f8fafc; }
   {% endif %}
   .totals { width: 260px; margin-left: auto; font-size: 0.95em; }
-  .totals tr td { padding: 3px 0; }
+  .totals tr td { padding: 3px 8px; }
   .totals td.label { color: #64748b; }
   .totals td.value { text-align: right; }
   .totals tr.grand td { border-top: 2px solid #1e293b; font-weight: bold; font-size: 1.15em; padding-top: 6px; }
   .totals tr.discount td { color: {{ accent_color }}; }
+  {% if config.layout_preset == 'modern' %}
+  {# xhtml2pdf applies a border declared on a multi-row <table> to every
+     row, not just the table's own edge (legacy border="1"-style behavior —
+     confirmed by testing: a border on .totals here drew a line above EVERY
+     row, not just the top). The single-row table.header above doesn't show
+     this because it only has one row to begin with. Fix: put the border on
+     the first row's cells specifically, not the table. #}
+  .totals tr:first-child td { border-top: 2px solid {{ accent_color }}; padding-top: 8px; }
+  .totals tr td { padding: 5px 10px; }
+  .totals tr.grand td { background: {{ primary_color }}; color: white; border-top: none; }
+  .totals tr.grand td.label { color: white; }
+  {% endif %}
   .amount-words { margin-top: 10px; font-size: 0.85em; font-style: italic; color: #475569; text-align: right; }
-  .notes-terms { display: flex; justify-content: space-between; margin-top: 22px; font-size: 0.85em; }
-  .notes-terms .block { width: 48%; }
+  table.notes-terms { width: 100%; border-collapse: collapse; margin-top: 22px; font-size: 0.85em; }
+  table.notes-terms td { width: 50%; vertical-align: top; padding-right: 12px; }
   .notes-terms .label { font-size: 0.76em; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 3px; }
   .bank { margin-top: 16px; font-size: 0.85em; border: 1px solid #e2e8f0; padding: 10px; border-radius: 4px; }
   .bank .label { font-size: 0.76em; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
@@ -92,44 +122,48 @@
 
   {% if config.show_watermark %}<div class="watermark">{{ status }}</div>{% endif %}
 
-  <div class="header">
-    <div>
-      {% if logo_uri %}<img class="logo" src="{{ logo_uri }}" />{% endif %}
-      <p class="biz-name">{{ business.legal_name or business.name }}</p>
-      {% if business.address_line1 %}<p class="biz-line">{{ business.address_line1 }}{% if business.address_line2 %}, {{ business.address_line2 }}{% endif %}</p>{% endif %}
-      {% if business.city or business.country %}<p class="biz-line">{{ [business.city, business.state, business.country] | select | join(', ') }}</p>{% endif %}
-      {% if business.phone %}<p class="biz-line">Tel: {{ business.phone_code or '' }} {{ business.phone }}{% if business.email %} &middot; {{ business.email }}{% endif %}</p>{% endif %}
-      {% if business.tax_id %}<p class="biz-line">Tax ID: {{ business.tax_id }}{% if business.cr_no %} &middot; CR No: {{ business.cr_no }}{% endif %}</p>{% endif %}
-    </div>
-    <div>
-      <p class="doc-title">{{ doc_type }}</p>
-      <table class="doc-meta">
-        <tr><td>No.</td><td><strong>{{ number }}</strong></td></tr>
-        <tr><td>Date</td><td>{{ doc_date }}</td></tr>
-        {% if due_date %}<tr><td>{{ due_label }}</td><td>{{ due_date }}</td></tr>{% endif %}
-        <tr><td>Status</td><td><span class="status-badge">{{ status }}</span></td></tr>
-      </table>
-    </div>
-  </div>
+  <table class="header">
+    <tr>
+      <td class="header-left">
+        {% if logo_uri %}<p class="logo-line" style="text-align: {{ 'right' if config.logo_position == 'right' else 'center' if config.logo_position == 'center' else 'left' }};"><img class="logo" src="{{ logo_uri }}" /></p>{% endif %}
+        <p class="biz-name">{{ business.legal_name or business.name }}</p>
+        {% if business.address_line1 %}<p class="biz-line">{{ business.address_line1 }}{% if business.address_line2 %}, {{ business.address_line2 }}{% endif %}</p>{% endif %}
+        {% if business.city or business.country %}<p class="biz-line">{{ [business.city, business.state, business.country] | select | join(', ') }}</p>{% endif %}
+        {% if business.phone %}<p class="biz-line">Tel: {{ business.phone_code or '' }} {{ business.phone }}{% if business.email %} &middot; {{ business.email }}{% endif %}</p>{% endif %}
+        {% if business.tax_id %}<p class="biz-line">Tax ID: {{ business.tax_id }}{% if business.cr_no %} &middot; CR No: {{ business.cr_no }}{% endif %}</p>{% endif %}
+      </td>
+      <td class="header-right">
+        <p class="doc-title">{{ doc_type }}</p>
+        <table class="doc-meta">
+          <tr><td>No.</td><td><strong>{{ number }}</strong></td></tr>
+          <tr><td>Date</td><td>{{ doc_date }}</td></tr>
+          {% if due_date %}<tr><td>{{ due_label }}</td><td>{{ due_date }}</td></tr>{% endif %}
+          <tr><td>Status</td><td><span class="status-badge">{{ status }}</span></td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 
-  <div class="parties">
-    <div class="party-block">
-      <p class="party-label">Bill To</p>
-      <p class="party-name">{{ customer.name }}</p>
-      {% if employee %}<p class="party-line">Attn: {{ employee.name }}</p>{% endif %}
-      {% if 'address' in config.bill_to_fields and customer.address_line1 %}<p class="party-line">{{ customer.address_line1 }}{% if customer.address_line2 %}, {{ customer.address_line2 }}{% endif %}</p>{% endif %}
-      {% if 'address' in config.bill_to_fields and (customer.city or customer.country) %}<p class="party-line">{{ [customer.city, customer.state, customer.country] | select | join(', ') }}</p>{% endif %}
-      {% if 'phone' in config.bill_to_fields and customer.phone %}<p class="party-line">Tel: {{ customer.phone_code or '' }} {{ customer.phone }}</p>{% endif %}
-      {% if 'email' in config.bill_to_fields and customer.email %}<p class="party-line">{{ customer.email }}</p>{% endif %}
-      {% if 'tax_id' in config.bill_to_fields and customer.id_value %}<p class="party-line">{{ 'Tax/VAT No' if customer.id_kind == 'vat_tax' else 'National ID' }}: {{ customer.id_value }}</p>{% endif %}
-    </div>
-    {% if config.show_sender_block %}
-    <div class="party-block" style="text-align: right;">
-      <p class="party-label">From</p>
-      <p class="party-name">{{ business.name }}</p>
-    </div>
-    {% endif %}
-  </div>
+  <table class="parties">
+    <tr>
+      <td class="party-left">
+        <p class="party-label">Bill To</p>
+        <p class="party-name">{{ customer.name }}</p>
+        {% if employee %}<p class="party-line">Attn: {{ employee.name }}</p>{% endif %}
+        {% if 'address' in config.bill_to_fields and customer.address_line1 %}<p class="party-line">{{ customer.address_line1 }}{% if customer.address_line2 %}, {{ customer.address_line2 }}{% endif %}</p>{% endif %}
+        {% if 'address' in config.bill_to_fields and (customer.city or customer.country) %}<p class="party-line">{{ [customer.city, customer.state, customer.country] | select | join(', ') }}</p>{% endif %}
+        {% if 'phone' in config.bill_to_fields and customer.phone %}<p class="party-line">Tel: {{ customer.phone_code or '' }} {{ customer.phone }}</p>{% endif %}
+        {% if 'email' in config.bill_to_fields and customer.email %}<p class="party-line">{{ customer.email }}</p>{% endif %}
+        {% if 'tax_id' in config.bill_to_fields and customer.id_value %}<p class="party-line">{{ 'Tax/VAT No' if customer.id_kind == 'vat_tax' else 'National ID' }}: {{ customer.id_value }}</p>{% endif %}
+      </td>
+      <td class="party-right">
+        {% if config.show_sender_block %}
+        <p class="party-label">From</p>
+        <p class="party-name">{{ business.name }}</p>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
 
   <table class="items">
     <thead>
@@ -173,10 +207,12 @@
   {% if amount_in_words %}<p class="amount-words">{{ amount_in_words }}</p>{% endif %}
 
   {% if (config.show_notes and notes) or (config.show_terms and terms) %}
-  <div class="notes-terms">
-    {% if config.show_notes and notes %}<div class="block"><p class="label">Notes</p><p>{{ notes }}</p></div>{% endif %}
-    {% if config.show_terms and terms %}<div class="block"><p class="label">Terms & Conditions</p><p>{{ terms }}</p></div>{% endif %}
-  </div>
+  <table class="notes-terms">
+    <tr>
+      <td>{% if config.show_notes and notes %}<p class="label">Notes</p><p>{{ notes }}</p>{% endif %}</td>
+      <td>{% if config.show_terms and terms %}<p class="label">Terms & Conditions</p><p>{{ terms }}</p>{% endif %}</td>
+    </tr>
+  </table>
   {% endif %}
 
   {% if show_bank_details and business.bank_iban_or_no %}
