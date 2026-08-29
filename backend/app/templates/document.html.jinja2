@@ -9,6 +9,7 @@
   body {
     font-family: {{ 'DejaVu Serif, Georgia, serif' if config.font_family == 'serif' else 'DejaVu Sans, Arial, sans-serif' }};
     font-size: {{ '9.5pt' if config.font_size == 'small' else '12pt' if config.font_size == 'large' else '10.5pt' }};
+    line-height: 1.45;
     color: #1e293b;
     margin: 0;
     position: relative;
@@ -27,14 +28,15 @@
   .logo-line { margin: 0 0 4px; }
   .logo { max-height: 60px; max-width: 200px; object-fit: contain; }
   .biz-name { font-size: 1.4em; font-weight: bold; margin: 0 0 2px; }
-  .biz-line { font-size: 0.85em; color: #475569; margin: 0; }
+  .biz-line { font-size: 0.85em; color: #475569; margin: 0 0 2px; }
   .doc-title {
     font-size: 1.9em;
     font-weight: bold;
     text-transform: uppercase;
+    letter-spacing: 0.02em;
     color: {{ primary_color }};
     text-align: right;
-    margin: 0;
+    margin: 0 0 4px;
   }
   .doc-meta { font-size: 0.9em; text-align: right; color: #475569; }
   .doc-meta td { padding: 1px 0 1px 12px; text-align: right; }
@@ -53,26 +55,30 @@
   table.parties td { width: 50%; vertical-align: top; }
   table.parties td.party-right { text-align: right; }
   .party-label {
-    font-size: 0.76em; text-transform: uppercase; color: #94a3b8; font-weight: bold;
-    margin-bottom: 3px;
+    font-size: 0.76em; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; font-weight: bold;
+    margin-bottom: 5px;
     {% if config.layout_preset == 'modern' %}border-left: 3px solid {{ accent_color }}; padding-left: 6px;{% endif %}
   }
   .party-right .party-label { {% if config.layout_preset == 'modern' %}border-left: none; border-right: 3px solid {{ accent_color }}; padding-left: 0; padding-right: 6px;{% endif %} }
-  .party-name { font-weight: bold; font-size: 1.05em; margin-bottom: 2px; }
-  .party-line { font-size: 0.9em; color: #334155; margin: 0; }
-  table.items { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  .party-name { font-weight: bold; font-size: 1.05em; margin-bottom: 4px; }
+  .party-line { font-size: 0.9em; color: #334155; margin: 0 0 1px; }
+  table.items { width: 100%; border-collapse: collapse; margin-bottom: 18px; table-layout: fixed; }
+  table.items th:first-child, table.items td:first-child { width: 34%; }
   table.items th {
     background: {{ primary_color }};
     color: white;
     font-size: 0.8em;
     text-transform: uppercase;
-    padding: 6px 8px;
+    letter-spacing: 0.03em;
+    padding: 8px 10px;
     text-align: left;
   }
   table.items th.num, table.items td.num { text-align: right; }
   table.items td {
-    padding: 6px 8px;
+    padding: 8px 10px;
     font-size: 0.9em;
+    line-height: 1.4;
+    word-wrap: break-word;
     {% if config.table_style == 'bordered' %}border: 1px solid #cbd5e1;{% else %}border-bottom: 1px solid #e2e8f0;{% endif %}
   }
   {% if config.table_style == 'striped' %}
@@ -99,15 +105,17 @@
   .amount-words { margin-top: 10px; font-size: 0.85em; font-style: italic; color: #475569; text-align: right; }
   table.notes-terms { width: 100%; border-collapse: collapse; margin-top: 22px; font-size: 0.85em; }
   table.notes-terms td { width: 50%; vertical-align: top; padding-right: 12px; }
-  .notes-terms .label { font-size: 0.76em; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 3px; }
-  .bank { margin-top: 16px; font-size: 0.85em; border: 1px solid #e2e8f0; padding: 10px; border-radius: 4px; }
-  .bank .label { font-size: 0.76em; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
+  .notes-terms .label { font-size: 0.76em; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
+  .notes-terms .body-text { line-height: 1.5; }
+  .bank { margin-top: 16px; font-size: 0.85em; border: 1px solid #e2e8f0; padding: 12px; border-radius: 4px; }
+  .bank .label { font-size: 0.76em; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
+  .bank .body-text { line-height: 1.6; }
   .signature { margin-top: 40px; font-size: 0.85em; }
   .signature .line { width: 220px; border-top: 1px solid #334155; padding-top: 4px; color: #64748b; }
   .footer { margin-top: 24px; text-align: center; font-size: 0.8em; color: #94a3b8; }
   .status-badge {
-    display: inline-block; padding: 2px 10px; border-radius: 10px;
-    font-size: 0.8em; text-transform: uppercase; font-weight: bold;
+    display: inline-block; padding: 3px 11px; border-radius: 10px;
+    font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.03em; font-weight: bold;
     background: #f1f5f9; color: {{ accent_color }};
   }
   .watermark {
@@ -209,8 +217,8 @@
   {% if (config.show_notes and notes) or (config.show_terms and terms) %}
   <table class="notes-terms">
     <tr>
-      <td>{% if config.show_notes and notes %}<p class="label">Notes</p><p>{{ notes }}</p>{% endif %}</td>
-      <td>{% if config.show_terms and terms %}<p class="label">Terms & Conditions</p><p>{{ terms }}</p>{% endif %}</td>
+      <td>{% if config.show_notes and notes %}<p class="label">Notes</p><p class="body-text">{{ notes }}</p>{% endif %}</td>
+      <td>{% if config.show_terms and terms %}<p class="label">Terms & Conditions</p><p class="body-text">{{ terms }}</p>{% endif %}</td>
     </tr>
   </table>
   {% endif %}
@@ -218,7 +226,7 @@
   {% if show_bank_details and business.bank_iban_or_no %}
   <div class="bank">
     <p class="label">Bank Details</p>
-    <p>{{ business.bank_name }} &middot; {{ business.bank_account_name }}<br/>
+    <p class="body-text">{{ business.bank_name }} &middot; {{ business.bank_account_name }}<br/>
     IBAN/Account No: {{ business.bank_iban_or_no }}{% if business.bank_swift %} &middot; SWIFT: {{ business.bank_swift }}{% endif %}</p>
   </div>
   {% endif %}
