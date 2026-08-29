@@ -88,14 +88,7 @@ export default function DesignStudioPage() {
 
       <div className="grid grid-cols-3 gap-6">
         <div className="space-y-5">
-          <Section title="Layout & Colors">
-            <FieldRow label="Layout preset">
-              <select value={config.layout_preset} onChange={(e) => set("layout_preset", e.target.value)} className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none">
-                <option value="classic">Classic</option>
-                <option value="modern">Modern</option>
-                <option value="compact">Compact</option>
-              </select>
-            </FieldRow>
+          <Section title="Colors">
             <FieldRow label="Primary color">
               <input type="color" value={config.primary_color} onChange={(e) => set("primary_color", e.target.value)} className="h-9 w-16 rounded border border-slate-300" />
             </FieldRow>
@@ -121,6 +114,15 @@ export default function DesignStudioPage() {
                 ))}
               </div>
             </div>
+          </Section>
+
+          <Section title="Layout & Typography">
+            <FieldRow label="Layout preset">
+              <select value={config.layout_preset} onChange={(e) => set("layout_preset", e.target.value)} className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none">
+                <option value="classic">Classic</option>
+                <option value="modern">Modern</option>
+              </select>
+            </FieldRow>
             <FieldRow label="Font family">
               <select value={config.font_family} onChange={(e) => set("font_family", e.target.value as TemplateConfig["font_family"])} className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none">
                 <option value="sans">Sans-serif</option>
