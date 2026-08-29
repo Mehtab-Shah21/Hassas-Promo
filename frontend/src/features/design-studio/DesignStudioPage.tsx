@@ -10,6 +10,15 @@ const BILL_TO_FIELD_OPTIONS = [
   { key: "tax_id", label: "Tax / National ID" },
 ];
 
+const COLOR_PRESETS: { name: string; primary: string; accent: string }[] = [
+  { name: "Indigo / Violet", primary: "#4F46E5", accent: "#7C3AED" },
+  { name: "Emerald / Teal", primary: "#059669", accent: "#0D9488" },
+  { name: "Slate / Blue", primary: "#334155", accent: "#2563EB" },
+  { name: "Rose / Amber", primary: "#E11D48", accent: "#D97706" },
+  { name: "Blue / Cyan", primary: "#1D4ED8", accent: "#0891B2" },
+  { name: "Amber / Orange", primary: "#B45309", accent: "#EA580C" },
+];
+
 export default function DesignStudioPage() {
   const { activeBusiness, refreshBusinesses } = useBusiness();
   const [config, setConfig] = useState<TemplateConfig | null>(null);
@@ -87,9 +96,31 @@ export default function DesignStudioPage() {
                 <option value="compact">Compact</option>
               </select>
             </FieldRow>
-            <FieldRow label="Primary / accent color">
+            <FieldRow label="Primary color">
               <input type="color" value={config.primary_color} onChange={(e) => set("primary_color", e.target.value)} className="h-9 w-16 rounded border border-slate-300" />
             </FieldRow>
+            <FieldRow label="Accent color">
+              <input type="color" value={config.accent_color} onChange={(e) => set("accent_color", e.target.value)} className="h-9 w-16 rounded border border-slate-300" />
+            </FieldRow>
+            <div>
+              <span className="mb-1.5 block text-sm text-slate-600">Presets</span>
+              <div className="flex flex-wrap gap-2">
+                {COLOR_PRESETS.map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    title={preset.name}
+                    onClick={() => setConfig((c) => (c ? { ...c, primary_color: preset.primary, accent_color: preset.accent } : c))}
+                    className={`h-7 w-7 rounded-full border-2 ${
+                      config.primary_color === preset.primary && config.accent_color === preset.accent
+                        ? "border-slate-800"
+                        : "border-white shadow ring-1 ring-slate-200"
+                    }`}
+                    style={{ background: `linear-gradient(135deg, ${preset.primary} 50%, ${preset.accent} 50%)` }}
+                  />
+                ))}
+              </div>
+            </div>
             <FieldRow label="Font family">
               <select value={config.font_family} onChange={(e) => set("font_family", e.target.value as TemplateConfig["font_family"])} className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none">
                 <option value="sans">Sans-serif</option>

@@ -3,6 +3,7 @@ import { apiClient } from "./client";
 export interface TemplateConfig {
   layout_preset: string;
   primary_color: string;
+  accent_color: string;
   font_family: "sans" | "serif";
   font_size: "small" | "normal" | "large";
   logo_enabled: boolean;

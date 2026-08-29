@@ -28,6 +28,7 @@ _env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=True)
 DEFAULT_TEMPLATE_CONFIG = {
     "layout_preset": "classic",
     "primary_color": "#4F46E5",
+    "accent_color": "#7C3AED",
     "font_family": "sans",  # sans | serif
     "font_size": "normal",  # small | normal | large
     "logo_enabled": True,
@@ -173,7 +174,8 @@ def render_document_html(
         notes=notes,
         terms=terms,
         currency=currency,
-        accent_color=config["primary_color"],
+        primary_color=config["primary_color"],
+        accent_color=config["accent_color"],
         logo_uri=_logo_uri(business) if config["logo_enabled"] else None,
         config=config,
         amount_in_words=number_to_words(grand_total, business.base_currency) if config["show_amount_in_words"] else None,

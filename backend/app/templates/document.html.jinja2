@@ -14,12 +14,13 @@
     position: relative;
   }
   .accent { color: {{ accent_color }}; }
+  .primary { color: {{ primary_color }}; }
   .header {
     display: flex;
     justify-content: {{ 'flex-end' if config.logo_position == 'right' else 'center' if config.logo_position == 'center' else 'space-between' }};
     flex-direction: {{ 'row-reverse' if config.logo_position == 'right' else 'row' }};
     align-items: flex-start;
-    border-bottom: 3px solid {{ accent_color }};
+    border-bottom: 3px solid {{ primary_color }};
     padding-bottom: 12px;
     margin-bottom: 18px;
   }
@@ -30,7 +31,7 @@
     font-size: 1.9em;
     font-weight: bold;
     text-transform: uppercase;
-    color: {{ accent_color }};
+    color: {{ primary_color }};
     text-align: right;
     margin: 0;
   }
@@ -43,7 +44,7 @@
   .party-line { font-size: 0.9em; color: #334155; margin: 0; }
   table.items { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
   table.items th {
-    background: {{ accent_color }};
+    background: {{ primary_color }};
     color: white;
     font-size: 0.8em;
     text-transform: uppercase;
@@ -64,6 +65,7 @@
   .totals td.label { color: #64748b; }
   .totals td.value { text-align: right; }
   .totals tr.grand td { border-top: 2px solid #1e293b; font-weight: bold; font-size: 1.15em; padding-top: 6px; }
+  .totals tr.discount td { color: {{ accent_color }}; }
   .amount-words { margin-top: 10px; font-size: 0.85em; font-style: italic; color: #475569; text-align: right; }
   .notes-terms { display: flex; justify-content: space-between; margin-top: 22px; font-size: 0.85em; }
   .notes-terms .block { width: 48%; }
@@ -76,7 +78,7 @@
   .status-badge {
     display: inline-block; padding: 2px 10px; border-radius: 10px;
     font-size: 0.8em; text-transform: uppercase; font-weight: bold;
-    background: #f1f5f9; color: #475569;
+    background: #f1f5f9; color: {{ accent_color }};
   }
   .watermark {
     position: fixed; top: 40%; left: 10%; width: 80%;
@@ -158,7 +160,7 @@
 
   <table class="totals">
     <tr><td class="label">Subtotal</td><td class="value">{{ currency }} {{ '%.2f' | format(subtotal) }}</td></tr>
-    {% if discount_total %}<tr><td class="label">Discount{% if coupon_code %} ({{ coupon_code }}){% endif %}</td><td class="value">-{{ currency }} {{ '%.2f' | format(discount_total) }}</td></tr>{% endif %}
+    {% if discount_total %}<tr class="discount"><td class="label">Discount{% if coupon_code %} ({{ coupon_code }}){% endif %}</td><td class="value">-{{ currency }} {{ '%.2f' | format(discount_total) }}</td></tr>{% endif %}
     {% if config.show_tax_breakdown %}<tr><td class="label">VAT</td><td class="value">{{ currency }} {{ '%.2f' | format(vat_total) }}</td></tr>{% endif %}
     {% if show_govt_fee and govt_fee_total %}<tr><td class="label">Government fees</td><td class="value">{{ currency }} {{ '%.2f' | format(govt_fee_total) }}</td></tr>{% endif %}
     <tr class="grand"><td class="label">Total</td><td class="value">{{ currency }} {{ '%.2f' | format(grand_total) }}</td></tr>
