@@ -58,3 +58,27 @@ To undo just this step: revert `frontend/src/index.css` to its prior
 version (`@import "tailwindcss";` + the small html/body/print rules, no
 `@theme` block).
 
+### 2. Shared primitives
+- `frontend/src/components/form/Field.tsx` — label text, input/textarea
+  border+background+text+focus ring, SaveButton background — all switched
+  from the old slate/indigo classNames to the new tokens (`border-line`,
+  `bg-surface`, `text-ink`, `text-muted`, `focus:border-accent`,
+  `bg-accent`). No prop/behavior change.
+- `frontend/src/components/Modal.tsx` — backdrop, panel background/shadow
+  (now `shadow-overlay`, the guide's dedicated modal elevation level),
+  header border, title/close-button colors.
+- `frontend/src/components/SearchCombobox.tsx` — input + dropdown panel
+  (now `shadow-floating`, the guide's dropdown elevation level), option
+  hover state (`hover:bg-white/5` — a translucent overlay since dark
+  surfaces can't reuse a `hover:bg-slate-50`-style light tint), "extra
+  option" link color → `text-accent`.
+- `frontend/src/components/PlaceholderPage.tsx` — still live (used by
+  `AdminOnlyRoute.tsx`'s fallback screen), same token swap.
+
+These four files back essentially every form, modal, and combobox in the
+app, so this step's effect is much larger than 4 files even though only 4
+were edited.
+
+To undo: revert these 4 files individually, or as a group (they were one
+commit — see git log for the hash).
+

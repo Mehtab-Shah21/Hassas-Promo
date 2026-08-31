@@ -9,7 +9,7 @@ interface FieldProps {
 export function Field({ label, children, className }: FieldProps) {
   return (
     <label className={`block ${className ?? ""}`}>
-      <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
+      <span className="mb-1 block text-sm font-medium text-muted">{label}</span>
       {children}
     </label>
   );
@@ -19,7 +19,7 @@ export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none ${props.className ?? ""}`}
+      className={`w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${props.className ?? ""}`}
     />
   );
 }
@@ -28,7 +28,7 @@ export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       {...props}
-      className={`w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none ${props.className ?? ""}`}
+      className={`w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent ${props.className ?? ""}`}
     />
   );
 }
@@ -38,7 +38,7 @@ export function SaveButton({ saving, label = "Save changes" }: { saving: boolean
     <button
       type="submit"
       disabled={saving}
-      className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+      className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-raised transition-opacity hover:opacity-90 disabled:opacity-50"
     >
       {saving ? "Saving..." : label}
     </button>

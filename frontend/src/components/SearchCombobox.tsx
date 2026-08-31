@@ -51,14 +51,14 @@ export default function SearchCombobox<T>({
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
-        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+        className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
       />
       {open && (
-        <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-slate-200 bg-white shadow-lg">
+        <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-line bg-surface shadow-floating">
           {loading ? (
-            <div className="px-3 py-2 text-sm text-slate-400">Searching...</div>
+            <div className="px-3 py-2 text-sm text-muted">Searching...</div>
           ) : options.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-slate-400">No matches</div>
+            <div className="px-3 py-2 text-sm text-muted">No matches</div>
           ) : (
             options.map((opt, i) => (
               <button
@@ -69,10 +69,10 @@ export default function SearchCombobox<T>({
                   setOpen(false);
                   setQuery("");
                 }}
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-white/5"
               >
-                <div className="font-medium text-slate-800">{getLabel(opt)}</div>
-                {getSubLabel?.(opt) && <div className="text-xs text-slate-400">{getSubLabel(opt)}</div>}
+                <div className="font-medium text-ink">{getLabel(opt)}</div>
+                {getSubLabel?.(opt) && <div className="text-xs text-muted">{getSubLabel(opt)}</div>}
               </button>
             ))
           )}
@@ -83,7 +83,7 @@ export default function SearchCombobox<T>({
                 extraOption.onClick();
                 setOpen(false);
               }}
-              className="block w-full border-t border-slate-100 px-3 py-2 text-left text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+              className="block w-full border-t border-line px-3 py-2 text-left text-sm font-medium text-accent hover:bg-white/5"
             >
               {extraOption.label}
             </button>
