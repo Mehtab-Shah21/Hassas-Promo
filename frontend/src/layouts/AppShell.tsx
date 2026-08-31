@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
+import { acknowledgeNotification, snoozeNotification } from "../api/notifications";
 import { useAuth } from "../context/AuthContext";
 import { useBusiness } from "../context/BusinessContext";
 import { useFeatureFlags } from "../context/FeatureFlagsContext";
@@ -56,11 +57,99 @@ function readStoredCollapsed(): boolean {
   }
 }
 
+function NotificationBell() {
+  const navigate = useNavigate();
+  const { activeNotifications, badgeCount, refresh } = useNotifications();
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  async function handleAcknowledge(id: number) {
+    await acknowledgeNotification(id);
+    refresh();
+  }
+  async function handleSnooze(id: number) {
+    await snoozeNotification(id, 3);
+    refresh();
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Notifications"
+        title="Notifications"
+        className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted hover:bg-wash-1 hover:text-ink"
+      >
+        <Bell size={16} />
+        {badgeCount > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+            {badgeCount > 9 ? "9+" : badgeCount}
+          </span>
+        )}
+      </button>
+      {open && (
+        <div className="absolute right-0 z-30 mt-2 w-80 rounded-md border border-line bg-surface shadow-floating">
+          <div className="border-b border-line px-3 py-2 text-sm font-semibold text-ink">Notifications</div>
+          <div className="max-h-80 overflow-y-auto">
+            {activeNotifications.length === 0 ? (
+              <p className="px-3 py-4 text-center text-sm text-muted">Nothing active right now.</p>
+            ) : (
+              activeNotifications.map((n) => (
+                <div key={n.id} className="border-b border-line px-3 py-2 last:border-b-0">
+                  <p className="text-sm font-medium text-ink">
+                    {n.customer_name} <span className="font-normal text-muted">· {n.service_name}</span>
+                  </p>
+                  {n.note && <p className="text-xs text-muted">{n.note}</p>}
+                  <p className="text-xs text-muted">
+                    Target: {n.target_date} ·{" "}
+                    {n.days_remaining < 0 ? `${-n.days_remaining} days overdue` : `${n.days_remaining} days remaining`}
+                  </p>
+                  <div className="mt-1.5 flex gap-2 text-xs">
+                    <button onClick={() => handleSnooze(n.id)} className="rounded-md border border-line px-2 py-1 hover:bg-wash-1">
+                      Snooze 3d
+                    </button>
+                    <button
+                      onClick={() => handleAcknowledge(n.id)}
+                      className="rounded-md bg-accent px-2 py-1 text-white hover:opacity-90 transition-opacity"
+                    >
+                      Acknowledge
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <button
+            onClick={() => {
+              setOpen(false);
+              navigate("/notifications");
+            }}
+            className="block w-full border-t border-line px-3 py-2 text-center text-sm font-medium text-accent hover:bg-wash-1"
+          >
+            View all
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AppShell() {
   const { user, logout } = useAuth();
   const { businesses, activeBusiness, setActiveBusinessId } = useBusiness();
   const { isEnabled } = useFeatureFlags();
-  const { badgeCount } = useNotifications();
+  const { moduleAlerts, badgeCount } = useNotifications();
   const [collapsed, setCollapsed] = useState<boolean>(() => readStoredCollapsed());
 
   useEffect(() => {
@@ -98,6 +187,7 @@ export default function AppShell() {
         <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-2 py-2">
           {visibleItems.map((item) => {
             const Icon = item.icon;
+            const hasAlert = item.to !== "/notifications" && moduleAlerts.has(item.to);
             return (
               <NavLink
                 key={item.to}
@@ -112,6 +202,11 @@ export default function AppShell() {
                 <span className={`flex min-w-0 items-center ${collapsed ? "" : "gap-2"}`}>
                   <span className="relative flex shrink-0 items-center justify-center">
                     <Icon size={18} />
+                    {hasAlert && (
+                      <span
+                        className={`absolute h-2 w-2 rounded-full bg-danger ${collapsed ? "-right-0.5 -top-0.5" : "-right-1 -top-1"}`}
+                      />
+                    )}
                     {collapsed && item.to === "/notifications" && badgeCount > 0 && (
                       <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
                         {badgeCount > 9 ? "9+" : badgeCount}
@@ -154,6 +249,7 @@ export default function AppShell() {
             </select>
           </div>
           <div className="flex items-center gap-3">
+            {isEnabled("notifications") && <NotificationBell />}
             <ThemeToggle />
             <span className="text-sm text-muted">{user?.display_name ?? user?.email}</span>
             <span className="rounded-full bg-wash-2 px-2 py-0.5 text-xs font-medium capitalize text-ink">

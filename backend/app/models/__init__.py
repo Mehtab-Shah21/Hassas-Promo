@@ -6,7 +6,7 @@ from app.models.coupon import Coupon
 from app.models.customer import Customer
 from app.models.feature_flag import FeatureFlag
 from app.models.invoice import Invoice, InvoiceItem, Payment
-from app.models.notification import Notification, NotificationReminder, NotificationType
+from app.models.notification import Notification, NotificationReminder
 from app.models.quotation import Quotation, QuotationItem
 from app.models.service import Service, ServiceCategory
 from app.models.user import User
@@ -23,7 +23,6 @@ __all__ = [
     "InvoiceItem",
     "Notification",
     "NotificationReminder",
-    "NotificationType",
     "Payment",
     "Quotation",
     "QuotationItem",

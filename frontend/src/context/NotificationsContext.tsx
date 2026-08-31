@@ -1,11 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { getBadgeCount } from "../api/notifications";
+import { listActiveNotifications } from "../api/notifications";
+import type { NotificationListItem } from "../api/types";
 import { useAuth } from "./AuthContext";
 import { useBusiness } from "./BusinessContext";
 import { useFeatureFlags } from "./FeatureFlagsContext";
 
 interface NotificationsContextValue {
   badgeCount: number;
+  activeNotifications: NotificationListItem[];
+  moduleAlerts: Set<string>;
   refresh: () => Promise<void>;
 }
 
@@ -15,17 +18,17 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { activeBusiness } = useBusiness();
   const { isEnabled } = useFeatureFlags();
-  const [badgeCount, setBadgeCount] = useState(0);
+  const [activeNotifications, setActiveNotifications] = useState<NotificationListItem[]>([]);
 
   async function refresh() {
     if (!user || !activeBusiness || !isEnabled("notifications")) {
-      setBadgeCount(0);
+      setActiveNotifications([]);
       return;
     }
     try {
-      setBadgeCount(await getBadgeCount());
+      setActiveNotifications(await listActiveNotifications());
     } catch {
-      // non-critical; leave badge as-is
+      // non-critical; leave state as-is
     }
   }
 
@@ -34,7 +37,18 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeBusiness?.id]);
 
-  const value = useMemo(() => ({ badgeCount, refresh }), [badgeCount]);
+  const moduleAlerts = useMemo(() => {
+    const set = new Set<string>();
+    for (const n of activeNotifications) {
+      for (const m of n.visibility_modules) set.add(m);
+    }
+    return set;
+  }, [activeNotifications]);
+
+  const value = useMemo(
+    () => ({ badgeCount: activeNotifications.length, activeNotifications, moduleAlerts, refresh }),
+    [activeNotifications, moduleAlerts],
+  );
 
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }

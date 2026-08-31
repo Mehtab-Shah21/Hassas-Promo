@@ -1,22 +1,8 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.models.notification import ReminderUnit
-
-
-class NotificationTypeCreate(BaseModel):
-    name: str
-    is_active: bool = True
-
-
-class NotificationTypeResponse(BaseModel):
-    id: int
-    business_id: int
-    name: str
-    is_active: bool
-
-    model_config = {"from_attributes": True}
 
 
 class ReminderCreate(BaseModel):
@@ -34,16 +20,18 @@ class ReminderResponse(BaseModel):
 
 class NotificationCreate(BaseModel):
     customer_id: int
-    type_id: int
+    service_id: int
     note: str | None = None
     target_date: date
+    visibility_modules: list[str] = []
     reminders: list[ReminderCreate] = []
 
 
 class NotificationUpdate(BaseModel):
-    type_id: int | None = None
+    service_id: int | None = None
     note: str | None = None
     target_date: date | None = None
+    visibility_modules: list[str] | None = None
 
 
 class SnoozeRequest(BaseModel):
@@ -54,26 +42,33 @@ class NotificationResponse(BaseModel):
     id: int
     business_id: int
     customer_id: int
-    type_id: int
+    service_id: int | None
     note: str | None
     target_date: date
     acknowledged_at: datetime | None
     snoozed_until: date | None
+    visibility_modules: list[str]
     reminders: list[ReminderResponse]
 
     model_config = {"from_attributes": True}
+
+    @field_validator("visibility_modules", mode="before")
+    @classmethod
+    def _default_visibility_modules(cls, v: list[str] | None) -> list[str]:
+        return v or []
 
 
 class NotificationListItem(BaseModel):
     id: int
     customer_id: int
     customer_name: str
-    type_id: int
-    type_name: str
+    service_id: int | None
+    service_name: str
     note: str | None
     target_date: date
     acknowledged_at: datetime | None
     snoozed_until: date | None
+    visibility_modules: list[str]
     days_remaining: int
     triggered: bool
 

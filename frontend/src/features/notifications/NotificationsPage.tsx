@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import {
   acknowledgeNotification,
   deleteNotification,
-  listNotificationTypes,
   listNotifications,
   snoozeNotification,
 } from "../../api/notifications";
-import type { NotificationListItem, NotificationType } from "../../api/types";
+import type { NotificationListItem } from "../../api/types";
 import { useBusiness } from "../../context/BusinessContext";
 import { useNotifications } from "../../context/NotificationsContext";
 import NotificationFormModal from "./NotificationFormModal";
@@ -22,7 +21,6 @@ export default function NotificationsPage() {
   const { activeBusiness } = useBusiness();
   const { refresh: refreshBadge } = useNotifications();
   const [items, setItems] = useState<NotificationListItem[]>([]);
-  const [types, setTypes] = useState<NotificationType[]>([]);
   const [showOnlyPending, setShowOnlyPending] = useState(true);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -36,14 +34,9 @@ export default function NotificationsPage() {
     }
   }
 
-  async function loadTypes() {
-    setTypes(await listNotificationTypes());
-  }
-
   useEffect(() => {
     if (!activeBusiness) return;
     load();
-    loadTypes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeBusiness?.id, showOnlyPending]);
 
@@ -93,7 +86,7 @@ export default function NotificationsPage() {
             <div key={n.id} className={`flex items-center justify-between rounded-lg border border-l-4 border-line bg-surface p-4 ${urgencyClass(n)}`}>
               <div>
                 <p className="font-medium text-ink">
-                  {n.customer_name} <span className="font-normal text-muted">· {n.type_name}</span>
+                  {n.customer_name} <span className="font-normal text-muted">· {n.service_name}</span>
                 </p>
                 {n.note && <p className="text-sm text-muted">{n.note}</p>}
                 <p className="text-xs text-muted">
@@ -123,8 +116,6 @@ export default function NotificationsPage() {
 
       {showForm && (
         <NotificationFormModal
-          types={types}
-          onTypesChanged={loadTypes}
           onClose={() => setShowForm(false)}
           onSaved={() => {
             setShowForm(false);

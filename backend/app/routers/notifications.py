@@ -7,21 +7,19 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.db import get_db
 from app.core.deps import get_current_user, require_active_business_id
 from app.models.customer import Customer
-from app.models.notification import Notification, NotificationReminder, NotificationType, ReminderUnit
+from app.models.notification import Notification, NotificationReminder, ReminderUnit
+from app.models.service import Service
 from app.schemas.notification import (
     BadgeResponse,
     NotificationCreate,
     NotificationListItem,
     NotificationResponse,
-    NotificationTypeCreate,
-    NotificationTypeResponse,
     NotificationUpdate,
     SnoozeRequest,
 )
 from app.services.audit import write_audit_log
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
-types_router = APIRouter(prefix="/api/notification-types", tags=["notifications"])
 
 
 def _subtract(d: date, value: int, unit: ReminderUnit) -> date:
@@ -51,38 +49,21 @@ def _is_triggered(notification: Notification, today: date) -> bool:
     return _earliest_trigger(notification) <= today
 
 
-# --- Types ---
-
-
-@types_router.get("", response_model=list[NotificationTypeResponse])
-def list_types(
-    business_id: int = Depends(require_active_business_id),
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    return (
-        db.query(NotificationType)
-        .filter(NotificationType.business_id == business_id, NotificationType.is_active.is_(True))
-        .order_by(NotificationType.name)
-        .all()
+def _to_list_item(n: Notification, customer_names: dict[int, str], service_names: dict[int, str], today: date) -> NotificationListItem:
+    return NotificationListItem(
+        id=n.id,
+        customer_id=n.customer_id,
+        customer_name=customer_names.get(n.customer_id, "—"),
+        service_id=n.service_id,
+        service_name=service_names.get(n.service_id, "—") if n.service_id else "—",
+        note=n.note,
+        target_date=n.target_date,
+        acknowledged_at=n.acknowledged_at,
+        snoozed_until=n.snoozed_until,
+        visibility_modules=n.visibility_modules or [],
+        days_remaining=(n.target_date - today).days,
+        triggered=_is_triggered(n, today),
     )
-
-
-@types_router.post("", response_model=NotificationTypeResponse, status_code=status.HTTP_201_CREATED)
-def create_type(
-    payload: NotificationTypeCreate,
-    business_id: int = Depends(require_active_business_id),
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    nt = NotificationType(business_id=business_id, **payload.model_dump())
-    db.add(nt)
-    db.commit()
-    db.refresh(nt)
-    return nt
-
-
-# --- Notifications ---
 
 
 @router.get("", response_model=list[NotificationListItem])
@@ -98,26 +79,35 @@ def list_notifications(
     notifications = q.order_by(Notification.target_date).all()
 
     customer_names = {c.id: c.name for c in db.query(Customer).filter(Customer.business_id == business_id).all()}
-    type_names = {
-        t.id: t.name for t in db.query(NotificationType).filter(NotificationType.business_id == business_id).all()
-    }
+    service_names = {s.id: s.name for s in db.query(Service).filter(Service.business_id == business_id).all()}
+    today = date.today()
+
+    return [_to_list_item(n, customer_names, service_names, today) for n in notifications]
+
+
+@router.get("/active", response_model=list[NotificationListItem])
+def list_active_notifications(
+    business_id: int = Depends(require_active_business_id),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Currently triggered, unacknowledged notifications — drives the top-bar
+    bell panel and the per-module nav red-dot indicators."""
+    notifications = (
+        db.query(Notification)
+        .options(selectinload(Notification.reminders))
+        .filter(Notification.business_id == business_id, Notification.acknowledged_at.is_(None))
+        .order_by(Notification.target_date)
+        .all()
+    )
+    customer_names = {c.id: c.name for c in db.query(Customer).filter(Customer.business_id == business_id).all()}
+    service_names = {s.id: s.name for s in db.query(Service).filter(Service.business_id == business_id).all()}
     today = date.today()
 
     return [
-        NotificationListItem(
-            id=n.id,
-            customer_id=n.customer_id,
-            customer_name=customer_names.get(n.customer_id, "—"),
-            type_id=n.type_id,
-            type_name=type_names.get(n.type_id, "—"),
-            note=n.note,
-            target_date=n.target_date,
-            acknowledged_at=n.acknowledged_at,
-            snoozed_until=n.snoozed_until,
-            days_remaining=(n.target_date - today).days,
-            triggered=_is_triggered(n, today),
-        )
+        _to_list_item(n, customer_names, service_names, today)
         for n in notifications
+        if _is_triggered(n, today)
     ]
 
 
@@ -148,16 +138,17 @@ def create_notification(
     customer = db.get(Customer, payload.customer_id)
     if not customer or customer.business_id != business_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer not found")
-    ntype = db.get(NotificationType, payload.type_id)
-    if not ntype or ntype.business_id != business_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Notification type not found")
+    service = db.get(Service, payload.service_id)
+    if not service or service.business_id != business_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Service not found")
 
     notification = Notification(
         business_id=business_id,
         customer_id=payload.customer_id,
-        type_id=payload.type_id,
+        service_id=payload.service_id,
         note=payload.note,
         target_date=payload.target_date,
+        visibility_modules=payload.visibility_modules,
         created_by=current_user.id,
         reminders=[
             NotificationReminder(offset_value=r.offset_value, offset_unit=r.offset_unit) for r in payload.reminders
@@ -187,6 +178,10 @@ def update_notification(
     if not notification or notification.business_id != business_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found")
     data = payload.model_dump(exclude_unset=True)
+    if "service_id" in data:
+        service = db.get(Service, data["service_id"])
+        if not service or service.business_id != business_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Service not found")
     for field, value in data.items():
         setattr(notification, field, value)
     if "target_date" in data:

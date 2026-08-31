@@ -17,7 +17,6 @@ from app.models import (  # noqa: F401  ensure models are registered
     InvoiceItem,
     Notification,
     NotificationReminder,
-    NotificationType,
     Payment,
     Quotation,
     QuotationItem,

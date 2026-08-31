@@ -216,13 +216,6 @@ export interface EmployeeTotals {
 
 export type ReminderUnit = "day" | "week" | "month";
 
-export interface NotificationType {
-  id: number;
-  business_id: number;
-  name: string;
-  is_active: boolean;
-}
-
 export interface Reminder {
   id: number;
   offset_value: number;
@@ -233,12 +226,13 @@ export interface NotificationListItem {
   id: number;
   customer_id: number;
   customer_name: string;
-  type_id: number;
-  type_name: string;
+  service_id: number | null;
+  service_name: string;
   note: string | null;
   target_date: string;
   acknowledged_at: string | null;
   snoozed_until: string | null;
+  visibility_modules: string[];
   days_remaining: number;
   triggered: boolean;
 }

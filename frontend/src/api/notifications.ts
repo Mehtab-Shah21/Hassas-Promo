@@ -1,15 +1,5 @@
 import { apiClient } from "./client";
-import type { NotificationListItem, NotificationType, ReminderUnit } from "./types";
-
-export async function listNotificationTypes(): Promise<NotificationType[]> {
-  const res = await apiClient.get<NotificationType[]>("/api/notification-types");
-  return res.data;
-}
-
-export async function createNotificationType(name: string): Promise<NotificationType> {
-  const res = await apiClient.post<NotificationType>("/api/notification-types", { name });
-  return res.data;
-}
+import type { NotificationListItem, ReminderUnit } from "./types";
 
 export async function listNotifications(unacknowledgedOnly = false): Promise<NotificationListItem[]> {
   const res = await apiClient.get<NotificationListItem[]>("/api/notifications", {
@@ -18,9 +8,9 @@ export async function listNotifications(unacknowledgedOnly = false): Promise<Not
   return res.data;
 }
 
-export async function getBadgeCount(): Promise<number> {
-  const res = await apiClient.get<{ count: number }>("/api/notifications/badge");
-  return res.data.count;
+export async function listActiveNotifications(): Promise<NotificationListItem[]> {
+  const res = await apiClient.get<NotificationListItem[]>("/api/notifications/active");
+  return res.data;
 }
 
 export interface ReminderInput {
@@ -30,9 +20,10 @@ export interface ReminderInput {
 
 export async function createNotification(payload: {
   customer_id: number;
-  type_id: number;
+  service_id: number;
   note?: string | null;
   target_date: string;
+  visibility_modules: string[];
   reminders: ReminderInput[];
 }): Promise<void> {
   await apiClient.post("/api/notifications", payload);
