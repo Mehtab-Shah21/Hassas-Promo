@@ -53,8 +53,8 @@ export default function AuditLogPage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">Audit Log</h1>
-        <button onClick={() => downloadAuditLogCsv(params)} className="rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">
+        <h1 className="text-xl font-semibold text-ink">Audit Log</h1>
+        <button onClick={() => downloadAuditLogCsv(params)} className="rounded-md border border-line px-3 py-2 text-sm hover:bg-white/5">
           Export CSV
         </button>
       </div>
@@ -64,28 +64,28 @@ export default function AuditLogPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search description..."
-          className="w-64 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="w-64 rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
         />
-        <select value={entityType} onChange={(e) => setEntityType(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <select value={entityType} onChange={(e) => setEntityType(e.target.value)} className="rounded-md border border-line px-3 py-2 text-sm">
           <option value="">All entities</option>
           {ENTITY_TYPES.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
-        <select value={action} onChange={(e) => setAction(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm">
+        <select value={action} onChange={(e) => setAction(e.target.value)} className="rounded-md border border-line px-3 py-2 text-sm">
           <option value="">All actions</option>
           {ACTIONS.map((a) => (
             <option key={a} value={a}>{a}</option>
           ))}
         </select>
-        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-        <span className="self-center text-sm text-slate-400">to</span>
-        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
+        <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="rounded-md border border-line px-3 py-2 text-sm" />
+        <span className="self-center text-sm text-muted">to</span>
+        <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="rounded-md border border-line px-3 py-2 text-sm" />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+          <thead className="bg-white/5 text-left text-xs font-semibold uppercase text-muted">
             <tr>
               <th className="px-4 py-2">When</th>
               <th className="px-4 py-2">User</th>
@@ -94,25 +94,25 @@ export default function AuditLogPage() {
               <th className="px-4 py-2">Description</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-line">
             {loading ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">Loading...</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-muted">Loading...</td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">No matching entries.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-muted">No matching entries.</td></tr>
             ) : (
               items.map((e) => (
-                <tr key={e.id} onClick={() => setExpanded(expanded === e.id ? null : e.id)} className="cursor-pointer hover:bg-slate-50">
-                  <td className="px-4 py-2 text-slate-500">{new Date(e.created_at).toLocaleString()}</td>
-                  <td className="px-4 py-2 text-slate-700">{e.user_name ?? "—"}</td>
-                  <td className="px-4 py-2 capitalize text-slate-600">{e.action}</td>
-                  <td className="px-4 py-2 text-slate-600">
+                <tr key={e.id} onClick={() => setExpanded(expanded === e.id ? null : e.id)} className="cursor-pointer hover:bg-white/5">
+                  <td className="px-4 py-2 text-muted">{new Date(e.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-2 text-muted">{e.user_name ?? "—"}</td>
+                  <td className="px-4 py-2 capitalize text-muted">{e.action}</td>
+                  <td className="px-4 py-2 text-muted">
                     {e.entity_type}{e.entity_id ? ` #${e.entity_id}` : ""}
                   </td>
-                  <td className="px-4 py-2 text-slate-700">
+                  <td className="px-4 py-2 text-muted">
                     {expanded === e.id ? (
                       <div>
                         <p>{e.description}</p>
-                        <p className="mt-1 text-xs text-slate-400">IP: {e.source_ip ?? "—"} · business_id: {e.business_id ?? "—"}</p>
+                        <p className="mt-1 text-xs text-muted">IP: {e.source_ip ?? "—"} · business_id: {e.business_id ?? "—"}</p>
                       </div>
                     ) : (
                       <span className="line-clamp-1">{e.description}</span>
@@ -126,11 +126,11 @@ export default function AuditLogPage() {
       </div>
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <div className="mt-4 flex items-center justify-between text-sm text-muted">
           <span>Page {page} of {totalPages} ({total} total)</span>
           <div className="flex gap-2">
-            <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-md border border-slate-300 px-3 py-1 disabled:opacity-40">Prev</button>
-            <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="rounded-md border border-slate-300 px-3 py-1 disabled:opacity-40">Next</button>
+            <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-md border border-line px-3 py-1 disabled:opacity-40">Prev</button>
+            <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="rounded-md border border-line px-3 py-1 disabled:opacity-40">Next</button>
           </div>
         </div>
       )}

@@ -25,21 +25,21 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <h1 className="no-print mb-4 text-xl font-semibold text-slate-900">Reports</h1>
-      <div className="no-print mb-4 flex flex-wrap gap-1 border-b border-slate-200">
+      <h1 className="no-print mb-4 text-xl font-semibold text-ink">Reports</h1>
+      <div className="no-print mb-4 flex flex-wrap gap-1 border-b border-line">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setActive(t.key)}
             className={`rounded-t-md px-3 py-2 text-sm font-medium ${
-              active === t.key ? "border-b-2 border-indigo-600 text-indigo-700" : "text-slate-500 hover:text-slate-800"
+              active === t.key ? "border-b-2 border-accent text-accent" : "text-muted hover:text-ink"
             }`}
           >
             {t.label}
           </button>
         ))}
       </div>
-      <div className="rounded-lg border border-slate-200 bg-white p-5">
+      <div className="rounded-lg border border-line bg-surface p-5">
         <ActiveComponent />
       </div>
     </div>

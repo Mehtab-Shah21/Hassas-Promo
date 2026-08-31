@@ -22,15 +22,15 @@ export default function GovtFeesReportTab() {
       />
       {data && (
         <>
-          <div className="mb-4 rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-xs font-medium uppercase text-slate-400">Total government fees</p>
-            <p className="text-2xl font-semibold text-amber-600">{data.total_govt_fee.toFixed(2)}</p>
+          <div className="mb-4 rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs font-medium uppercase text-muted">Total government fees</p>
+            <p className="text-2xl font-semibold text-orange-50">{data.total_govt_fee.toFixed(2)}</p>
           </div>
           <table className="w-full text-sm">
-            <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="text-left text-xs font-semibold uppercase text-muted">
               <tr><th className="py-1.5">Number</th><th>Date</th><th>Customer</th><th className="text-right">Govt fee</th></tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {data.rows.map((r) => (
                 <tr key={r.number}><td className="py-1.5">{r.number}</td><td>{r.date}</td><td>{r.customer}</td><td className="text-right">{r.govt_fee.toFixed(2)}</td></tr>
               ))}

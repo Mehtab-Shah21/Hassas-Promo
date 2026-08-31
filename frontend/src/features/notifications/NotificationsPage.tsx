@@ -67,36 +67,36 @@ export default function NotificationsPage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">Notifications</h1>
+        <h1 className="text-xl font-semibold text-ink">Notifications</h1>
         <button
           onClick={() => setShowForm(true)}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
         >
           + New notification
         </button>
       </div>
 
-      <label className="mb-4 flex items-center gap-2 text-sm text-slate-600">
+      <label className="mb-4 flex items-center gap-2 text-sm text-muted">
         <input type="checkbox" checked={showOnlyPending} onChange={(e) => setShowOnlyPending(e.target.checked)} />
         Show only unacknowledged
       </label>
 
       {loading ? (
-        <p className="text-sm text-slate-500">Loading...</p>
+        <p className="text-sm text-muted">Loading...</p>
       ) : items.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-400">
+        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
           Nothing here. All caught up.
         </p>
       ) : (
         <div className="space-y-2">
           {items.map((n) => (
-            <div key={n.id} className={`flex items-center justify-between rounded-lg border border-l-4 border-slate-200 bg-white p-4 ${urgencyClass(n)}`}>
+            <div key={n.id} className={`flex items-center justify-between rounded-lg border border-l-4 border-line bg-surface p-4 ${urgencyClass(n)}`}>
               <div>
-                <p className="font-medium text-slate-800">
-                  {n.customer_name} <span className="font-normal text-slate-400">· {n.type_name}</span>
+                <p className="font-medium text-ink">
+                  {n.customer_name} <span className="font-normal text-muted">· {n.type_name}</span>
                 </p>
-                {n.note && <p className="text-sm text-slate-500">{n.note}</p>}
-                <p className="text-xs text-slate-400">
+                {n.note && <p className="text-sm text-muted">{n.note}</p>}
+                <p className="text-xs text-muted">
                   Target: {n.target_date} ·{" "}
                   {n.days_remaining < 0 ? `${-n.days_remaining} days overdue` : `${n.days_remaining} days remaining`}
                   {n.acknowledged_at && " · acknowledged"}
@@ -105,13 +105,13 @@ export default function NotificationsPage() {
               </div>
               {!n.acknowledged_at && (
                 <div className="flex gap-2 text-sm">
-                  <button onClick={() => handleSnooze(n.id)} className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-50">
+                  <button onClick={() => handleSnooze(n.id)} className="rounded-md border border-line px-3 py-1 hover:bg-white/5">
                     Snooze 3d
                   </button>
-                  <button onClick={() => handleAcknowledge(n.id)} className="rounded-md bg-indigo-600 px-3 py-1 text-white hover:bg-indigo-700">
+                  <button onClick={() => handleAcknowledge(n.id)} className="rounded-md bg-accent px-3 py-1 text-white hover:opacity-90 transition-opacity">
                     Acknowledge
                   </button>
-                  <button onClick={() => handleDelete(n.id)} className="text-red-500 hover:underline">
+                  <button onClick={() => handleDelete(n.id)} className="text-danger hover:underline">
                     Delete
                   </button>
                 </div>

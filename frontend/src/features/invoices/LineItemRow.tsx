@@ -79,21 +79,21 @@ export default function LineItemRow({
   }
 
   return (
-    <tr className="border-b border-slate-100">
+    <tr className="border-b border-line">
       <td className="px-2 py-2 align-top" style={{ minWidth: 220 }}>
         {line.isAdhoc || line.description ? (
           <div>
             <input
               value={line.description}
               onChange={(e) => onChange({ ...line, description: e.target.value })}
-              className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+              className="w-full rounded-md border border-line px-2 py-1 text-sm"
               placeholder="Description"
             />
             {line.service_id === null && (
               <div className="mt-1 flex items-center gap-2">
-                <span className="text-xs text-slate-400">Ad-hoc line</span>
+                <span className="text-xs text-muted">Ad-hoc line</span>
                 {user?.role === "admin" && (
-                  <label className="flex items-center gap-1 text-xs text-slate-500">
+                  <label className="flex items-center gap-1 text-xs text-muted">
                     <input
                       type="checkbox"
                       checked={line.save_as_service}
@@ -126,7 +126,7 @@ export default function LineItemRow({
           step="0.01"
           value={line.qty}
           onChange={(e) => onChange({ ...line, qty: Number(e.target.value) })}
-          className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm"
+          className="w-20 rounded-md border border-line px-2 py-1 text-sm"
         />
       </td>
       <td className="px-2 py-2 align-top">
@@ -136,7 +136,7 @@ export default function LineItemRow({
           step="0.01"
           value={line.unit_price}
           onChange={(e) => onChange({ ...line, unit_price: Number(e.target.value) })}
-          className="w-24 rounded-md border border-slate-300 px-2 py-1 text-sm"
+          className="w-24 rounded-md border border-line px-2 py-1 text-sm"
         />
       </td>
       <td className="px-2 py-2 align-top">
@@ -146,7 +146,7 @@ export default function LineItemRow({
           step="0.01"
           value={line.govt_fee}
           onChange={(e) => onChange({ ...line, govt_fee: Number(e.target.value) })}
-          className="w-24 rounded-md border border-slate-300 px-2 py-1 text-sm"
+          className="w-24 rounded-md border border-line px-2 py-1 text-sm"
         />
       </td>
       <td className="px-2 py-2 align-top">
@@ -156,7 +156,7 @@ export default function LineItemRow({
           step="0.01"
           value={line.discount}
           onChange={(e) => onChange({ ...line, discount: Number(e.target.value) })}
-          className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm"
+          className="w-20 rounded-md border border-line px-2 py-1 text-sm"
         />
       </td>
       <td className="px-2 py-2 align-top">
@@ -166,14 +166,14 @@ export default function LineItemRow({
           step="0.01"
           value={line.vat_rate}
           onChange={(e) => onChange({ ...line, vat_rate: Number(e.target.value) })}
-          className="w-16 rounded-md border border-slate-300 px-2 py-1 text-sm"
+          className="w-16 rounded-md border border-line px-2 py-1 text-sm"
         />
       </td>
-      <td className="px-2 py-2 text-right align-top text-sm font-medium text-slate-700">
+      <td className="px-2 py-2 text-right align-top text-sm font-medium text-muted">
         {lineTotal(line).toFixed(2)}
       </td>
       <td className="px-2 py-2 align-top">
-        <button type="button" onClick={onRemove} className="text-slate-400 hover:text-red-500">
+        <button type="button" onClick={onRemove} className="text-muted hover:text-danger">
           ✕
         </button>
       </td>

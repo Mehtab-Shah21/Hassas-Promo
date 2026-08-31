@@ -106,3 +106,83 @@ Field.tsx/SearchCombobox.tsx were touched again here for the input-bg fix —
 if you revert step 2 first you'll want to revert this commit too, or the
 input backgrounds will mismatch their containers.
 
+### 4. Every feature page — mechanical token mapping (37 files)
+
+With the primitives/shell established, the remaining ~40 feature files all
+reused the same handful of old-palette Tailwind classes (border-slate-300,
+text-slate-500/600/700/800/900, bg-white, bg-indigo-600, text-emerald-600,
+etc.) — the exact same patterns everywhere, just copy-pasted across pages.
+Rather than hand-edit 40 files one at a time with identical changes, applied
+one comprehensive `sed` mapping across all of them at once, then verified
+with `npm run build` + a full grep sweep for anything left unmapped. Full
+mapping table:
+
+| Old (light theme) | New (token) | Role |
+|---|---|---|
+| `bg-white` | `bg-surface` | card/panel background |
+| `bg-slate-50` | `bg-white/5` | subtle row/section tint (table headers) |
+| `bg-slate-100` | `bg-white/10` | pill/badge background |
+| `bg-slate-200`/`-300` | `bg-white/15`/`/20` | rare, slightly stronger tint |
+| `border-slate-100/200/300/800` | `border-line` | all borders/dividers |
+| `ring-slate-200` | `ring-line` | |
+| `divide-slate-100/200` | `divide-line` | |
+| `text-slate-900`/`800` | `text-ink` | primary/emphasis text |
+| `text-slate-700`/`600`/`500`/`400` | `text-muted` | labels, captions, secondary text |
+| `focus:border-indigo-500` | `focus:border-accent` | |
+| `bg-indigo-600` | `bg-accent` | primary buttons |
+| `hover:bg-indigo-700` | `hover:opacity-90 transition-opacity` | button hover (no darker-accent token exists, so uses opacity instead) |
+| `text-indigo-600`/`700` | `text-accent` | links |
+| `bg-indigo-100` | `bg-accent/10` | accent-tinted badges |
+| `text-red-500/600/700` | `text-danger` | errors/destructive |
+| `bg-red-100`/`500` | `bg-danger/10`/`bg-danger` | |
+| `text-emerald-600/700` | `text-accent-green` | success/positive (guide's status palette) |
+| `bg-emerald-100/600` | `bg-accent-green/10`/`bg-accent-green` | |
+| `text-amber-600/700` | `text-orange-50` | warning text (guide's `--warning` is a pale beige, unreadable as text on dark bg — used the vibrant `orange-50` status token instead for anything that needs to actually read as a warning color) |
+| `bg-amber-100/500` | `bg-orange-50/10`/`bg-orange-50` | |
+| `text-blue-600/700` | `text-info` | informational |
+| `bg-blue-100` | `bg-info/10` | |
+
+**Bug caught and fixed mid-pass**: the `bg-white` → `bg-surface` rule ran
+before the `hover:bg-white` → `hover:bg-white/5` rule in the sed script.
+Word-boundary matching doesn't stop at `/`, so it also corrupted the
+opacity-suffixed patterns from step 2/3 (`bg-white/5`, `bg-white/10`) into
+`bg-surface/5`, `bg-surface/10` in the 3 files that already had them
+(`SearchCombobox.tsx`, `SettingsShell.tsx`, `AppShell.tsx`). Caught via a
+follow-up grep for `bg-surface/[0-9]+` (a pattern that should never exist —
+`bg-surface` is meant to be solid), fixed with a second targeted sed pass,
+verified clean.
+
+**Context bug also caught**: `ServerConfigGate.tsx` (the employee first-run
+"connect to server" screen) wasn't part of the earlier manual shell/auth
+pass, so the mechanical mapping turned its full-page wrapper's
+`bg-slate-100` into `bg-white/10` — correct token-for-token, but wrong in
+context: that's a page-level background, not a subtle overlay, and `10%
+white on black` reads as almost-black, not the intended visible page
+backdrop. Fixed by hand to match `LoginPage.tsx`'s established pattern
+(`bg-bg` page, `shadow-floating` card, `bg-bg` input) — this file is
+functionally identical to LoginPage (a full-screen pre-auth gate) and now
+looks consistent with it.
+
+**`design-studio/DesignStudioPage.tsx` handled separately, by hand** (not
+part of the sed sweep) because it contains `COLOR_PRESETS`, an array of
+hex values that are *business data* — the color choices offered to admins
+for branding their own invoice PDFs — not app styling. Restyled all the
+surrounding chrome (panel backgrounds, labels, selects, buttons) to the new
+tokens; **the 6 preset hex values themselves are byte-for-byte unchanged**
+(verified via grep). Also fixed the color-swatch selection indicator, which
+used `border-slate-800` (near-black) to mark the selected swatch — invisible
+against the new black page background — now `border-ink` (bright) for
+selected vs `border-line` for unselected.
+
+Verified across the whole sweep: `npm run build` clean, and a repo-wide
+grep for every old Tailwind color family (slate/indigo/red/emerald/amber/
+blue/gray/zinc/neutral/stone/sky/cyan/teal/green/purple/pink/yellow) with
+a numeric suffix returns zero matches outside intentional new tokens
+(`orange-50`, `accent-green`, etc., which matched the grep pattern
+harmlessly since they share the `-NN` suffix shape).
+
+To undo: this was 37 files in one mechanical pass + `ServerConfigGate.tsx`
++ `DesignStudioPage.tsx` as 2 more targeted edits — see git log for the
+commit(s). Since it was a uniform token substitution, reverting the commit
+cleanly restores every old className.
+

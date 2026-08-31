@@ -108,19 +108,19 @@ export default function QuotationCreatePage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-semibold text-slate-900">New Quotation</h1>
+      <h1 className="mb-4 text-xl font-semibold text-ink">New Quotation</h1>
 
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
             <div className="mb-3">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Customer</span>
+              <span className="mb-1 block text-sm font-medium text-muted">Customer</span>
               {customer ? (
-                <div className="flex items-center justify-between rounded-md border border-slate-300 px-3 py-2 text-sm">
+                <div className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-sm">
                   <span>
-                    {customer.name} <span className="text-xs text-slate-400 capitalize">({customer.type})</span>
+                    {customer.name} <span className="text-xs text-muted capitalize">({customer.type})</span>
                   </span>
-                  <button type="button" onClick={() => setCustomer(null)} className="text-xs text-slate-400 hover:text-slate-700">
+                  <button type="button" onClick={() => setCustomer(null)} className="text-xs text-muted hover:text-muted">
                     change
                   </button>
                 </div>
@@ -138,11 +138,11 @@ export default function QuotationCreatePage() {
 
             {customer?.type === "company" && (
               <div className="mb-3">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Employee (optional)</span>
+                <span className="mb-1 block text-sm font-medium text-muted">Employee (optional)</span>
                 <select
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value ? Number(e.target.value) : "")}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
                 >
                   <option value="">— none —</option>
                   {employees.map((emp) => (
@@ -156,20 +156,20 @@ export default function QuotationCreatePage() {
 
             <div className="grid grid-cols-2 gap-4">
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Quotation date</span>
+                <span className="mb-1 block text-sm font-medium text-muted">Quotation date</span>
                 <TextInput type="date" value={quotationDate} onChange={(e) => setQuotationDate(e.target.value)} />
               </label>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Validity (days)</span>
+                <span className="mb-1 block text-sm font-medium text-muted">Validity (days)</span>
                 <TextInput type="number" min="1" value={validityDays} onChange={(e) => setValidityDays(e.target.value)} />
               </label>
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="mb-2 text-sm font-semibold text-slate-800">Line items</h2>
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h2 className="mb-2 text-sm font-semibold text-ink">Line items</h2>
             <table className="w-full text-sm">
-              <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+              <thead className="text-left text-xs font-semibold uppercase text-muted">
                 <tr>
                   <th className="px-2 py-1">Service / description</th>
                   <th className="px-2 py-1">Qty</th>
@@ -196,20 +196,20 @@ export default function QuotationCreatePage() {
             <button
               type="button"
               onClick={() => setLines((prev) => [...prev, emptyLine(defaultVat)])}
-              className="mt-3 text-sm font-medium text-indigo-600 hover:underline"
+              className="mt-3 text-sm font-medium text-accent hover:underline"
             >
               + Add line
             </button>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
             <div className="grid grid-cols-2 gap-4">
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Notes</span>
+                <span className="mb-1 block text-sm font-medium text-muted">Notes</span>
                 <TextArea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </label>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Terms</span>
+                <span className="mb-1 block text-sm font-medium text-muted">Terms</span>
                 <TextArea rows={3} value={terms} onChange={(e) => setTerms(e.target.value)} />
               </label>
             </div>
@@ -221,14 +221,14 @@ export default function QuotationCreatePage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="mb-3 text-sm font-semibold text-slate-800">Coupon</h2>
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h2 className="mb-3 text-sm font-semibold text-ink">Coupon</h2>
             <TextInput value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="Coupon code (optional)" />
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <h2 className="mb-3 font-semibold text-slate-800">Totals (preview)</h2>
-            <div className="space-y-1 text-slate-600">
+          <div className="rounded-lg border border-line bg-surface p-4 text-sm">
+            <h2 className="mb-3 font-semibold text-ink">Totals (preview)</h2>
+            <div className="space-y-1 text-muted">
               <div className="flex justify-between">
                 <span>Subtotal</span>
                 <span>{subtotal.toFixed(2)}</span>
@@ -241,20 +241,20 @@ export default function QuotationCreatePage() {
                 <span>Govt. fees</span>
                 <span>{govtFeeTotal.toFixed(2)}</span>
               </div>
-              <p className="text-xs text-slate-400">Coupon discount is applied when you save.</p>
-              <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-base font-semibold text-slate-900">
+              <p className="text-xs text-muted">Coupon discount is applied when you save.</p>
+              <div className="mt-2 flex justify-between border-t border-line pt-2 text-base font-semibold text-ink">
                 <span>Grand total</span>
                 <span>{grandTotalPreview.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full rounded-md bg-indigo-600 px-4 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full rounded-md bg-accent px-4 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {saving ? "Saving..." : "Create quotation"}
           </button>

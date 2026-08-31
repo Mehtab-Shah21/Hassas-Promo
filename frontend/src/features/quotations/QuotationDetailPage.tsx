@@ -49,25 +49,25 @@ export default function QuotationDetailPage() {
     }
   }
 
-  if (loading || !quotation) return <p className="text-sm text-slate-500">Loading...</p>;
+  if (loading || !quotation) return <p className="text-sm text-muted">Loading...</p>;
 
   return (
     <div>
-      <button onClick={() => navigate("/quotations")} className="mb-3 text-sm text-slate-500 hover:underline">
+      <button onClick={() => navigate("/quotations")} className="mb-3 text-sm text-muted hover:underline">
         ← Back to quotations
       </button>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-6">
+      <div className="rounded-lg border border-line bg-surface p-6">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">{quotation.number}</h1>
-            <p className="text-sm text-slate-500">
+            <h1 className="text-xl font-semibold text-ink">{quotation.number}</h1>
+            <p className="text-sm text-muted">
               {customer?.name} · {quotation.quotation_date} · valid until {quotation.valid_until}
             </p>
           </div>
           <div className="flex items-center gap-3">
             {quotation.status === "converted" ? (
-              <span className="rounded-full bg-indigo-100 px-3 py-1.5 text-sm font-medium text-indigo-700">
+              <span className="rounded-full bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent">
                 Converted → Invoice #{quotation.converted_invoice_id}
               </span>
             ) : (
@@ -75,7 +75,7 @@ export default function QuotationDetailPage() {
                 <select
                   value={quotation.status}
                   onChange={(e) => handleStatusChange(e.target.value as QuotationStatus)}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm capitalize focus:border-indigo-500 focus:outline-none"
+                  className="rounded-md border border-line px-3 py-1.5 text-sm capitalize focus:border-accent focus:outline-none"
                 >
                   {STATUS_OPTIONS.map((s) => (
                     <option key={s} value={s}>
@@ -86,7 +86,7 @@ export default function QuotationDetailPage() {
                 <select
                   value={convertType}
                   onChange={(e) => setConvertType(e.target.value as TransactionType)}
-                  className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"
+                  className="rounded-md border border-line px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
                 >
                   <option value="credit">Credit</option>
                   <option value="cash">Cash</option>
@@ -94,7 +94,7 @@ export default function QuotationDetailPage() {
                 <button
                   onClick={handleConvert}
                   disabled={converting}
-                  className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                  className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {converting ? "Converting..." : "Convert to invoice"}
                 </button>
@@ -104,7 +104,7 @@ export default function QuotationDetailPage() {
               href={`${getServerUrl()}/api/quotations/${quotation.id}/preview`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5"
             >
               Preview
             </a>
@@ -112,7 +112,7 @@ export default function QuotationDetailPage() {
               href={`${getServerUrl()}/api/quotations/${quotation.id}/pdf`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5"
             >
               Print / PDF
             </a>
@@ -120,7 +120,7 @@ export default function QuotationDetailPage() {
         </div>
 
         <table className="mb-4 w-full text-sm">
-          <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+          <thead className="text-left text-xs font-semibold uppercase text-muted">
             <tr>
               <th className="py-1.5">Description</th>
               <th className="py-1.5">Qty</th>
@@ -130,15 +130,15 @@ export default function QuotationDetailPage() {
               <th className="py-1.5 text-right">Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-line">
             {quotation.items.map((item) => (
               <tr key={item.id}>
-                <td className="py-2 text-slate-800">{item.description}</td>
-                <td className="py-2 text-slate-600">{item.qty}</td>
-                <td className="py-2 text-slate-600">{item.unit_price.toFixed(2)}</td>
-                <td className="py-2 text-slate-600">{item.discount.toFixed(2)}</td>
-                <td className="py-2 text-slate-600">{item.vat_rate.toFixed(2)}</td>
-                <td className="py-2 text-right text-slate-700">{item.line_total.toFixed(2)}</td>
+                <td className="py-2 text-ink">{item.description}</td>
+                <td className="py-2 text-muted">{item.qty}</td>
+                <td className="py-2 text-muted">{item.unit_price.toFixed(2)}</td>
+                <td className="py-2 text-muted">{item.discount.toFixed(2)}</td>
+                <td className="py-2 text-muted">{item.vat_rate.toFixed(2)}</td>
+                <td className="py-2 text-right text-muted">{item.line_total.toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
@@ -149,7 +149,7 @@ export default function QuotationDetailPage() {
           <Row label="Discount" value={-quotation.discount_total} />
           <Row label="VAT" value={quotation.vat_total} />
           <Row label="Govt. fees" value={quotation.govt_fee_total} />
-          <div className="flex justify-between border-t border-slate-200 pt-1 text-base font-semibold text-slate-900">
+          <div className="flex justify-between border-t border-line pt-1 text-base font-semibold text-ink">
             <span>Grand total</span>
             <span>{quotation.grand_total.toFixed(2)}</span>
           </div>
@@ -159,14 +159,14 @@ export default function QuotationDetailPage() {
           <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
             {quotation.notes && (
               <div>
-                <p className="text-xs font-medium uppercase text-slate-400">Notes</p>
-                <p className="whitespace-pre-wrap text-slate-600">{quotation.notes}</p>
+                <p className="text-xs font-medium uppercase text-muted">Notes</p>
+                <p className="whitespace-pre-wrap text-muted">{quotation.notes}</p>
               </div>
             )}
             {quotation.terms && (
               <div>
-                <p className="text-xs font-medium uppercase text-slate-400">Terms</p>
-                <p className="whitespace-pre-wrap text-slate-600">{quotation.terms}</p>
+                <p className="text-xs font-medium uppercase text-muted">Terms</p>
+                <p className="whitespace-pre-wrap text-muted">{quotation.terms}</p>
               </div>
             )}
           </div>
@@ -178,7 +178,7 @@ export default function QuotationDetailPage() {
 
 function Row({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex justify-between text-slate-600">
+    <div className="flex justify-between text-muted">
       <span>{label}</span>
       <span>{value.toFixed(2)}</span>
     </div>

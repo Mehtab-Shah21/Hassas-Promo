@@ -47,11 +47,11 @@ export default function CouponsPage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">Coupons</h1>
+        <h1 className="text-xl font-semibold text-ink">Coupons</h1>
         {isAdmin && (
           <button
             onClick={() => setShowForm(true)}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
           >
             + Add coupon
           </button>
@@ -59,14 +59,14 @@ export default function CouponsPage() {
       </div>
 
       {!isAdmin && (
-        <p className="mb-4 rounded-md bg-slate-100 px-3 py-2 text-xs text-slate-500">
+        <p className="mb-4 rounded-md bg-white/10 px-3 py-2 text-xs text-muted">
           You have read-only access to coupons. They're available to apply when invoicing.
         </p>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+          <thead className="bg-white/5 text-left text-xs font-semibold uppercase text-muted">
             <tr>
               <th className="px-4 py-2">Code</th>
               <th className="px-4 py-2">Discount</th>
@@ -76,32 +76,32 @@ export default function CouponsPage() {
               {isAdmin && <th className="px-4 py-2"></th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-line">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted">
                   Loading...
                 </td>
               </tr>
             ) : coupons.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted">
                   No coupons yet.
                 </td>
               </tr>
             ) : (
               coupons.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-2 font-medium text-slate-800">{c.code}</td>
-                  <td className="px-4 py-2 text-slate-600">
+                <tr key={c.id} className="hover:bg-white/5">
+                  <td className="px-4 py-2 font-medium text-ink">{c.code}</td>
+                  <td className="px-4 py-2 text-muted">
                     {c.discount_type === "percent" ? `${c.value}%` : c.value.toFixed(2)}
                   </td>
-                  <td className="px-4 py-2 text-slate-600">{c.valid_from ?? "—"}</td>
-                  <td className="px-4 py-2 text-slate-600">{c.valid_to ?? "—"}</td>
+                  <td className="px-4 py-2 text-muted">{c.valid_from ?? "—"}</td>
+                  <td className="px-4 py-2 text-muted">{c.valid_to ?? "—"}</td>
                   <td className="px-4 py-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        isCurrentlyValid(c) ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                        isCurrentlyValid(c) ? "bg-accent-green/10 text-accent-green" : "bg-white/10 text-muted"
                       }`}
                     >
                       {isCurrentlyValid(c) ? "Active" : "Inactive"}
@@ -109,10 +109,10 @@ export default function CouponsPage() {
                   </td>
                   {isAdmin && (
                     <td className="px-4 py-2 text-right">
-                      <button onClick={() => setEditing(c)} className="mr-3 text-indigo-600 hover:underline">
+                      <button onClick={() => setEditing(c)} className="mr-3 text-accent hover:underline">
                         Edit
                       </button>
-                      <button onClick={() => handleDeactivate(c)} className="text-red-600 hover:underline">
+                      <button onClick={() => handleDeactivate(c)} className="text-danger hover:underline">
                         Deactivate
                       </button>
                     </td>

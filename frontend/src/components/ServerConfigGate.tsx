@@ -48,10 +48,10 @@ function ServerSetupForm({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm">
-        <h1 className="mb-1 text-xl font-semibold text-slate-900">Connect to your office server</h1>
-        <p className="mb-6 text-sm text-slate-500">
+    <div className="flex min-h-screen items-center justify-center bg-bg">
+      <div className="w-full max-w-sm rounded-xl bg-surface p-8 shadow-floating">
+        <h1 className="mb-1 text-xl font-semibold text-ink">Connect to your office server</h1>
+        <p className="mb-6 text-sm text-muted">
           Enter the admin PC's address on your network. Ask your admin if you're not sure — it's shown
           on the admin PC's Settings screen.
         </p>
@@ -61,13 +61,13 @@ function ServerSetupForm({ onDone }: { onDone: () => void }) {
             onChange={(e) => setAddress(e.target.value)}
             placeholder="192.168.1.50:8000"
             autoFocus
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
           />
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <button
             type="submit"
             disabled={testing}
-            className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {testing ? "Connecting..." : "Connect"}
           </button>

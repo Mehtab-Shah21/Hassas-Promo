@@ -39,12 +39,12 @@ export default function QuotationDefaultsPage() {
     }
   }
 
-  if (!activeBusiness) return <p className="text-sm text-slate-500">Loading...</p>;
+  if (!activeBusiness) return <p className="text-sm text-muted">Loading...</p>;
 
   return (
     <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Quotation Defaults — {activeBusiness.name}</h2>
+        <h2 className="text-lg font-semibold text-ink">Quotation Defaults — {activeBusiness.name}</h2>
       </div>
 
       <Field label="Default validity (days)">
@@ -74,7 +74,7 @@ export default function QuotationDefaultsPage() {
 
       <div className="flex items-center gap-3">
         <SaveButton saving={saving} />
-        {message && <span className="text-sm text-emerald-600">{message}</span>}
+        {message && <span className="text-sm text-accent-green">{message}</span>}
       </div>
     </form>
   );

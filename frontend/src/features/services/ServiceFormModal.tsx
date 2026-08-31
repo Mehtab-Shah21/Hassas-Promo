@@ -60,7 +60,7 @@ export default function ServiceFormModal({ service, categories, onClose, onSaved
             <select
               value={form.category_id ?? ""}
               onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value ? Number(e.target.value) : null }))}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
             >
               <option value="">Uncategorized</option>
               {categories.map((c) => (
@@ -103,15 +103,15 @@ export default function ServiceFormModal({ service, categories, onClose, onSaved
             type="checkbox"
             checked={form.taxable ?? true}
             onChange={(e) => setForm((f) => ({ ...f, taxable: e.target.checked }))}
-            className="h-4 w-4 rounded border-slate-300"
+            className="h-4 w-4 rounded border-line"
           />
           Taxable (VAT applies)
         </label>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-white/10">
             Cancel
           </button>
           <SaveButton saving={saving} label={isEdit ? "Save changes" : "Create"} />

@@ -48,13 +48,13 @@ export default function CategoriesModal({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="New category name"
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="flex-1 rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
         />
-        <button type="submit" className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+        <button type="submit" className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">
           Add
         </button>
       </form>
-      <ul className="divide-y divide-slate-100">
+      <ul className="divide-y divide-line">
         {categories.map((c) => (
           <li key={c.id} className="flex items-center justify-between py-2">
             {editingId === c.id ? (
@@ -64,10 +64,10 @@ export default function CategoriesModal({
                 onChange={(e) => setEditingName(e.target.value)}
                 onBlur={() => handleRename(c.id)}
                 onKeyDown={(e) => e.key === "Enter" && handleRename(c.id)}
-                className="flex-1 rounded-md border border-slate-300 px-2 py-1 text-sm"
+                className="flex-1 rounded-md border border-line px-2 py-1 text-sm"
               />
             ) : (
-              <span className="text-sm text-slate-800">{c.name}</span>
+              <span className="text-sm text-ink">{c.name}</span>
             )}
             <div className="flex gap-3 text-sm">
               <button
@@ -75,17 +75,17 @@ export default function CategoriesModal({
                   setEditingId(c.id);
                   setEditingName(c.name);
                 }}
-                className="text-indigo-600 hover:underline"
+                className="text-accent hover:underline"
               >
                 Rename
               </button>
-              <button onClick={() => handleRemove(c.id)} className="text-red-600 hover:underline">
+              <button onClick={() => handleRemove(c.id)} className="text-danger hover:underline">
                 Remove
               </button>
             </div>
           </li>
         ))}
-        {categories.length === 0 && <p className="py-2 text-sm text-slate-400">No categories yet.</p>}
+        {categories.length === 0 && <p className="py-2 text-sm text-muted">No categories yet.</p>}
       </ul>
     </Modal>
   );

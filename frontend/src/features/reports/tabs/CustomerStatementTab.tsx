@@ -23,9 +23,9 @@ export default function CustomerStatementTab() {
     <div>
       <div className="no-print mb-4 max-w-sm">
         {customer ? (
-          <div className="flex items-center justify-between rounded-md border border-slate-300 px-3 py-2 text-sm">
+          <div className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-sm">
             <span>{customer.name}</span>
-            <button onClick={() => { setCustomer(null); setData(null); }} className="text-xs text-slate-400 hover:text-slate-700">change</button>
+            <button onClick={() => { setCustomer(null); setData(null); }} className="text-xs text-muted hover:text-muted">change</button>
           </div>
         ) : (
           <SearchCombobox<Customer> placeholder="Search customer..." fetchOptions={fetchCustomers} getLabel={(c) => c.name} getSubLabel={(c) => c.phone} onSelect={select} />
@@ -38,13 +38,13 @@ export default function CustomerStatementTab() {
           <div className="mb-4 grid grid-cols-3 gap-4">
             <Stat label="Billed" value={data.billed_total} />
             <Stat label="Paid" value={data.paid_total} />
-            <Stat label="Outstanding" value={data.outstanding_total} accent="text-red-600" />
+            <Stat label="Outstanding" value={data.outstanding_total} accent="text-danger" />
           </div>
           <table className="w-full text-sm">
-            <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="text-left text-xs font-semibold uppercase text-muted">
               <tr><th className="py-1.5">Number</th><th>Date</th><th className="text-right">Billed</th><th className="text-right">Paid</th><th className="text-right">Outstanding</th></tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {data.rows.map((r) => (
                 <tr key={r.number}><td className="py-1.5">{r.number}</td><td>{r.date}</td><td className="text-right">{r.billed.toFixed(2)}</td><td className="text-right">{r.paid.toFixed(2)}</td><td className="text-right">{r.outstanding.toFixed(2)}</td></tr>
               ))}
@@ -58,9 +58,9 @@ export default function CustomerStatementTab() {
 
 function Stat({ label, value, accent }: { label: string; value: number; accent?: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="text-xs font-medium uppercase text-slate-400">{label}</p>
-      <p className={`text-xl font-semibold ${accent ?? "text-slate-900"}`}>{value.toFixed(2)}</p>
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <p className="text-xs font-medium uppercase text-muted">{label}</p>
+      <p className={`text-xl font-semibold ${accent ?? "text-ink"}`}>{value.toFixed(2)}</p>
     </div>
   );
 }

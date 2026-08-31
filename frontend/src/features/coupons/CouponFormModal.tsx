@@ -57,7 +57,7 @@ export default function CouponFormModal({
             <select
               value={form.discount_type ?? "percent"}
               onChange={(e) => setForm((f) => ({ ...f, discount_type: e.target.value as CouponPayload["discount_type"] }))}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
             >
               <option value="percent">Percent</option>
               <option value="fixed">Fixed amount</option>
@@ -90,10 +90,10 @@ export default function CouponFormModal({
           Active
         </label>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-white/10">
             Cancel
           </button>
           <SaveButton saving={saving} label={isEdit ? "Save changes" : "Create"} />

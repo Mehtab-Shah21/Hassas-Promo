@@ -11,9 +11,9 @@ function monthStart() {
 }
 
 const STATUS_STYLES: Record<AttendanceStatus, string> = {
-  present: "bg-emerald-600 text-white",
-  absent: "bg-red-500 text-white",
-  leave: "bg-amber-500 text-white",
+  present: "bg-accent-green text-white",
+  absent: "bg-danger text-white",
+  leave: "bg-orange-50 text-white",
 };
 
 export default function AttendancePage() {
@@ -55,29 +55,29 @@ export default function AttendancePage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-semibold text-slate-900">Attendance</h1>
+      <h1 className="mb-4 text-xl font-semibold text-ink">Attendance</h1>
 
-      <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4">
+      <div className="mb-6 rounded-lg border border-line bg-surface p-4">
         <div className="mb-3 flex items-center gap-3">
-          <span className="text-sm font-medium text-slate-700">Date</span>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-md border border-slate-300 px-3 py-1.5 text-sm" />
+          <span className="text-sm font-medium text-muted">Date</span>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-md border border-line px-3 py-1.5 text-sm" />
         </div>
         {loading ? (
-          <p className="text-sm text-slate-500">Loading...</p>
+          <p className="text-sm text-muted">Loading...</p>
         ) : entries.length === 0 ? (
-          <p className="text-sm text-slate-400">No employees found.</p>
+          <p className="text-sm text-muted">No employees found.</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="text-left text-xs font-semibold uppercase text-muted">
               <tr>
                 <th className="py-1.5">Employee</th>
                 <th className="py-1.5">Mark</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {entries.map((e) => (
                 <tr key={e.user_id}>
-                  <td className="py-2 font-medium text-slate-800">{e.user_name}</td>
+                  <td className="py-2 font-medium text-ink">{e.user_name}</td>
                   <td className="py-2">
                     <div className="flex gap-2">
                       {(["present", "absent", "leave"] as const).map((s) => (
@@ -85,7 +85,7 @@ export default function AttendancePage() {
                           key={s}
                           onClick={() => handleMark(e.user_id, s)}
                           className={`rounded-md px-3 py-1 text-xs font-medium capitalize ${
-                            e.status === s ? STATUS_STYLES[s] : "border border-slate-300 text-slate-600 hover:bg-slate-50"
+                            e.status === s ? STATUS_STYLES[s] : "border border-line text-muted hover:bg-white/5"
                           }`}
                         >
                           {s}
@@ -100,18 +100,18 @@ export default function AttendancePage() {
         )}
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="rounded-lg border border-line bg-surface p-4">
         <div className="mb-3 flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-slate-800">Totals</h2>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="rounded-md border border-slate-300 px-2 py-1 text-sm" />
-          <span className="text-sm text-slate-400">to</span>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="rounded-md border border-slate-300 px-2 py-1 text-sm" />
+          <h2 className="text-sm font-semibold text-ink">Totals</h2>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="rounded-md border border-line px-2 py-1 text-sm" />
+          <span className="text-sm text-muted">to</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="rounded-md border border-line px-2 py-1 text-sm" />
         </div>
         {totals.length === 0 ? (
-          <p className="text-sm text-slate-400">No data.</p>
+          <p className="text-sm text-muted">No data.</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="text-left text-xs font-semibold uppercase text-muted">
               <tr>
                 <th className="py-1.5">Employee</th>
                 <th className="py-1.5 text-right">Present</th>
@@ -119,13 +119,13 @@ export default function AttendancePage() {
                 <th className="py-1.5 text-right">Leave</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {totals.map((t) => (
                 <tr key={t.user_id}>
-                  <td className="py-1.5 font-medium text-slate-800">{t.user_name}</td>
-                  <td className="py-1.5 text-right text-emerald-600">{t.present}</td>
-                  <td className="py-1.5 text-right text-red-600">{t.absent}</td>
-                  <td className="py-1.5 text-right text-amber-600">{t.leave}</td>
+                  <td className="py-1.5 font-medium text-ink">{t.user_name}</td>
+                  <td className="py-1.5 text-right text-accent-green">{t.present}</td>
+                  <td className="py-1.5 text-right text-danger">{t.absent}</td>
+                  <td className="py-1.5 text-right text-orange-50">{t.leave}</td>
                 </tr>
               ))}
             </tbody>

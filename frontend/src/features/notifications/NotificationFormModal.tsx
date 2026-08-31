@@ -74,11 +74,11 @@ export default function NotificationFormModal({
     <Modal title="New notification" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <span className="mb-1 block text-sm font-medium text-slate-700">Customer</span>
+          <span className="mb-1 block text-sm font-medium text-muted">Customer</span>
           {customer ? (
-            <div className="flex items-center justify-between rounded-md border border-slate-300 px-3 py-2 text-sm">
+            <div className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-sm">
               <span>{customer.name}</span>
-              <button type="button" onClick={() => setCustomer(null)} className="text-xs text-slate-400 hover:text-slate-700">
+              <button type="button" onClick={() => setCustomer(null)} className="text-xs text-muted hover:text-muted">
                 change
               </button>
             </div>
@@ -98,7 +98,7 @@ export default function NotificationFormModal({
             <select
               value={typeId}
               onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : "")}
-              className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              className="flex-1 rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
             >
               <option value="">— select —</option>
               {types.map((t) => (
@@ -115,7 +115,7 @@ export default function NotificationFormModal({
               placeholder="Add new type..."
               className="flex-1"
             />
-            <button type="button" onClick={handleAddType} className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">
+            <button type="button" onClick={handleAddType} className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5">
               Add
             </button>
           </div>
@@ -130,7 +130,7 @@ export default function NotificationFormModal({
         </Field>
 
         <div>
-          <span className="mb-1 block text-sm font-medium text-slate-700">Reminders</span>
+          <span className="mb-1 block text-sm font-medium text-muted">Reminders</span>
           <div className="space-y-2">
             {reminders.map((r, i) => (
               <div key={i} className="flex items-center gap-2">
@@ -144,13 +144,13 @@ export default function NotificationFormModal({
                 <select
                   value={r.offset_unit}
                   onChange={(e) => updateReminder(i, { offset_unit: e.target.value as ReminderUnit })}
-                  className="rounded-md border border-slate-300 px-2 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                  className="rounded-md border border-line px-2 py-2 text-sm focus:border-accent focus:outline-none"
                 >
                   <option value="day">day(s) before</option>
                   <option value="week">week(s) before</option>
                   <option value="month">month(s) before</option>
                 </select>
-                <button type="button" onClick={() => removeReminder(i)} className="text-slate-400 hover:text-red-500">
+                <button type="button" onClick={() => removeReminder(i)} className="text-muted hover:text-danger">
                   ✕
                 </button>
               </div>
@@ -159,16 +159,16 @@ export default function NotificationFormModal({
           <button
             type="button"
             onClick={() => setReminders((prev) => [...prev, { offset_value: 1, offset_unit: "day" }])}
-            className="mt-2 text-sm font-medium text-indigo-600 hover:underline"
+            className="mt-2 text-sm font-medium text-accent hover:underline"
           >
             + Add reminder
           </button>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-white/10">
             Cancel
           </button>
           <SaveButton saving={saving} label="Create" />

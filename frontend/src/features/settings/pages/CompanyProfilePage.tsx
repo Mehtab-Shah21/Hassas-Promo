@@ -67,26 +67,26 @@ export default function CompanyProfilePage() {
     }
   }
 
-  if (!activeBusiness) return <p className="text-sm text-slate-500">Loading...</p>;
+  if (!activeBusiness) return <p className="text-sm text-muted">Loading...</p>;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Company Profile — {activeBusiness.name}</h2>
-        <p className="text-sm text-slate-500">Editing the {activeBusiness.name} business profile.</p>
+        <h2 className="text-lg font-semibold text-ink">Company Profile — {activeBusiness.name}</h2>
+        <p className="text-sm text-muted">Editing the {activeBusiness.name} business profile.</p>
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border border-line bg-white/5">
           {activeBusiness.logo_path ? (
             <img src={resolveAssetUrl(activeBusiness.logo_path)!} alt="Logo" className="h-full w-full object-contain" />
           ) : (
-            <span className="text-xs text-slate-400">No logo</span>
+            <span className="text-xs text-muted">No logo</span>
           )}
         </div>
         <div>
           <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" onChange={handleLogoChange} />
-          {uploading && <p className="text-xs text-slate-500">Uploading...</p>}
+          {uploading && <p className="text-xs text-muted">Uploading...</p>}
         </div>
       </div>
 
@@ -118,7 +118,7 @@ export default function CompanyProfilePage() {
       </div>
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-800">Address</h3>
+        <h3 className="mb-2 text-sm font-semibold text-ink">Address</h3>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Address line 1" className="col-span-2">
             <TextInput value={form.address_line1 ?? ""} onChange={set("address_line1")} />
@@ -142,7 +142,7 @@ export default function CompanyProfilePage() {
       </div>
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-800">Bank details</h3>
+        <h3 className="mb-2 text-sm font-semibold text-ink">Bank details</h3>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Account name">
             <TextInput value={form.bank_account_name ?? ""} onChange={set("bank_account_name")} />
@@ -161,7 +161,7 @@ export default function CompanyProfilePage() {
 
       <div className="flex items-center gap-3">
         <SaveButton saving={saving} />
-        {message && <span className="text-sm text-emerald-600">{message}</span>}
+        {message && <span className="text-sm text-accent-green">{message}</span>}
       </div>
     </form>
   );

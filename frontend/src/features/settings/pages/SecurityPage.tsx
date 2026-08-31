@@ -73,12 +73,12 @@ export default function SecurityPage() {
   return (
     <div className="max-w-lg space-y-10">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Security</h2>
-        <p className="text-sm text-slate-500">Change your password, PIN, and session auto-lock timeout.</p>
+        <h2 className="text-lg font-semibold text-ink">Security</h2>
+        <p className="text-sm text-muted">Change your password, PIN, and session auto-lock timeout.</p>
       </div>
 
       <form onSubmit={handlePasswordSubmit} className="space-y-3">
-        <h3 className="text-sm font-semibold text-slate-800">Change password</h3>
+        <h3 className="text-sm font-semibold text-ink">Change password</h3>
         <Field label="Current password">
           <TextInput
             type="password"
@@ -96,15 +96,15 @@ export default function SecurityPage() {
             onChange={(e) => setNewPassword(e.target.value)}
           />
         </Field>
-        {passwordError && <p className="text-sm text-red-600">{passwordError}</p>}
+        {passwordError && <p className="text-sm text-danger">{passwordError}</p>}
         <div className="flex items-center gap-3">
           <SaveButton saving={passwordSaving} label="Update password" />
-          {passwordMessage && <span className="text-sm text-emerald-600">{passwordMessage}</span>}
+          {passwordMessage && <span className="text-sm text-accent-green">{passwordMessage}</span>}
         </div>
       </form>
 
       <form onSubmit={handlePinSubmit} className="space-y-3">
-        <h3 className="text-sm font-semibold text-slate-800">Set PIN (4–6 digits)</h3>
+        <h3 className="text-sm font-semibold text-ink">Set PIN (4–6 digits)</h3>
         <Field label="New PIN">
           <TextInput
             type="password"
@@ -115,15 +115,15 @@ export default function SecurityPage() {
             onChange={(e) => setPin(e.target.value)}
           />
         </Field>
-        {pinError && <p className="text-sm text-red-600">{pinError}</p>}
+        {pinError && <p className="text-sm text-danger">{pinError}</p>}
         <div className="flex items-center gap-3">
           <SaveButton saving={pinSaving} label="Update PIN" />
-          {pinMessage && <span className="text-sm text-emerald-600">{pinMessage}</span>}
+          {pinMessage && <span className="text-sm text-accent-green">{pinMessage}</span>}
         </div>
       </form>
 
       <form onSubmit={handleAutoLockSubmit} className="space-y-3">
-        <h3 className="text-sm font-semibold text-slate-800">Session auto-lock</h3>
+        <h3 className="text-sm font-semibold text-ink">Session auto-lock</h3>
         <Field label="Lock after (minutes of inactivity)">
           <TextInput
             type="number"
@@ -135,7 +135,7 @@ export default function SecurityPage() {
         </Field>
         <div className="flex items-center gap-3">
           <SaveButton saving={autoLockSaving} label="Save" />
-          {autoLockMessage && <span className="text-sm text-emerald-600">{autoLockMessage}</span>}
+          {autoLockMessage && <span className="text-sm text-accent-green">{autoLockMessage}</span>}
         </div>
       </form>
     </div>

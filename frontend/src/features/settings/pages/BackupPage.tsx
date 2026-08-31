@@ -64,11 +64,11 @@ export default function BackupPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Backup & Restore</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-ink">Backup & Restore</h2>
+        <p className="text-sm text-muted">
           Manual backups only for now — copies the SQLite database file to a folder you choose. For a
           fully automated schedule, point Windows Task Scheduler at{" "}
-          <code className="rounded bg-slate-100 px-1">POST /api/backup/run</code> on a timer (see
+          <code className="rounded bg-white/10 px-1">POST /api/backup/run</code> on a timer (see
           PROGRESS.md). Only works for the default SQLite setup; a Postgres deployment needs
           pg_dump/pg_restore instead.
         </p>
@@ -85,33 +85,33 @@ export default function BackupPage() {
         <button
           onClick={handleBackupNow}
           disabled={running || !folder}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {running ? "Backing up..." : "Backup now"}
         </button>
       </div>
 
       {(message || error) && (
-        <p className={`text-sm ${error ? "text-red-600" : "text-emerald-600"}`}>{error ?? message}</p>
+        <p className={`text-sm ${error ? "text-danger" : "text-accent-green"}`}>{error ?? message}</p>
       )}
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-800">Existing backups</h3>
+        <h3 className="mb-2 text-sm font-semibold text-ink">Existing backups</h3>
         {backups.length === 0 ? (
-          <p className="text-sm text-slate-400">No backups yet.</p>
+          <p className="text-sm text-muted">No backups yet.</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+            <thead className="text-left text-xs font-semibold uppercase text-muted">
               <tr><th className="py-1.5">File</th><th>Size</th><th>Created</th><th></th></tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {backups.map((b) => (
                 <tr key={b.filename}>
                   <td className="py-2">{b.filename}</td>
-                  <td className="py-2 text-slate-500">{formatBytes(b.size_bytes)}</td>
-                  <td className="py-2 text-slate-500">{new Date(b.created_at).toLocaleString()}</td>
+                  <td className="py-2 text-muted">{formatBytes(b.size_bytes)}</td>
+                  <td className="py-2 text-muted">{new Date(b.created_at).toLocaleString()}</td>
                   <td className="py-2 text-right">
-                    <button onClick={() => handleRestore(b.filename)} className="text-red-600 hover:underline">
+                    <button onClick={() => handleRestore(b.filename)} className="text-danger hover:underline">
                       Restore
                     </button>
                   </td>

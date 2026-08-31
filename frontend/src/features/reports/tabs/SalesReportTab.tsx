@@ -30,7 +30,7 @@ export default function SalesReportTab() {
           <button
             key={v}
             onClick={() => setSubView(v)}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium ${subView === v ? "bg-indigo-600 text-white" : "border border-slate-300 text-slate-600"}`}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium ${subView === v ? "bg-accent text-white" : "border border-line text-muted"}`}
           >
             {v === "summary" ? "Summary" : v === "by_invoice" ? "By Invoice" : "By Service"}
           </button>
@@ -49,10 +49,10 @@ export default function SalesReportTab() {
 
       {subView === "by_invoice" && (
         <table className="w-full text-sm">
-          <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+          <thead className="text-left text-xs font-semibold uppercase text-muted">
             <tr><th className="py-1.5">Number</th><th>Date</th><th>Customer</th><th>Type</th><th>Status</th><th className="text-right">Total</th></tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-line">
             {byInvoice.map((r) => (
               <tr key={r.number}><td className="py-1.5">{r.number}</td><td>{r.date}</td><td>{r.customer}</td><td className="capitalize">{r.type}</td><td className="capitalize">{r.status}</td><td className="text-right">{r.total.toFixed(2)}</td></tr>
             ))}
@@ -62,10 +62,10 @@ export default function SalesReportTab() {
 
       {subView === "by_service" && (
         <table className="w-full text-sm">
-          <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+          <thead className="text-left text-xs font-semibold uppercase text-muted">
             <tr><th className="py-1.5">Service</th><th className="text-right">Qty</th><th className="text-right">Revenue</th></tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-line">
             {byService.map((r) => (
               <tr key={r.service}><td className="py-1.5">{r.service}</td><td className="text-right">{r.qty}</td><td className="text-right">{r.revenue.toFixed(2)}</td></tr>
             ))}
@@ -78,9 +78,9 @@ export default function SalesReportTab() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="text-xs font-medium uppercase text-slate-400">{label}</p>
-      <p className="text-xl font-semibold text-slate-900">{value}</p>
+    <div className="rounded-lg border border-line bg-surface p-4">
+      <p className="text-xs font-medium uppercase text-muted">{label}</p>
+      <p className="text-xl font-semibold text-ink">{value}</p>
     </div>
   );
 }

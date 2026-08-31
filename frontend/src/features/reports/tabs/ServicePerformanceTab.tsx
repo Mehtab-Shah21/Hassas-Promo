@@ -21,10 +21,10 @@ export default function ServicePerformanceTab() {
         onExportCsv={() => downloadCsv("/api/reports/service-performance", { date_from: dateFrom, date_to: dateTo }, "service_performance.csv")}
       />
       <table className="w-full text-sm">
-        <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+        <thead className="text-left text-xs font-semibold uppercase text-muted">
           <tr><th className="py-1.5">Service</th><th className="text-right">Count</th><th className="text-right">Revenue</th></tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-line">
           {rows.map((r) => (
             <tr key={r.service}><td className="py-1.5">{r.service}</td><td className="text-right">{r.count}</td><td className="text-right">{r.revenue.toFixed(2)}</td></tr>
           ))}

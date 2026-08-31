@@ -45,13 +45,13 @@ export default function InvoiceDefaultsPage() {
     }
   }
 
-  if (!activeBusiness) return <p className="text-sm text-slate-500">Loading...</p>;
+  if (!activeBusiness) return <p className="text-sm text-muted">Loading...</p>;
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Invoice Defaults — {activeBusiness.name}</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-ink">Invoice Defaults — {activeBusiness.name}</h2>
+        <p className="text-sm text-muted">
           Defaults applied to new invoices. Government fee is always stored and counted on the
           dashboard — this only controls whether it's <em>printed</em> on the invoice.
         </p>
@@ -73,9 +73,9 @@ export default function InvoiceDefaultsPage() {
             type="checkbox"
             checked={form.show_govt_fee_on_invoice}
             onChange={(e) => setForm((f) => ({ ...f, show_govt_fee_on_invoice: e.target.checked }))}
-            className="h-4 w-4 rounded border-slate-300"
+            className="h-4 w-4 rounded border-line"
           />
-          <span className="text-sm font-medium text-slate-700">Show government fee on printed invoice</span>
+          <span className="text-sm font-medium text-muted">Show government fee on printed invoice</span>
         </label>
       </div>
 
@@ -112,7 +112,7 @@ export default function InvoiceDefaultsPage() {
 
       <div className="flex items-center gap-3">
         <SaveButton saving={saving} />
-        {message && <span className="text-sm text-emerald-600">{message}</span>}
+        {message && <span className="text-sm text-accent-green">{message}</span>}
       </div>
     </form>
   );

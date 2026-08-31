@@ -113,11 +113,11 @@ export default function InvoiceCreatePage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-semibold text-slate-900">New Invoice</h1>
+      <h1 className="mb-4 text-xl font-semibold text-ink">New Invoice</h1>
 
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
             <div className="mb-3 flex gap-4">
               <label className="flex items-center gap-2 text-sm">
                 <input type="radio" checked={transactionType === "cash"} onChange={() => setTransactionType("cash")} />
@@ -130,13 +130,13 @@ export default function InvoiceCreatePage() {
             </div>
 
             <div className="mb-3">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Customer</span>
+              <span className="mb-1 block text-sm font-medium text-muted">Customer</span>
               {customer ? (
-                <div className="flex items-center justify-between rounded-md border border-slate-300 px-3 py-2 text-sm">
+                <div className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-sm">
                   <span>
-                    {customer.name} <span className="text-xs text-slate-400 capitalize">({customer.type})</span>
+                    {customer.name} <span className="text-xs text-muted capitalize">({customer.type})</span>
                   </span>
-                  <button type="button" onClick={() => setCustomer(null)} className="text-xs text-slate-400 hover:text-slate-700">
+                  <button type="button" onClick={() => setCustomer(null)} className="text-xs text-muted hover:text-muted">
                     change
                   </button>
                 </div>
@@ -154,11 +154,11 @@ export default function InvoiceCreatePage() {
 
             {customer?.type === "company" && (
               <div className="mb-3">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Employee (optional)</span>
+                <span className="mb-1 block text-sm font-medium text-muted">Employee (optional)</span>
                 <select
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value ? Number(e.target.value) : "")}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
                 >
                   <option value="">— none —</option>
                   {employees.map((emp) => (
@@ -172,20 +172,20 @@ export default function InvoiceCreatePage() {
 
             <div className="grid grid-cols-2 gap-4">
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Invoice date</span>
+                <span className="mb-1 block text-sm font-medium text-muted">Invoice date</span>
                 <TextInput type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
               </label>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Due date</span>
+                <span className="mb-1 block text-sm font-medium text-muted">Due date</span>
                 <TextInput type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
               </label>
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="mb-2 text-sm font-semibold text-slate-800">Line items</h2>
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h2 className="mb-2 text-sm font-semibold text-ink">Line items</h2>
             <table className="w-full text-sm">
-              <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+              <thead className="text-left text-xs font-semibold uppercase text-muted">
                 <tr>
                   <th className="px-2 py-1">Service / description</th>
                   <th className="px-2 py-1">Qty</th>
@@ -212,20 +212,20 @@ export default function InvoiceCreatePage() {
             <button
               type="button"
               onClick={() => setLines((prev) => [...prev, emptyLine(defaultVat)])}
-              className="mt-3 text-sm font-medium text-indigo-600 hover:underline"
+              className="mt-3 text-sm font-medium text-accent hover:underline"
             >
               + Add line
             </button>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
             <div className="grid grid-cols-2 gap-4">
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Notes</span>
+                <span className="mb-1 block text-sm font-medium text-muted">Notes</span>
                 <TextArea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
               </label>
               <label className="block">
-                <span className="mb-1 block text-sm font-medium text-slate-700">Terms</span>
+                <span className="mb-1 block text-sm font-medium text-muted">Terms</span>
                 <TextArea rows={3} value={terms} onChange={(e) => setTerms(e.target.value)} />
               </label>
             </div>
@@ -237,8 +237,8 @@ export default function InvoiceCreatePage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="mb-3 text-sm font-semibold text-slate-800">Coupon</h2>
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h2 className="mb-3 text-sm font-semibold text-ink">Coupon</h2>
             <TextInput
               value={couponCode}
               onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
@@ -246,9 +246,9 @@ export default function InvoiceCreatePage() {
             />
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <h2 className="mb-3 font-semibold text-slate-800">Totals (preview)</h2>
-            <div className="space-y-1 text-slate-600">
+          <div className="rounded-lg border border-line bg-surface p-4 text-sm">
+            <h2 className="mb-3 font-semibold text-ink">Totals (preview)</h2>
+            <div className="space-y-1 text-muted">
               <div className="flex justify-between">
                 <span>Subtotal</span>
                 <span>{subtotal.toFixed(2)}</span>
@@ -261,20 +261,20 @@ export default function InvoiceCreatePage() {
                 <span>Govt. fees</span>
                 <span>{govtFeeTotal.toFixed(2)}</span>
               </div>
-              <p className="text-xs text-slate-400">Coupon discount is applied when you save.</p>
-              <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-base font-semibold text-slate-900">
+              <p className="text-xs text-muted">Coupon discount is applied when you save.</p>
+              <div className="mt-2 flex justify-between border-t border-line pt-2 text-base font-semibold text-ink">
                 <span>Grand total</span>
                 <span>{grandTotalPreview.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full rounded-md bg-indigo-600 px-4 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full rounded-md bg-accent px-4 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {saving ? "Saving..." : "Create invoice"}
           </button>

@@ -104,7 +104,7 @@ export default function CustomerFormModal({ customer, forcedParentId, onClose, o
             <select
               value={form.id_kind ?? "vat_tax"}
               onChange={(e) => setForm((f) => ({ ...f, id_kind: e.target.value as CustomerPayload["id_kind"] }))}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
             >
               <option value="vat_tax">VAT / Tax No.</option>
               <option value="national_id">National ID</option>
@@ -116,7 +116,7 @@ export default function CustomerFormModal({ customer, forcedParentId, onClose, o
         </div>
 
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-slate-800">Address</h3>
+          <h3 className="mb-2 text-sm font-semibold text-ink">Address</h3>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Address line 1" className="col-span-2">
               <TextInput value={form.address_line1 ?? ""} onChange={set("address_line1")} />
@@ -143,10 +143,10 @@ export default function CustomerFormModal({ customer, forcedParentId, onClose, o
           <TextArea rows={2} value={form.notes ?? ""} onChange={set("notes")} />
         </Field>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-white/10">
             Cancel
           </button>
           <SaveButton saving={saving} label={isEdit ? "Save changes" : "Create"} />

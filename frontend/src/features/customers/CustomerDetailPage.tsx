@@ -40,33 +40,33 @@ export default function CustomerDetailPage() {
     navigate("/customers");
   }
 
-  if (loading || !customer) return <p className="text-sm text-slate-500">Loading...</p>;
+  if (loading || !customer) return <p className="text-sm text-muted">Loading...</p>;
 
   return (
     <div>
-      <button onClick={() => navigate("/customers")} className="mb-3 text-sm text-slate-500 hover:underline">
+      <button onClick={() => navigate("/customers")} className="mb-3 text-sm text-muted hover:underline">
         ← Back to customers
       </button>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-6">
+      <div className="rounded-lg border border-line bg-surface p-6">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">{customer.name}</h1>
-            <p className="text-sm capitalize text-slate-500">
-              {customer.type} {!customer.is_active && <span className="text-red-500">(inactive)</span>}
+            <h1 className="text-xl font-semibold text-ink">{customer.name}</h1>
+            <p className="text-sm capitalize text-muted">
+              {customer.type} {!customer.is_active && <span className="text-danger">(inactive)</span>}
             </p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setEditing(true)}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5"
             >
               Edit
             </button>
             {customer.is_active && (
               <button
                 onClick={handleDeactivate}
-                className="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+                className="rounded-md border border-danger/30 px-3 py-1.5 text-sm text-danger hover:bg-danger/10"
               >
                 Deactivate
               </button>
@@ -89,21 +89,21 @@ export default function CustomerDetailPage() {
       </div>
 
       {customer.type === "company" && (
-        <div className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+        <div className="mt-6 rounded-lg border border-line bg-surface p-6">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-slate-900">Employees</h2>
+            <h2 className="text-base font-semibold text-ink">Employees</h2>
             <button
               onClick={() => setAddingEmployee(true)}
-              className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+              className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
             >
               + Add employee
             </button>
           </div>
           {employees.length === 0 ? (
-            <p className="text-sm text-slate-400">No employees added yet.</p>
+            <p className="text-sm text-muted">No employees added yet.</p>
           ) : (
             <table className="w-full text-sm">
-              <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+              <thead className="text-left text-xs font-semibold uppercase text-muted">
                 <tr>
                   <th className="py-1.5">Name</th>
                   <th className="py-1.5">Phone</th>
@@ -111,16 +111,16 @@ export default function CustomerDetailPage() {
                   <th className="py-1.5"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line">
                 {employees.map((emp) => (
                   <tr key={emp.id}>
-                    <td className="py-2 font-medium text-slate-800">{emp.name}</td>
-                    <td className="py-2 text-slate-600">
+                    <td className="py-2 font-medium text-ink">{emp.name}</td>
+                    <td className="py-2 text-muted">
                       {emp.phone_code} {emp.phone}
                     </td>
-                    <td className="py-2 text-slate-600">{emp.email}</td>
+                    <td className="py-2 text-muted">{emp.email}</td>
                     <td className="py-2 text-right">
-                      <button onClick={() => setEditingEmployee(emp)} className="text-indigo-600 hover:underline">
+                      <button onClick={() => setEditingEmployee(emp)} className="text-accent hover:underline">
                         Edit
                       </button>
                     </td>
@@ -170,8 +170,8 @@ export default function CustomerDetailPage() {
 function Info({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase text-slate-400">{label}</p>
-      <p className="text-slate-700">{value || "—"}</p>
+      <p className="text-xs font-medium uppercase text-muted">{label}</p>
+      <p className="text-muted">{value || "—"}</p>
     </div>
   );
 }

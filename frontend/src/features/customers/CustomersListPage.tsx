@@ -50,10 +50,10 @@ export default function CustomersListPage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">Customers</h1>
+        <h1 className="text-xl font-semibold text-ink">Customers</h1>
         <button
           onClick={() => setShowAdd(true)}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
         >
           + Add customer
         </button>
@@ -64,12 +64,12 @@ export default function CustomersListPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, phone or tax ID..."
-          className="w-72 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="w-72 rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
         />
         <select
           value={type}
           onChange={(e) => setType(e.target.value as CustomerType | "")}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          className="rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
         >
           <option value="">All types</option>
           <option value="individual">Individual</option>
@@ -77,9 +77,9 @@ export default function CustomersListPage() {
         </select>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+          <thead className="bg-white/5 text-left text-xs font-semibold uppercase text-muted">
             <tr>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Type</th>
@@ -88,16 +88,16 @@ export default function CustomersListPage() {
               <th className="px-4 py-2">Tax / ID</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-line">
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={5} className="px-4 py-8 text-center text-muted">
                   Loading...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                <td colSpan={5} className="px-4 py-8 text-center text-muted">
                   No customers yet. Click "Add customer" to create one.
                 </td>
               </tr>
@@ -106,15 +106,15 @@ export default function CustomersListPage() {
                 <tr
                   key={c.id}
                   onClick={() => navigate(`/customers/${c.id}`)}
-                  className="cursor-pointer hover:bg-slate-50"
+                  className="cursor-pointer hover:bg-white/5"
                 >
-                  <td className="px-4 py-2 font-medium text-slate-800">{c.name}</td>
-                  <td className="px-4 py-2 capitalize text-slate-600">{c.type}</td>
-                  <td className="px-4 py-2 text-slate-600">
+                  <td className="px-4 py-2 font-medium text-ink">{c.name}</td>
+                  <td className="px-4 py-2 capitalize text-muted">{c.type}</td>
+                  <td className="px-4 py-2 text-muted">
                     {c.phone_code} {c.phone}
                   </td>
-                  <td className="px-4 py-2 text-slate-600">{c.email}</td>
-                  <td className="px-4 py-2 text-slate-600">{c.id_value}</td>
+                  <td className="px-4 py-2 text-muted">{c.email}</td>
+                  <td className="px-4 py-2 text-muted">{c.id_value}</td>
                 </tr>
               ))
             )}
@@ -123,7 +123,7 @@ export default function CustomersListPage() {
       </div>
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+        <div className="mt-4 flex items-center justify-between text-sm text-muted">
           <span>
             Page {page} of {totalPages} ({total} total)
           </span>
@@ -131,14 +131,14 @@ export default function CustomersListPage() {
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="rounded-md border border-slate-300 px-3 py-1 disabled:opacity-40"
+              className="rounded-md border border-line px-3 py-1 disabled:opacity-40"
             >
               Prev
             </button>
             <button
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-md border border-slate-300 px-3 py-1 disabled:opacity-40"
+              className="rounded-md border border-line px-3 py-1 disabled:opacity-40"
             >
               Next
             </button>

@@ -21,12 +21,12 @@ export default function AttendanceSummaryTab() {
         onExportCsv={() => downloadCsv("/api/reports/attendance-summary", { date_from: dateFrom, date_to: dateTo }, "attendance_summary.csv")}
       />
       <table className="w-full text-sm">
-        <thead className="text-left text-xs font-semibold uppercase text-slate-500">
+        <thead className="text-left text-xs font-semibold uppercase text-muted">
           <tr><th className="py-1.5">Employee</th><th className="text-right">Present</th><th className="text-right">Absent</th><th className="text-right">Leave</th></tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-line">
           {rows.map((r) => (
-            <tr key={r.employee}><td className="py-1.5">{r.employee}</td><td className="text-right text-emerald-600">{r.present}</td><td className="text-right text-red-600">{r.absent}</td><td className="text-right text-amber-600">{r.leave}</td></tr>
+            <tr key={r.employee}><td className="py-1.5">{r.employee}</td><td className="text-right text-accent-green">{r.present}</td><td className="text-right text-danger">{r.absent}</td><td className="text-right text-orange-50">{r.leave}</td></tr>
           ))}
         </tbody>
       </table>
