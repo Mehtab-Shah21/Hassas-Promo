@@ -33,7 +33,7 @@ function EmployeeDashboard() {
         </button>
         <button
           onClick={() => navigate("/customers")}
-          className="rounded-md border border-line px-4 py-2 text-sm font-medium hover:bg-white/5"
+          className="rounded-md border border-line px-4 py-2 text-sm font-medium hover:bg-wash-1"
         >
           + Add customer
         </button>
@@ -74,7 +74,7 @@ function AdminDashboard({
           <button onClick={() => navigate("/invoices/new")} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">
             + Create invoice
           </button>
-          <button onClick={() => navigate("/customers")} className="rounded-md border border-line px-4 py-2 text-sm font-medium hover:bg-white/5">
+          <button onClick={() => navigate("/customers")} className="rounded-md border border-line px-4 py-2 text-sm font-medium hover:bg-wash-1">
             + Add customer
           </button>
         </div>
@@ -86,7 +86,7 @@ function AdminDashboard({
             key={p}
             onClick={() => setPeriod(p)}
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              period === p ? "bg-accent text-white" : "border border-line text-muted hover:bg-white/5"
+              period === p ? "bg-accent text-white" : "border border-line text-muted hover:bg-wash-1"
             }`}
           >
             {p === "month" ? "This month" : p === "year" ? "This year" : "All time"}
@@ -124,7 +124,7 @@ function AdminDashboard({
                 <table className="w-full text-sm">
                   <tbody className="divide-y divide-line">
                     {summary.recent_invoices.map((inv) => (
-                      <tr key={inv.id} className="cursor-pointer hover:bg-white/5" onClick={() => navigate(`/invoices/${inv.id}`)}>
+                      <tr key={inv.id} className="cursor-pointer hover:bg-wash-1" onClick={() => navigate(`/invoices/${inv.id}`)}>
                         <td className="py-1.5 font-medium text-ink">{inv.number}</td>
                         <td className="py-1.5 text-muted">{inv.customer_name}</td>
                         <td className="py-1.5 text-muted">{inv.invoice_date}</td>

@@ -68,7 +68,7 @@ export default function BackupPage() {
         <p className="text-sm text-muted">
           Manual backups only for now — copies the SQLite database file to a folder you choose. For a
           fully automated schedule, point Windows Task Scheduler at{" "}
-          <code className="rounded bg-white/10 px-1">POST /api/backup/run</code> on a timer (see
+          <code className="rounded bg-wash-2 px-1">POST /api/backup/run</code> on a timer (see
           PROGRESS.md). Only works for the default SQLite setup; a Postgres deployment needs
           pg_dump/pg_restore instead.
         </p>

@@ -25,10 +25,10 @@ export function ReportToolbar({
         )}
       </div>
       <div className="flex gap-2">
-        <button onClick={onExportCsv} className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5">
+        <button onClick={onExportCsv} className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1">
           Export CSV
         </button>
-        <button onClick={() => window.print()} className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5">
+        <button onClick={() => window.print()} className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1">
           Print / PDF
         </button>
       </div>

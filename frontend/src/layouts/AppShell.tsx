@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import ThemeToggle from "../components/ThemeToggle";
 import { useAuth } from "../context/AuthContext";
 import { useBusiness } from "../context/BusinessContext";
 import { useFeatureFlags } from "../context/FeatureFlagsContext";
@@ -49,7 +50,7 @@ export default function AppShell() {
               end={item.to === "/"}
               className={({ isActive }) =>
                 `flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive ? "bg-accent text-white" : "text-muted hover:bg-white/5 hover:text-ink"
+                  isActive ? "bg-accent text-white" : "text-muted hover:bg-wash-1 hover:text-ink"
                 }`
               }
             >
@@ -82,8 +83,9 @@ export default function AppShell() {
             </select>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <span className="text-sm text-muted">{user?.display_name ?? user?.email}</span>
-            <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium capitalize text-muted">
+            <span className="rounded-full bg-wash-2 px-2 py-0.5 text-xs font-medium capitalize text-ink">
               {user?.role}
             </span>
             <button onClick={logout} className="text-sm text-muted hover:text-ink">

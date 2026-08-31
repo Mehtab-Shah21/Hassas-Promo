@@ -79,7 +79,7 @@ export default function CustomersListPage() {
 
       <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-white/5 text-left text-xs font-semibold uppercase text-muted">
+          <thead className="bg-wash-1 text-left text-xs font-semibold uppercase text-ink">
             <tr>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Type</th>
@@ -106,7 +106,7 @@ export default function CustomersListPage() {
                 <tr
                   key={c.id}
                   onClick={() => navigate(`/customers/${c.id}`)}
-                  className="cursor-pointer hover:bg-white/5"
+                  className="cursor-pointer hover:bg-wash-1"
                 >
                   <td className="px-4 py-2 font-medium text-ink">{c.name}</td>
                   <td className="px-4 py-2 capitalize text-muted">{c.type}</td>

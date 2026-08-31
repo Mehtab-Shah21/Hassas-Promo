@@ -82,7 +82,7 @@ export default function InvoiceDetailPage() {
               href={`${getServerUrl()}/api/invoices/${invoice.id}/preview`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5"
+              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
               Preview
             </a>
@@ -90,7 +90,7 @@ export default function InvoiceDetailPage() {
               href={`${getServerUrl()}/api/invoices/${invoice.id}/pdf`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5"
+              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
               Print / PDF
             </a>
@@ -252,7 +252,7 @@ function RecordPaymentModal({
           <TextInput value={reference} onChange={(e) => setReference(e.target.value)} />
         </Field>
         <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-white/10">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-wash-2">
             Cancel
           </button>
           <SaveButton saving={saving} label="Record payment" />

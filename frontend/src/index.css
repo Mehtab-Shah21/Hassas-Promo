@@ -6,9 +6,18 @@
    Defining these via Tailwind v4's @theme generates matching utilities
    project-wide (bg-surface, text-muted, border-line, rounded-lg, shadow-*,
    etc.) so most components pick up the new look just by using these names.
+
+   Theme switching: every color below is a CSS custom property, and
+   Tailwind v4 compiles utilities as `var(--color-x)` references rather than
+   inlining literal values (verified in the compiled output) — so a second
+   block further down that redeclares the same custom properties under
+   `body[data-theme="light"]` is enough to reskin the entire app for every
+   component that already uses these utility classes, with no per-component
+   changes needed. See ThemeContext.tsx for the toggle that sets/clears that
+   attribute.
    ========================================================================== */
 @theme {
-  /* Core roles */
+  /* Core roles (dark — the default/guide theme) */
   --color-bg: #000000;
   --color-surface: #333333;
   --color-ink: #f8fafb;
@@ -18,6 +27,17 @@
   --color-danger: #c21b16;
   --color-warning: #fdfae1;
   --color-info: #2066b0;
+
+  /* Subtle wash/overlay tints for hover states, table header rows, pill
+     backgrounds, etc. Named by strength, not color, on purpose — dark theme
+     washes light (white-tinted), light theme washes dark (black-tinted), so
+     a literal "bg-white/5" would go invisible on a light background. Using
+     these instead of a raw white/opacity value is what makes every hover
+     state and subtle background in the app automatically theme-correct. */
+  --color-wash-1: rgb(255 255 255 / 5%);
+  --color-wash-2: rgb(255 255 255 / 10%);
+  --color-wash-3: rgb(255 255 255 / 15%);
+  --color-wash-4: rgb(255 255 255 / 20%);
 
   /* Extended neutral scale */
   --color-gray-10: #edeef0;
@@ -53,11 +73,32 @@
   --radius-xl: 20px;
   --radius-full: 512px;
 
-  /* Elevation (guide §5) */
+  /* Elevation (guide §5) — kept black-tinted in both themes (a dark shadow
+     under a raised surface reads correctly whether the page itself is
+     black or white; only --shadow-flat depends on a themed color, via
+     --color-line). */
   --shadow-flat: inset 0 0 0 1px var(--color-line);
   --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-floating: 0 8px 18px 0 rgba(0, 0, 0, 0.35);
   --shadow-overlay: 0 7px 21px rgba(0, 0, 0, 0.45), 0 -1px 6px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Light theme — not part of the source style guide (which only documents a
+   dark login-page capture), constructed to match: same accent/status colors
+   (vivid enough to work on both), neutrals inverted using the guide's own
+   extended gray scale so it stays visually related to the dark theme rather
+   than an unrelated palette. */
+body[data-theme="light"] {
+  --color-bg: var(--color-gray-10);
+  --color-surface: #ffffff;
+  --color-ink: #14181f;
+  --color-muted: #525c69;
+  --color-line: var(--color-gray-20);
+  --color-wash-1: rgb(0 0 0 / 4%);
+  --color-wash-2: rgb(0 0 0 / 6%);
+  --color-wash-3: rgb(0 0 0 / 9%);
+  --color-wash-4: rgb(0 0 0 / 12%);
+  color-scheme: light;
 }
 
 html,

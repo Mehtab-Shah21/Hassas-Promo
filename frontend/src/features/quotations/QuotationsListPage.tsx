@@ -7,7 +7,7 @@ import { useBusiness } from "../../context/BusinessContext";
 const PAGE_SIZE = 20;
 
 const STATUS_COLORS: Record<QuotationStatus, string> = {
-  draft: "bg-white/10 text-muted",
+  draft: "bg-wash-2 text-ink",
   sent: "bg-info/10 text-info",
   accepted: "bg-accent-green/10 text-accent-green",
   rejected: "bg-danger/10 text-danger",
@@ -82,7 +82,7 @@ export default function QuotationsListPage() {
 
       <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-white/5 text-left text-xs font-semibold uppercase text-muted">
+          <thead className="bg-wash-1 text-left text-xs font-semibold uppercase text-ink">
             <tr>
               <th className="px-4 py-2">Number</th>
               <th className="px-4 py-2">Date</th>
@@ -106,7 +106,7 @@ export default function QuotationsListPage() {
               </tr>
             ) : (
               items.map((q) => (
-                <tr key={q.id} onClick={() => navigate(`/quotations/${q.id}`)} className="cursor-pointer hover:bg-white/5">
+                <tr key={q.id} onClick={() => navigate(`/quotations/${q.id}`)} className="cursor-pointer hover:bg-wash-1">
                   <td className="px-4 py-2 font-medium text-ink">{q.number}</td>
                   <td className="px-4 py-2 text-muted">{q.quotation_date}</td>
                   <td className="px-4 py-2 text-muted">{q.valid_until}</td>

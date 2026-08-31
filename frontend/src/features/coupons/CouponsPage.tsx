@@ -59,14 +59,14 @@ export default function CouponsPage() {
       </div>
 
       {!isAdmin && (
-        <p className="mb-4 rounded-md bg-white/10 px-3 py-2 text-xs text-muted">
+        <p className="mb-4 rounded-md bg-wash-2 px-3 py-2 text-xs text-ink">
           You have read-only access to coupons. They're available to apply when invoicing.
         </p>
       )}
 
       <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-white/5 text-left text-xs font-semibold uppercase text-muted">
+          <thead className="bg-wash-1 text-left text-xs font-semibold uppercase text-ink">
             <tr>
               <th className="px-4 py-2">Code</th>
               <th className="px-4 py-2">Discount</th>
@@ -91,7 +91,7 @@ export default function CouponsPage() {
               </tr>
             ) : (
               coupons.map((c) => (
-                <tr key={c.id} className="hover:bg-white/5">
+                <tr key={c.id} className="hover:bg-wash-1">
                   <td className="px-4 py-2 font-medium text-ink">{c.code}</td>
                   <td className="px-4 py-2 text-muted">
                     {c.discount_type === "percent" ? `${c.value}%` : c.value.toFixed(2)}
@@ -101,7 +101,7 @@ export default function CouponsPage() {
                   <td className="px-4 py-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        isCurrentlyValid(c) ? "bg-accent-green/10 text-accent-green" : "bg-white/10 text-muted"
+                        isCurrentlyValid(c) ? "bg-accent-green/10 text-accent-green" : "bg-wash-2 text-ink"
                       }`}
                     >
                       {isCurrentlyValid(c) ? "Active" : "Inactive"}

@@ -7,12 +7,12 @@ import { useBusiness } from "../../context/BusinessContext";
 const PAGE_SIZE = 20;
 
 const STATUS_COLORS: Record<InvoiceStatus, string> = {
-  draft: "bg-white/10 text-muted",
+  draft: "bg-wash-2 text-ink",
   sent: "bg-info/10 text-info",
   paid: "bg-accent-green/10 text-accent-green",
   partial: "bg-orange-50/10 text-orange-50",
   overdue: "bg-danger/10 text-danger",
-  void: "bg-white/15 text-muted line-through",
+  void: "bg-wash-3 text-ink line-through",
 };
 
 export default function InvoicesListPage() {
@@ -110,7 +110,7 @@ export default function InvoicesListPage() {
 
       <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-white/5 text-left text-xs font-semibold uppercase text-muted">
+          <thead className="bg-wash-1 text-left text-xs font-semibold uppercase text-ink">
             <tr>
               <th className="px-4 py-2">Number</th>
               <th className="px-4 py-2">Date</th>
@@ -135,7 +135,7 @@ export default function InvoicesListPage() {
               </tr>
             ) : (
               items.map((inv) => (
-                <tr key={inv.id} onClick={() => navigate(`/invoices/${inv.id}`)} className="cursor-pointer hover:bg-white/5">
+                <tr key={inv.id} onClick={() => navigate(`/invoices/${inv.id}`)} className="cursor-pointer hover:bg-wash-1">
                   <td className="px-4 py-2 font-medium text-ink">{inv.number}</td>
                   <td className="px-4 py-2 text-muted">{inv.invoice_date}</td>
                   <td className="px-4 py-2 capitalize text-muted">{inv.transaction_type}</td>

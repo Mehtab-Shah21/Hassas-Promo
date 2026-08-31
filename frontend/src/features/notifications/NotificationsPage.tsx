@@ -105,7 +105,7 @@ export default function NotificationsPage() {
               </div>
               {!n.acknowledged_at && (
                 <div className="flex gap-2 text-sm">
-                  <button onClick={() => handleSnooze(n.id)} className="rounded-md border border-line px-3 py-1 hover:bg-white/5">
+                  <button onClick={() => handleSnooze(n.id)} className="rounded-md border border-line px-3 py-1 hover:bg-wash-1">
                     Snooze 3d
                   </button>
                   <button onClick={() => handleAcknowledge(n.id)} className="rounded-md bg-accent px-3 py-1 text-white hover:opacity-90 transition-opacity">

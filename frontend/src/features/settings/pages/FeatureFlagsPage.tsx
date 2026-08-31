@@ -51,7 +51,7 @@ export default function FeatureFlagsPage() {
               onClick={() => toggle(flag)}
               disabled={savingKey === flag.key}
               className={`relative h-6 w-11 rounded-full transition-colors ${
-                flag.enabled ? "bg-accent" : "bg-white/20"
+                flag.enabled ? "bg-accent" : "bg-wash-4"
               } disabled:opacity-50`}
             >
               <span

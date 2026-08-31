@@ -85,7 +85,7 @@ export default function AttendancePage() {
                           key={s}
                           onClick={() => handleMark(e.user_id, s)}
                           className={`rounded-md px-3 py-1 text-xs font-medium capitalize ${
-                            e.status === s ? STATUS_STYLES[s] : "border border-line text-muted hover:bg-white/5"
+                            e.status === s ? STATUS_STYLES[s] : "border border-line text-muted hover:bg-wash-1"
                           }`}
                         >
                           {s}

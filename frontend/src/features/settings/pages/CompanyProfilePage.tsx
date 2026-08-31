@@ -77,7 +77,7 @@ export default function CompanyProfilePage() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border border-line bg-white/5">
+        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border border-line bg-wash-1">
           {activeBusiness.logo_path ? (
             <img src={resolveAssetUrl(activeBusiness.logo_path)!} alt="Logo" className="h-full w-full object-contain" />
           ) : (

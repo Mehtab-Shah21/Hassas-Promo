@@ -21,7 +21,7 @@ export default function SettingsShell() {
             end={item.end}
             className={({ isActive }) =>
               `block rounded-md px-3 py-2 text-sm font-medium ${
-                isActive ? "bg-accent/10 text-accent" : "text-muted hover:bg-white/5"
+                isActive ? "bg-accent/10 text-accent" : "text-muted hover:bg-wash-1"
               }`
             }
           >

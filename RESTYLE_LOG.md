@@ -221,3 +221,81 @@ cleanly restores every old className.
   leftover old-palette classes, not by looking at rendered pixels. Click
   through it yourself before trusting the look is right.
 
+---
+
+## Round 2 (2026-09-01): contrast fix, light theme, theme toggle
+
+### 5. Sharp-white text on gray backgrounds
+Found every spot where a persistent (non-hover) gray/wash background paired
+with `text-muted` (dim gray-blue) — table header rows (6 files), status
+pill badges (draft/void/inactive, 4 spots), and 2 read-only-access notice
+banners, plus the sidebar role pill — 13 spots total. Switched all of them
+from `text-muted` to `text-ink`. Deliberately used the token `text-ink`
+(theme-relative "primary/high-contrast text"), not a hardcoded `text-white`
+— `text-ink` resolves to near-white in dark theme and near-black in light
+theme, so these stay correctly high-contrast in *both* themes rather than
+becoming illegible white-on-white once the light theme (below) exists.
+Left hover-only gray backgrounds (`hover:bg-wash-*`) alone — those are
+transient interaction feedback, not a persistent legibility problem.
+
+### 6. Prerequisite: theme-aware overlay tokens (`bg-wash-1..4`)
+Before the light theme could actually look right, had to fix something not
+explicitly asked for but necessary: every subtle hover/highlight background
+in the app used literal `bg-white/5`, `/10`, `/15`, `/20` (translucent
+white tints). On a light page, "5% white" over white does nothing visible —
+every table-header tint, hover row, and badge background would have gone
+invisible. Renamed all of them (mechanical sed, same file set as before) to
+new tokens `bg-wash-1` through `bg-wash-4`, defined in `index.css` as
+white-tinted in dark theme and black-tinted in light theme. This is what
+makes every existing hover state and subtle background correctly show up
+in both themes without touching component code a second time.
+
+### 7. Light theme
+No light theme exists in the source style guide (it only captured a dark
+login page) — constructed one to match: same accent/danger/info colors
+(vivid enough to read on both light and dark), neutrals inverted using the
+guide's *own* extended gray scale so it stays visually related rather than
+an arbitrary new palette (`bg: gray-10`, `surface: white`, `ink: #14181f`
+near-black, `line: gray-20`). Implemented as a second CSS block in
+`index.css` (`body[data-theme="light"] { ... }`) redeclaring the same
+custom property names the dark theme's `@theme` block sets — since
+Tailwind v4 compiles utilities as `var(--color-x)` references rather than
+inlined values (verified against the compiled CSS), every existing
+`bg-surface`/`text-ink`/`border-line`/etc. class in every component
+automatically respects whichever theme is active. **No component file
+needed to change for the light theme itself** — only the two files above
+(sharp-white fix, wash tokens) needed touching, and those were prerequisite
+correctness fixes, not per-theme styling.
+
+### 8. Theme toggle
+- `frontend/src/context/ThemeContext.tsx` (new) — reads/writes
+  `localStorage["ui_theme"]`, applies the theme by setting/clearing
+  `data-theme="light"` on `<body>`. Applied synchronously in the initial
+  `useState` (not just in a `useEffect`) to avoid a flash of the wrong
+  theme on load.
+- `frontend/src/components/ThemeToggle.tsx` (new) — a single icon button
+  (hand-written sun/moon SVG, no icon library dependency) that calls
+  `toggleTheme()`.
+- `frontend/src/main.tsx` — wrapped the app in `<ThemeProvider>`.
+- `frontend/src/layouts/AppShell.tsx` — added `<ThemeToggle />` to the top
+  bar, next to the user menu.
+
+**Not added to `LoginPage`/`LockScreen`/`ServerConfigGate`** — those
+pre-auth/full-screen pages don't have the toggle; only the main
+authenticated app shell does. All three of those pages *are* already
+theme-aware (they use the same token classes), so if you switch theme while
+logged in and then get logged out, the login screen will correctly show
+your chosen theme — there's just no control to change it from that screen
+itself. Say the word if you want the toggle there too.
+
+Verified: `npm run build` clean, full grep sweep for any remaining
+hardcoded `bg-white`/`bg-slate`/`bg-gray` outside the two intentional
+`bg-black/NN` modal-backdrop scrims (which are correctly theme-invariant —
+backdrop dimmers are conventionally black in both light and dark UIs), and
+the compiled CSS confirmed to contain a correct
+`body[data-theme=light]{...}` rule with all 9 overridden custom properties.
+
+To undo: revert this round's commit(s) — restores literal `bg-white/N`,
+removes the light theme block and wash tokens, removes the toggle/context/
+main.tsx wiring.
+

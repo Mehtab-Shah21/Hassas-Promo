@@ -69,7 +69,7 @@ export default function SearchCombobox<T>({
                   setOpen(false);
                   setQuery("");
                 }}
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-white/5"
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-wash-1"
               >
                 <div className="font-medium text-ink">{getLabel(opt)}</div>
                 {getSubLabel?.(opt) && <div className="text-xs text-muted">{getSubLabel(opt)}</div>}
@@ -83,7 +83,7 @@ export default function SearchCombobox<T>({
                 extraOption.onClick();
                 setOpen(false);
               }}
-              className="block w-full border-t border-line px-3 py-2 text-left text-sm font-medium text-accent hover:bg-white/5"
+              className="block w-full border-t border-line px-3 py-2 text-left text-sm font-medium text-accent hover:bg-wash-1"
             >
               {extraOption.label}
             </button>

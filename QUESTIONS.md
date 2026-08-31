@@ -151,6 +151,31 @@
     spring/stagger/Lottie parts. Say so if you want the fuller motion
     treatment as a separate, explicit follow-up.
 
+13. **"Sharp white for gray bg" — interpreted as theme-relative, not literal
+    white.** Applied `text-ink` (not a hardcoded `text-white`) to the 13
+    spots where persistent gray backgrounds paired with dim text. Since you
+    also asked for a light theme in the same message, a literal white would
+    have gone illegible (white-on-white) once light theme exists — `text-ink`
+    is near-white in dark theme and near-black in light theme, so it stays
+    "sharp"/high-contrast in both. If you specifically wanted literal white
+    text regardless of theme in those 13 spots (even knowing it'll look
+    wrong in light mode there), say so.
+
+14. **Light theme colors are invented, not from the style guide.** The
+    source guide only captured a dark login page — there's no light-theme
+    data to draw from. Built one using the guide's own extended gray scale
+    (bg=gray-10, surface=white, line=gray-20) plus a near-black `#14181f`
+    for text, keeping accent/danger/info identical across both themes. This
+    is a reasonable construction, not an extraction — if you want to adjust
+    any of these five values, they're the `body[data-theme="light"]` block
+    in `frontend/src/index.css`.
+
+15. **Theme toggle only lives in the main app shell**, not on
+    LoginPage/LockScreen/ServerConfigGate (those pre-auth screens are
+    already theme-aware — they'll show whichever theme was last chosen —
+    just no control to change it from there). Say so if you want it there
+    too; it's the same `<ThemeToggle />` component, just needs importing.
+
 ---
 
 *(Add more entries above as they come up. Once you've answered one, delete it

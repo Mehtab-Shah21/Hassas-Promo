@@ -115,7 +115,7 @@ export default function NotificationFormModal({
               placeholder="Add new type..."
               className="flex-1"
             />
-            <button type="button" onClick={handleAddType} className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5">
+            <button type="button" onClick={handleAddType} className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1">
               Add
             </button>
           </div>
@@ -168,7 +168,7 @@ export default function NotificationFormModal({
         {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-white/10">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-wash-2">
             Cancel
           </button>
           <SaveButton saving={saving} label="Create" />

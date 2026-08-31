@@ -62,7 +62,7 @@ export default function ServicesPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setShowCategories(true)}
-              className="rounded-md border border-line px-3 py-2 text-sm hover:bg-white/5"
+              className="rounded-md border border-line px-3 py-2 text-sm hover:bg-wash-1"
             >
               Manage categories
             </button>
@@ -77,7 +77,7 @@ export default function ServicesPage() {
       </div>
 
       {!isAdmin && (
-        <p className="mb-4 rounded-md bg-white/10 px-3 py-2 text-xs text-muted">
+        <p className="mb-4 rounded-md bg-wash-2 px-3 py-2 text-xs text-ink">
           You have read-only access to services. Ask an admin to add or edit them.
         </p>
       )}
@@ -105,7 +105,7 @@ export default function ServicesPage() {
 
       <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-white/5 text-left text-xs font-semibold uppercase text-muted">
+          <thead className="bg-wash-1 text-left text-xs font-semibold uppercase text-ink">
             <tr>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Category</th>
@@ -130,7 +130,7 @@ export default function ServicesPage() {
               </tr>
             ) : (
               services.map((s) => (
-                <tr key={s.id} className="hover:bg-white/5">
+                <tr key={s.id} className="hover:bg-wash-1">
                   <td className="px-4 py-2 font-medium text-ink">
                     {s.name}
                     {s.code && <span className="ml-2 text-xs text-muted">{s.code}</span>}

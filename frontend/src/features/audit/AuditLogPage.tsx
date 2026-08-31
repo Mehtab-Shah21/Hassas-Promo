@@ -54,7 +54,7 @@ export default function AuditLogPage() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-ink">Audit Log</h1>
-        <button onClick={() => downloadAuditLogCsv(params)} className="rounded-md border border-line px-3 py-2 text-sm hover:bg-white/5">
+        <button onClick={() => downloadAuditLogCsv(params)} className="rounded-md border border-line px-3 py-2 text-sm hover:bg-wash-1">
           Export CSV
         </button>
       </div>
@@ -85,7 +85,7 @@ export default function AuditLogPage() {
 
       <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-white/5 text-left text-xs font-semibold uppercase text-muted">
+          <thead className="bg-wash-1 text-left text-xs font-semibold uppercase text-ink">
             <tr>
               <th className="px-4 py-2">When</th>
               <th className="px-4 py-2">User</th>
@@ -101,7 +101,7 @@ export default function AuditLogPage() {
               <tr><td colSpan={5} className="px-4 py-8 text-center text-muted">No matching entries.</td></tr>
             ) : (
               items.map((e) => (
-                <tr key={e.id} onClick={() => setExpanded(expanded === e.id ? null : e.id)} className="cursor-pointer hover:bg-white/5">
+                <tr key={e.id} onClick={() => setExpanded(expanded === e.id ? null : e.id)} className="cursor-pointer hover:bg-wash-1">
                   <td className="px-4 py-2 text-muted">{new Date(e.created_at).toLocaleString()}</td>
                   <td className="px-4 py-2 text-muted">{e.user_name ?? "—"}</td>
                   <td className="px-4 py-2 capitalize text-muted">{e.action}</td>

@@ -104,7 +104,7 @@ export default function QuotationDetailPage() {
               href={`${getServerUrl()}/api/quotations/${quotation.id}/preview`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5"
+              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
               Preview
             </a>
@@ -112,7 +112,7 @@ export default function QuotationDetailPage() {
               href={`${getServerUrl()}/api/quotations/${quotation.id}/pdf`}
               target="_blank"
               rel="noreferrer"
-              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-white/5"
+              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
               Print / PDF
             </a>
