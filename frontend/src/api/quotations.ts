@@ -53,8 +53,16 @@ export async function convertQuotation(
   return res.data;
 }
 
-export async function fetchQuotationPreviewBlob(id: number): Promise<Blob> {
-  const res = await apiClient.get(`/api/quotations/${id}/preview`, { responseType: "blob" });
+export async function fetchQuotationPreviewHtml(id: number): Promise<string> {
+  const res = await apiClient.get<string>(`/api/quotations/${id}/preview`, { responseType: "text" });
+  return res.data;
+}
+
+export async function fetchQuotationThermalPreviewHtml(id: number, width?: 58 | 80): Promise<string> {
+  const res = await apiClient.get<string>(`/api/quotations/${id}/thermal-preview`, {
+    params: width ? { width } : undefined,
+    responseType: "text",
+  });
   return res.data;
 }
 

@@ -3,16 +3,17 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getCustomer } from "../../api/customers";
 import {
   fetchInvoicePdfBlob,
-  fetchInvoicePreviewBlob,
+  fetchInvoicePreviewHtml,
   fetchInvoiceThermalPdfBlob,
+  fetchInvoiceThermalPreviewHtml,
   getInvoice,
   recordPayment,
   updateInvoiceStatus,
 } from "../../api/invoices";
 import type { Customer, Invoice, InvoiceStatus } from "../../api/types";
 import Modal from "../../components/Modal";
+import PrintPreviewModal from "../../components/PrintPreviewModal";
 import { Field, SaveButton, TextInput } from "../../components/form/Field";
-import { openBlobDocument } from "../../utils/openBlobDocument";
 
 const STATUS_OPTIONS: InvoiceStatus[] = ["draft", "sent", "paid", "partial", "void"];
 
@@ -24,7 +25,7 @@ export default function InvoiceDetailPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPayment, setShowPayment] = useState(false);
-  const [docError, setDocError] = useState<string | null>(null);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -51,33 +52,6 @@ export default function InvoiceDetailPage() {
   if (loading || !invoice) return <p className="text-sm text-muted">Loading...</p>;
 
   const balanceDue = invoice.grand_total - invoice.amount_paid;
-
-  async function handlePreview() {
-    setDocError(null);
-    try {
-      await openBlobDocument(() => fetchInvoicePreviewBlob(invoice!.id), `${invoice!.number}-preview.html`);
-    } catch {
-      setDocError("Could not load the preview.");
-    }
-  }
-
-  async function handlePdf() {
-    setDocError(null);
-    try {
-      await openBlobDocument(() => fetchInvoicePdfBlob(invoice!.id), `${invoice!.number}.pdf`);
-    } catch {
-      setDocError("Could not generate the PDF.");
-    }
-  }
-
-  async function handleThermalPdf() {
-    setDocError(null);
-    try {
-      await openBlobDocument(() => fetchInvoiceThermalPdfBlob(invoice!.id), `${invoice!.number}-thermal.pdf`);
-    } catch {
-      setDocError("Could not generate the thermal receipt.");
-    }
-  }
 
   return (
     <div>
@@ -115,30 +89,13 @@ export default function InvoiceDetailPage() {
             )}
             <button
               type="button"
-              onClick={handlePreview}
+              onClick={() => setShowPrintPreview(true)}
               className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
-              Preview
-            </button>
-            <button
-              type="button"
-              onClick={handlePdf}
-              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
-            >
-              Print / PDF
-            </button>
-            <button
-              type="button"
-              onClick={handleThermalPdf}
-              title="Uses this business's Settings paper width and Design Studio thermal design"
-              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
-            >
-              Thermal receipt
+              Print / Preview
             </button>
           </div>
         </div>
-
-        {docError && <p className="mb-4 text-sm text-danger">{docError}</p>}
 
         <table className="mb-4 w-full text-sm">
           <thead className="text-left text-xs font-semibold uppercase text-muted">
@@ -226,6 +183,20 @@ export default function InvoiceDetailPage() {
             setShowPayment(false);
             load();
           }}
+        />
+      )}
+
+      {showPrintPreview && (
+        <PrintPreviewModal
+          title={`Print Preview - ${invoice.number}`}
+          filenameBase={invoice.number}
+          onClose={() => setShowPrintPreview(false)}
+          fetchPreviewHtml={(format, width) =>
+            format === "a4" ? fetchInvoicePreviewHtml(invoice.id) : fetchInvoiceThermalPreviewHtml(invoice.id, width)
+          }
+          fetchPdfBlob={(format, width) =>
+            format === "a4" ? fetchInvoicePdfBlob(invoice.id) : fetchInvoiceThermalPdfBlob(invoice.id, width)
+          }
         />
       )}
     </div>

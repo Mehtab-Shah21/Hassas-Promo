@@ -4,13 +4,14 @@ import { getCustomer } from "../../api/customers";
 import {
   convertQuotation,
   fetchQuotationPdfBlob,
-  fetchQuotationPreviewBlob,
+  fetchQuotationPreviewHtml,
   fetchQuotationThermalPdfBlob,
+  fetchQuotationThermalPreviewHtml,
   getQuotation,
   updateQuotationStatus,
 } from "../../api/quotations";
 import type { Customer, Quotation, QuotationStatus, TransactionType } from "../../api/types";
-import { openBlobDocument } from "../../utils/openBlobDocument";
+import PrintPreviewModal from "../../components/PrintPreviewModal";
 
 const STATUS_OPTIONS: QuotationStatus[] = ["draft", "sent", "accepted", "rejected"];
 
@@ -23,7 +24,7 @@ export default function QuotationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
   const [convertType, setConvertType] = useState<TransactionType>("credit");
-  const [docError, setDocError] = useState<string | null>(null);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -58,33 +59,6 @@ export default function QuotationDetailPage() {
   }
 
   if (loading || !quotation) return <p className="text-sm text-muted">Loading...</p>;
-
-  async function handlePreview() {
-    setDocError(null);
-    try {
-      await openBlobDocument(() => fetchQuotationPreviewBlob(quotation!.id), `${quotation!.number}-preview.html`);
-    } catch {
-      setDocError("Could not load the preview.");
-    }
-  }
-
-  async function handlePdf() {
-    setDocError(null);
-    try {
-      await openBlobDocument(() => fetchQuotationPdfBlob(quotation!.id), `${quotation!.number}.pdf`);
-    } catch {
-      setDocError("Could not generate the PDF.");
-    }
-  }
-
-  async function handleThermalPdf() {
-    setDocError(null);
-    try {
-      await openBlobDocument(() => fetchQuotationThermalPdfBlob(quotation!.id), `${quotation!.number}-thermal.pdf`);
-    } catch {
-      setDocError("Could not generate the thermal receipt.");
-    }
-  }
 
   return (
     <div>
@@ -137,30 +111,13 @@ export default function QuotationDetailPage() {
             )}
             <button
               type="button"
-              onClick={handlePreview}
+              onClick={() => setShowPrintPreview(true)}
               className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
-              Preview
-            </button>
-            <button
-              type="button"
-              onClick={handlePdf}
-              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
-            >
-              Print / PDF
-            </button>
-            <button
-              type="button"
-              onClick={handleThermalPdf}
-              title="Uses this business's Settings paper width and Design Studio thermal design"
-              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
-            >
-              Thermal receipt
+              Print / Preview
             </button>
           </div>
         </div>
-
-        {docError && <p className="mb-4 text-sm text-danger">{docError}</p>}
 
         <table className="mb-4 w-full text-sm">
           <thead className="text-left text-xs font-semibold uppercase text-muted">
@@ -215,6 +172,20 @@ export default function QuotationDetailPage() {
           </div>
         )}
       </div>
+
+      {showPrintPreview && (
+        <PrintPreviewModal
+          title={`Print Preview - ${quotation.number}`}
+          filenameBase={quotation.number}
+          onClose={() => setShowPrintPreview(false)}
+          fetchPreviewHtml={(format, width) =>
+            format === "a4" ? fetchQuotationPreviewHtml(quotation.id) : fetchQuotationThermalPreviewHtml(quotation.id, width)
+          }
+          fetchPdfBlob={(format, width) =>
+            format === "a4" ? fetchQuotationPdfBlob(quotation.id) : fetchQuotationThermalPdfBlob(quotation.id, width)
+          }
+        />
+      )}
     </div>
   );
 }

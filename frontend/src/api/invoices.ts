@@ -68,8 +68,16 @@ export async function recordPayment(
   await apiClient.post(`/api/invoices/${id}/payments`, payload);
 }
 
-export async function fetchInvoicePreviewBlob(id: number): Promise<Blob> {
-  const res = await apiClient.get(`/api/invoices/${id}/preview`, { responseType: "blob" });
+export async function fetchInvoicePreviewHtml(id: number): Promise<string> {
+  const res = await apiClient.get<string>(`/api/invoices/${id}/preview`, { responseType: "text" });
+  return res.data;
+}
+
+export async function fetchInvoiceThermalPreviewHtml(id: number, width?: 58 | 80): Promise<string> {
+  const res = await apiClient.get<string>(`/api/invoices/${id}/thermal-preview`, {
+    params: width ? { width } : undefined,
+    responseType: "text",
+  });
   return res.data;
 }
 
