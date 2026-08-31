@@ -21,7 +21,7 @@ export default function SettingsShell() {
             end={item.end}
             className={({ isActive }) =>
               `block rounded-md px-3 py-2 text-sm font-medium ${
-                isActive ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-100"
+                isActive ? "bg-accent/10 text-accent" : "text-muted hover:bg-white/5"
               }`
             }
           >
@@ -29,7 +29,7 @@ export default function SettingsShell() {
           </NavLink>
         ))}
       </nav>
-      <div className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white p-6">
+      <div className="min-w-0 flex-1 rounded-lg border border-line bg-surface p-6">
         <Outlet />
       </div>
     </div>

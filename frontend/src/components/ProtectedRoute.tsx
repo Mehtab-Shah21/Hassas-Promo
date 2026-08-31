@@ -7,7 +7,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading, locked } = useAuth();
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center text-slate-500">Loading...</div>;
+    return <div className="flex h-screen items-center justify-center bg-bg text-muted">Loading...</div>;
   }
   if (!user) {
     return <Navigate to="/login" replace />;

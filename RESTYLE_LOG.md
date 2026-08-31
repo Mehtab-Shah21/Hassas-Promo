@@ -82,3 +82,27 @@ were edited.
 To undo: revert these 4 files individually, or as a group (they were one
 commit — see git log for the hash).
 
+### 3. Shell + auth pages
+- `frontend/src/layouts/AppShell.tsx` — sidebar and top bar now both
+  `bg-bg` (page black) with a `border-line` divider between them (was two
+  different grays before); active nav item `bg-accent`; business-switcher
+  select and role pill restyled to tokens.
+- `frontend/src/features/settings/SettingsShell.tsx` — active settings-nav
+  item uses a translucent `bg-accent/10 text-accent` instead of the old
+  indigo-50/indigo-700 pair; content panel → `bg-surface`.
+- `frontend/src/features/auth/LoginPage.tsx`, `LockScreen.tsx` — card →
+  `bg-surface` with `shadow-floating`/`shadow-overlay`; established the
+  pattern used everywhere else from here on: **input fields use `bg-bg`
+  (darker than their containing `bg-surface` card)** so they're visually
+  distinguishable from the panel they sit in, not just from their border.
+  Retroactively applied this same input background to `Field.tsx` and
+  `SearchCombobox.tsx` from step 2 for consistency (both were `bg-surface`,
+  same as their containers — fixed to `bg-bg`).
+- `frontend/src/components/ProtectedRoute.tsx` — loading-state text color
+  + background only.
+
+To undo: revert the 6 files in this step (see git log). Note step 2's
+Field.tsx/SearchCombobox.tsx were touched again here for the input-bg fix —
+if you revert step 2 first you'll want to revert this commit too, or the
+input backgrounds will mismatch their containers.
+
