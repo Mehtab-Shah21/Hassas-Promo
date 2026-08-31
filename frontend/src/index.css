@@ -1,5 +1,65 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Design tokens — Bitrix24-inspired style guide
+   Source: ~/.claude/plugins/b24-h8rcnk-design/STYLE_GUIDE.md
+   Defining these via Tailwind v4's @theme generates matching utilities
+   project-wide (bg-surface, text-muted, border-line, rounded-lg, shadow-*,
+   etc.) so most components pick up the new look just by using these names.
+   ========================================================================== */
+@theme {
+  /* Core roles */
+  --color-bg: #000000;
+  --color-surface: #333333;
+  --color-ink: #f8fafb;
+  --color-muted: #525c69;
+  --color-line: #212121;
+  --color-accent: #0077ff;
+  --color-danger: #c21b16;
+  --color-warning: #fdfae1;
+  --color-info: #2066b0;
+
+  /* Extended neutral scale */
+  --color-gray-10: #edeef0;
+  --color-gray-20: #dfe0e3;
+  --color-gray-30: #d5d7db;
+  --color-gray-35: #c9ccd0;
+  --color-gray-50: #a8adb4;
+  --color-gray-70: #828b95;
+  --color-gray-80: #6a737f;
+  --color-gray-90: #525c69;
+
+  /* Accent / status colors */
+  --color-accent-yellow: #fef3b8;
+  --color-accent-purple: #a77bde;
+  --color-accent-turquoise: #05b5ab;
+  --color-accent-green: #29ad49;
+  --color-accent-brown: #ae914b;
+  --color-accent-pink: #fb6dba;
+  --color-accent-aqua: #55d0e0;
+  --color-accent-light-blue: #559be6;
+  --color-blue-30: #c3f0ff;
+  --color-blue-50: #2fc6f6;
+  --color-orange-25: #ffe9be;
+  --color-orange-50: #ffa900;
+
+  /* Typography */
+  --font-sans: "Open Sans", "Segoe UI", Roboto, Montserrat, sans-serif;
+
+  /* Border radius scale (guide §4) */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 20px;
+  --radius-full: 512px;
+
+  /* Elevation (guide §5) */
+  --shadow-flat: inset 0 0 0 1px var(--color-line);
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-floating: 0 8px 18px 0 rgba(0, 0, 0, 0.35);
+  --shadow-overlay: 0 7px 21px rgba(0, 0, 0, 0.45), 0 -1px 6px 0 rgba(0, 0, 0, 0.2);
+}
+
 html,
 body,
 #root {
@@ -8,7 +68,10 @@ body,
 
 body {
   margin: 0;
-  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  color-scheme: dark;
 }
 
 @media print {
