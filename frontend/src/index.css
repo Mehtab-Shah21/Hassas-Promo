@@ -64,7 +64,7 @@
   --color-orange-50: #ffa900;
 
   /* Typography */
-  --font-sans: "Open Sans", "Segoe UI", Roboto, Montserrat, sans-serif;
+  --font-sans: "Roboto", "Segoe UI", "Open Sans", Arial, sans-serif;
 
   /* Border radius scale (guide §4) */
   --radius-sm: 6px;
