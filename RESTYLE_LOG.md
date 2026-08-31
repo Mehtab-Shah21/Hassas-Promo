@@ -19,7 +19,7 @@
 
 ---
 
-## Status: IN PROGRESS
+## Status: Core pass DONE. See "Not yet covered" below for what's left.
 
 ## Plan
 
@@ -185,4 +185,39 @@ To undo: this was 37 files in one mechanical pass + `ServerConfigGate.tsx`
 + `DesignStudioPage.tsx` as 2 more targeted edits — see git log for the
 commit(s). Since it was a uniform token substitution, reverting the commit
 cleanly restores every old className.
+
+---
+
+## Not yet covered (honest gaps, not oversights)
+
+- **Motion.** The guide specifies spring physics, staggered reveals, and
+  named Lottie-derived keyframes. Not implemented — see QUESTIONS.md #12.
+  Buttons/links that changed color on hover now also transition smoothly
+  where I touched them (`transition-opacity` on primary buttons), but
+  nothing beyond that.
+- **Typography scale.** Colors, font family, radius, and spacing all follow
+  the guide; the actual point sizes (guide: H1 19px/H2 16px/H3 14px/body
+  13.33px/caption 13px) were left as Tailwind's existing text-xs/sm/base/lg
+  scale rather than overridden, since redefining those globally would touch
+  the sizing of essentially every element in the app at once — a much
+  bigger, harder-to-review change than a color/token swap, and risks
+  breaking table/form density that was tuned for the current sizes. The
+  guide's own sizes are close to Tailwind's defaults already (its "inspired,
+  not literal" caveat applies here too). Flagging as a deliberate scope
+  boundary, not a miss.
+- **Native form controls** (checkbox/radio appearance) — only got
+  `color-scheme: dark` globally (affects native rendering in modern
+  browsers) and border-color token swaps; no custom checkbox/radio SVG
+  styling was added.
+- **Extended status colors** (`accent-purple`, `accent-turquoise`,
+  `accent-pink`, `accent-aqua`, `accent-light-blue`, `blue-30`) are defined
+  as tokens in `index.css` but not applied anywhere yet — nothing in the
+  current UI needed a 5th/6th status color beyond danger/warning/info/
+  success, which are covered. Available if you want them for something
+  later (e.g. category tags).
+- **Not visually verified in a browser** — no browser/screenshot tool is
+  available in this environment. Every step was verified via `npm run
+  build` (TypeScript + Vite compile clean) and exhaustive `grep` sweeps for
+  leftover old-palette classes, not by looking at rendered pixels. Click
+  through it yourself before trusting the look is right.
 
