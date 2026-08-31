@@ -1,4 +1,22 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  FileText,
+  FileClock,
+  Ticket,
+  Bell,
+  CalendarCheck,
+  BarChart3,
+  ScrollText,
+  Palette,
+  Settings as SettingsIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  type LucideIcon,
+} from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useAuth } from "../context/AuthContext";
 import { useBusiness } from "../context/BusinessContext";
@@ -8,30 +26,50 @@ import { useNotifications } from "../context/NotificationsContext";
 interface NavItem {
   to: string;
   label: string;
+  icon: LucideIcon;
   adminOnly?: boolean;
   flag?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/", label: "Dashboard" },
-  { to: "/customers", label: "Customers" },
-  { to: "/services", label: "Services" },
-  { to: "/invoices", label: "Invoices" },
-  { to: "/quotations", label: "Quotations" },
-  { to: "/coupons", label: "Coupons", flag: "coupons" },
-  { to: "/notifications", label: "Notifications", flag: "notifications" },
-  { to: "/attendance", label: "Attendance", adminOnly: true, flag: "attendance" },
-  { to: "/reports", label: "Reports", adminOnly: true },
-  { to: "/audit-log", label: "Audit Log", adminOnly: true },
-  { to: "/design-studio", label: "Design Studio", adminOnly: true, flag: "design_studio" },
-  { to: "/settings", label: "Settings", adminOnly: true },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/customers", label: "Customers", icon: Users },
+  { to: "/services", label: "Services", icon: Briefcase },
+  { to: "/invoices", label: "Invoices", icon: FileText },
+  { to: "/quotations", label: "Quotations", icon: FileClock },
+  { to: "/coupons", label: "Coupons", icon: Ticket, flag: "coupons" },
+  { to: "/notifications", label: "Notifications", icon: Bell, flag: "notifications" },
+  { to: "/attendance", label: "Attendance", icon: CalendarCheck, adminOnly: true, flag: "attendance" },
+  { to: "/reports", label: "Reports", icon: BarChart3, adminOnly: true },
+  { to: "/audit-log", label: "Audit Log", icon: ScrollText, adminOnly: true },
+  { to: "/design-studio", label: "Design Studio", icon: Palette, adminOnly: true, flag: "design_studio" },
+  { to: "/settings", label: "Settings", icon: SettingsIcon, adminOnly: true },
 ];
+
+const SIDEBAR_STORAGE_KEY = "sidebar_collapsed";
+
+function readStoredCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
 
 export default function AppShell() {
   const { user, logout } = useAuth();
   const { businesses, activeBusiness, setActiveBusinessId } = useBusiness();
   const { isEnabled } = useFeatureFlags();
   const { badgeCount } = useNotifications();
+  const [collapsed, setCollapsed] = useState<boolean>(() => readStoredCollapsed());
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(collapsed));
+    } catch {
+      // localStorage unavailable (private browsing etc.) — preference just won't persist
+    }
+  }, [collapsed]);
 
   const visibleBusinesses = businesses.filter((b) => b.name === "Main" || isEnabled("iim"));
   const visibleItems = NAV_ITEMS.filter(
@@ -40,30 +78,63 @@ export default function AppShell() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bg">
-      <aside className="no-print flex w-60 shrink-0 flex-col border-r border-line bg-bg text-muted">
-        <div className="px-5 py-5 text-lg font-semibold text-ink">PRO Invoicing</div>
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2">
-          {visibleItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/"}
-              className={({ isActive }) =>
-                `flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive ? "bg-accent text-white" : "text-muted hover:bg-wash-1 hover:text-ink"
-                }`
-              }
-            >
-              <span>{item.label}</span>
-              {item.to === "/notifications" && badgeCount > 0 && (
-                <span className="rounded-full bg-danger px-1.5 py-0.5 text-xs font-semibold text-white">
-                  {badgeCount}
+      <aside
+        className={`no-print flex shrink-0 flex-col border-r border-line bg-bg text-muted transition-all duration-200 ease-in-out ${
+          collapsed ? "w-16" : "w-60"
+        }`}
+      >
+        <div className={`flex items-center border-b border-line ${collapsed ? "justify-center py-4" : "justify-between px-5 py-5"}`}>
+          {!collapsed && <span className="truncate text-lg font-semibold text-ink">PRO Invoicing</span>}
+          <button
+            type="button"
+            onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted hover:bg-wash-1 hover:text-ink"
+          >
+            {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          </button>
+        </div>
+        <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-2 py-2">
+          {visibleItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === "/"}
+                className={({ isActive }) =>
+                  `group relative flex items-center rounded-md text-sm font-medium transition-colors ${
+                    collapsed ? "justify-center px-2 py-2" : "justify-between px-3 py-2"
+                  } ${isActive ? "bg-accent text-white" : "text-muted hover:bg-wash-1 hover:text-ink"}`
+                }
+              >
+                <span className={`flex min-w-0 items-center ${collapsed ? "" : "gap-2"}`}>
+                  <span className="relative flex shrink-0 items-center justify-center">
+                    <Icon size={18} />
+                    {collapsed && item.to === "/notifications" && badgeCount > 0 && (
+                      <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+                        {badgeCount > 9 ? "9+" : badgeCount}
+                      </span>
+                    )}
+                  </span>
+                  {!collapsed && <span className="truncate">{item.label}</span>}
                 </span>
-              )}
-            </NavLink>
-          ))}
+                {!collapsed && item.to === "/notifications" && badgeCount > 0 && (
+                  <span className="rounded-full bg-danger px-1.5 py-0.5 text-xs font-semibold text-white">
+                    {badgeCount}
+                  </span>
+                )}
+                {collapsed && (
+                  <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-line bg-surface px-2 py-1 text-xs font-medium text-ink opacity-0 shadow-floating transition-opacity group-hover:opacity-100">
+                    {item.label}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
-        <div className="border-t border-line p-3 text-xs text-muted">v0.1 — foundation</div>
+        <div className="border-t border-line p-3 text-xs text-muted">{!collapsed && "v0.1 — foundation"}</div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
