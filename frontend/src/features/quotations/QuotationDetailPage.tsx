@@ -5,6 +5,7 @@ import {
   convertQuotation,
   fetchQuotationPdfBlob,
   fetchQuotationPreviewBlob,
+  fetchQuotationThermalPdfBlob,
   getQuotation,
   updateQuotationStatus,
 } from "../../api/quotations";
@@ -76,6 +77,15 @@ export default function QuotationDetailPage() {
     }
   }
 
+  async function handleThermalPdf() {
+    setDocError(null);
+    try {
+      await openBlobDocument(() => fetchQuotationThermalPdfBlob(quotation!.id), `${quotation!.number}-thermal.pdf`);
+    } catch {
+      setDocError("Could not generate the thermal receipt.");
+    }
+  }
+
   return (
     <div>
       <button onClick={() => navigate("/quotations")} className="mb-3 text-sm text-muted hover:underline">
@@ -138,6 +148,14 @@ export default function QuotationDetailPage() {
               className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
               Print / PDF
+            </button>
+            <button
+              type="button"
+              onClick={handleThermalPdf}
+              title="Uses this business's Settings paper width and Design Studio thermal design"
+              className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
+            >
+              Thermal receipt
             </button>
           </div>
         </div>

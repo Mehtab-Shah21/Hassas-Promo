@@ -54,3 +54,10 @@ class Business(TimestampMixin, Base):
 
     template_config: Mapped[dict | None] = mapped_column(JSON)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    # Thermal receipt printing. thermal_paper_width is a hardware/printer
+    # setting (which roll is loaded) so it lives in Settings; thermal_template_config
+    # is the receipt's own design config (separate from the A4 template_config
+    # above), set from Design Studio's "Thermal Receipt" tab.
+    thermal_paper_width: Mapped[str] = mapped_column(String(10), default="80mm", nullable=False)
+    thermal_template_config: Mapped[dict | None] = mapped_column(JSON)

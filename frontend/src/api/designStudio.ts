@@ -31,3 +31,27 @@ export async function fetchPreviewHtml(config: TemplateConfig): Promise<string> 
   });
   return res.data;
 }
+
+export interface ThermalConfig {
+  logo_enabled: boolean;
+  header_text: string;
+  footer_text: string;
+  font_size: "small" | "normal" | "large";
+  show_customer_name: boolean;
+  show_payment_method: boolean;
+  show_tax_breakdown: boolean;
+  show_reprint_notice: boolean;
+}
+
+export async function getDefaultThermalConfig(): Promise<ThermalConfig> {
+  const res = await apiClient.get<ThermalConfig>("/api/design-studio/thermal-defaults");
+  return res.data;
+}
+
+export async function fetchThermalPreviewHtml(config: ThermalConfig, width: 58 | 80): Promise<string> {
+  const res = await apiClient.get<string>("/api/design-studio/thermal-preview", {
+    params: { config: JSON.stringify(config), width },
+    responseType: "text",
+  });
+  return res.data;
+}

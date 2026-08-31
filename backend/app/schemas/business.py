@@ -37,6 +37,8 @@ class BusinessBase(BaseModel):
     default_quotation_notes: str | None = None
     default_quotation_terms: str | None = None
     template_config: dict | None = None
+    thermal_paper_width: str = "80mm"
+    thermal_template_config: dict | None = None
     is_active: bool = True
 
 
@@ -76,6 +78,8 @@ class BusinessUpdate(BaseModel):
     default_quotation_notes: str | None = None
     default_quotation_terms: str | None = None
     template_config: dict | None = None
+    thermal_paper_width: str | None = None
+    thermal_template_config: dict | None = None
     is_active: bool | None = None
 
 

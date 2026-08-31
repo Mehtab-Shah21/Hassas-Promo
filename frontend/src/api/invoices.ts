@@ -77,3 +77,11 @@ export async function fetchInvoicePdfBlob(id: number): Promise<Blob> {
   const res = await apiClient.get(`/api/invoices/${id}/pdf`, { responseType: "blob" });
   return res.data;
 }
+
+export async function fetchInvoiceThermalPdfBlob(id: number, width?: 58 | 80): Promise<Blob> {
+  const res = await apiClient.get(`/api/invoices/${id}/thermal-pdf`, {
+    params: width ? { width } : undefined,
+    responseType: "blob",
+  });
+  return res.data;
+}

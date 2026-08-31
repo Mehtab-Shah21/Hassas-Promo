@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>{{ doc_type }} {{ number }}</title>
+<style>
+  {# xhtml2pdf-safe only: single column, table-based, literal hex colors,
+     no flexbox, no :not(), no rgba(). Monospace (Courier is one of the
+     PDF standard 14 fonts, always available un-embedded) to match the
+     dashed-divider receipt look at very small point sizes. #}
+  @page { size: {{ page_width_mm }}mm {{ page_height_mm }}mm; margin: 3mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Courier, monospace;
+    font-size: {{ font_size_pt }}pt;
+    line-height: 1.35;
+    color: #000000;
+    margin: 0;
+  }
+  p { margin: 2px 0; }
+  .center { text-align: center; }
+  .right { text-align: right; }
+  .bold { font-weight: bold; }
+  .divider { border-top: 1px dashed #000000; margin: 4px 0; font-size: 1px; line-height: 1px; }
+  .biz-name { font-size: {{ font_size_pt + 2 }}pt; }
+  .doc-title { font-size: {{ font_size_pt + 1 }}pt; }
+  .logo { max-width: {{ page_width_mm - 10 }}mm; max-height: 16mm; }
+  table.line { width: 100%; border-collapse: collapse; }
+  table.line td { padding: 1px 0; font-size: {{ font_size_pt }}pt; vertical-align: top; }
+  table.items td { padding: 0 0 2px 0; }
+</style>
+</head>
+<body>
+
+  {% if logo_uri %}<p class="center"><img class="logo" src="{{ logo_uri }}" /></p>{% endif %}
+  <p class="center bold biz-name">{{ business.name }}</p>
+  {% if config.header_text %}<p class="center">{{ config.header_text }}</p>{% endif %}
+
+  <div class="divider"></div>
+
+  <p class="center bold doc-title">{{ doc_type_upper }}</p>
+  {% if config.show_reprint_notice %}
+  <p class="center">*** REPRINT - DUPLICATE ***<br/>not a new sale</p>
+  {% endif %}
+
+  <table class="line">
+    <tr><td>#{{ number }}</td><td class="right">{{ doc_date }}</td></tr>
+  </table>
+
+  {% if config.show_customer_name and customer_name %}
+  <table class="line"><tr><td>Bill to: {{ customer_name }}</td></tr></table>
+  {% endif %}
+
+  <div class="divider"></div>
+
+  <table class="line">
+    <tr><td class="bold">Item</td><td class="right bold">Amount</td></tr>
+  </table>
+
+  <div class="divider"></div>
+
+  <table class="items">
+    {% for item in items %}
+    <tr><td colspan="2">{{ item.description }}</td></tr>
+    <tr>
+      <td>{{ item.qty }} x {{ currency }} {{ '%.2f' | format(item.unit_price) }}</td>
+      <td class="right">{{ currency }} {{ '%.2f' | format(item.line_total) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <div class="divider"></div>
+
+  <table class="line">
+    <tr><td>Subtotal</td><td class="right">{{ currency }} {{ '%.2f' | format(subtotal) }}</td></tr>
+    {% if discount_total %}<tr><td>Discount</td><td class="right">-{{ currency }} {{ '%.2f' | format(discount_total) }}</td></tr>{% endif %}
+    {% if config.show_tax_breakdown and vat_total %}<tr><td>VAT</td><td class="right">{{ currency }} {{ '%.2f' | format(vat_total) }}</td></tr>{% endif %}
+    <tr><td class="bold">TOTAL</td><td class="right bold">{{ currency }} {{ '%.2f' | format(grand_total) }}</td></tr>
+  </table>
+
+  <div class="divider"></div>
+
+  <p class="center bold">{{ status_upper }}</p>
+
+  {% if config.show_payment_method and payment_method %}
+  <div class="divider"></div>
+  <table class="line"><tr><td>Paid by</td><td class="right">{{ payment_method }}</td></tr></table>
+  {% endif %}
+
+  <div class="divider"></div>
+
+  <p class="center">{{ config.footer_text }}</p>
+
+</body>
+</html>

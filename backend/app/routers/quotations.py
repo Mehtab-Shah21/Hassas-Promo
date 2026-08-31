@@ -23,7 +23,12 @@ from app.schemas.quotation import (
 from app.services.audit import write_audit_log
 from app.services.invoice_calc import calc_invoice_totals, calc_line
 from app.services.numbering import reserve_invoice_number, reserve_quotation_number
-from app.services.pdf import PdfEngineUnavailable, render_pdf, render_quotation_html
+from app.services.pdf import (
+    PdfEngineUnavailable,
+    render_pdf,
+    render_quotation_html,
+    render_quotation_thermal_html,
+)
 
 router = APIRouter(prefix="/api/quotations", tags=["quotations"])
 
@@ -330,6 +335,45 @@ def download_quotation_pdf(
     current_user=Depends(get_current_user),
 ):
     html = _render_html_for_quotation(db, quotation_id, business_id)
+    try:
+        pdf_bytes = render_pdf(html)
+    except PdfEngineUnavailable as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    return Response(content=pdf_bytes, media_type="application/pdf")
+
+
+def _render_thermal_html_for_quotation(db: Session, quotation_id: int, business_id: int, width: int | None) -> str:
+    quotation = (
+        db.query(Quotation).options(selectinload(Quotation.items)).filter(Quotation.id == quotation_id).first()
+    )
+    if not quotation or quotation.business_id != business_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quotation not found")
+
+    business = db.get(Business, business_id)
+    customer = db.get(Customer, quotation.customer_id)
+    return render_quotation_thermal_html(quotation=quotation, business=business, customer=customer, width_override=width)
+
+
+@router.get("/{quotation_id}/thermal-preview", response_class=HTMLResponse)
+def preview_quotation_thermal(
+    quotation_id: int,
+    width: int | None = Query(default=None, description="Override the business's stored paper width: 58 or 80"),
+    business_id: int = Depends(require_active_business_id),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return HTMLResponse(_render_thermal_html_for_quotation(db, quotation_id, business_id, width))
+
+
+@router.get("/{quotation_id}/thermal-pdf")
+def download_quotation_thermal_pdf(
+    quotation_id: int,
+    width: int | None = Query(default=None, description="Override the business's stored paper width: 58 or 80"),
+    business_id: int = Depends(require_active_business_id),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    html = _render_thermal_html_for_quotation(db, quotation_id, business_id, width)
     try:
         pdf_bytes = render_pdf(html)
     except PdfEngineUnavailable as exc:

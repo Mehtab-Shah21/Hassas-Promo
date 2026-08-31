@@ -48,6 +48,8 @@ export interface Business {
   default_quotation_notes: string | null;
   default_quotation_terms: string | null;
   template_config: Record<string, unknown> | null;
+  thermal_paper_width: string;
+  thermal_template_config: Record<string, unknown> | null;
   is_active: boolean;
 }
 

@@ -25,7 +25,12 @@ from app.schemas.invoice import (
 from app.services.audit import write_audit_log
 from app.services.invoice_calc import calc_invoice_totals, calc_line
 from app.services.numbering import reserve_invoice_number
-from app.services.pdf import PdfEngineUnavailable, render_invoice_html, render_pdf
+from app.services.pdf import (
+    PdfEngineUnavailable,
+    render_invoice_html,
+    render_invoice_thermal_html,
+    render_pdf,
+)
 
 router = APIRouter(prefix="/api/invoices", tags=["invoices"])
 
@@ -376,6 +381,48 @@ def download_invoice_pdf(
     current_user=Depends(get_current_user),
 ):
     html = _render_html_for_invoice(db, invoice_id, business_id)
+    try:
+        pdf_bytes = render_pdf(html)
+    except PdfEngineUnavailable as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    return Response(content=pdf_bytes, media_type="application/pdf")
+
+
+def _render_thermal_html_for_invoice(db: Session, invoice_id: int, business_id: int, width: int | None) -> str:
+    invoice = (
+        db.query(Invoice)
+        .options(selectinload(Invoice.items), selectinload(Invoice.payments))
+        .filter(Invoice.id == invoice_id)
+        .first()
+    )
+    if not invoice or invoice.business_id != business_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found")
+
+    business = db.get(Business, business_id)
+    customer = db.get(Customer, invoice.customer_id)
+    return render_invoice_thermal_html(invoice=invoice, business=business, customer=customer, width_override=width)
+
+
+@router.get("/{invoice_id}/thermal-preview", response_class=HTMLResponse)
+def preview_invoice_thermal(
+    invoice_id: int,
+    width: int | None = Query(default=None, description="Override the business's stored paper width: 58 or 80"),
+    business_id: int = Depends(require_active_business_id),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return HTMLResponse(_render_thermal_html_for_invoice(db, invoice_id, business_id, width))
+
+
+@router.get("/{invoice_id}/thermal-pdf")
+def download_invoice_thermal_pdf(
+    invoice_id: int,
+    width: int | None = Query(default=None, description="Override the business's stored paper width: 58 or 80"),
+    business_id: int = Depends(require_active_business_id),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    html = _render_thermal_html_for_invoice(db, invoice_id, business_id, width)
     try:
         pdf_bytes = render_pdf(html)
     except PdfEngineUnavailable as exc:

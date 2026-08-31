@@ -234,6 +234,164 @@ def render_quotation_html(quotation, business: Business, customer: Customer, emp
     )
 
 
+DEFAULT_THERMAL_CONFIG = {
+    "logo_enabled": False,
+    "header_text": "",
+    "footer_text": "Thank you for your business!",
+    "font_size": "normal",  # small | normal | large
+    "show_customer_name": True,
+    "show_payment_method": True,
+    "show_tax_breakdown": True,
+    "show_reprint_notice": False,
+}
+
+_THERMAL_FONT_PT = {"small": 7, "normal": 8, "large": 9.5}
+
+
+def resolve_thermal_config(business: Business, override: dict | None = None) -> dict:
+    config = dict(DEFAULT_THERMAL_CONFIG)
+    if business.thermal_template_config and isinstance(business.thermal_template_config, dict):
+        config.update(business.thermal_template_config)
+    if override:
+        config.update(override)
+    return config
+
+
+def render_thermal_html(
+    *,
+    doc_type: str,
+    number: str,
+    doc_date: str,
+    status: str,
+    business: Business,
+    customer_name: str | None,
+    items: Sequence,
+    subtotal: float,
+    discount_total: float,
+    vat_total: float,
+    grand_total: float,
+    payment_method: str | None,
+    currency: str,
+    paper_width_mm: int,
+    config_override: dict | None = None,
+) -> str:
+    template = _env.get_template("thermal_receipt.html.jinja2")
+    config = resolve_thermal_config(business, config_override)
+    num_items = max(len(items), 1)
+    # Thermal rolls are continuous-feed, but a PDF page needs a fixed
+    # height — reportlab/xhtml2pdf would otherwise spill a near-empty
+    # "page 2". Estimate a height from the item count instead of using one
+    # fixed guess, so typical 1-5 line service invoices fit on one page
+    # without wasting a meter of blank paper.
+    page_height_mm = min(400, max(120, 60 + num_items * 8))
+    font_size_pt = _THERMAL_FONT_PT.get(config["font_size"], 8)
+
+    return template.render(
+        doc_type=doc_type,
+        doc_type_upper=doc_type.upper(),
+        number=number,
+        doc_date=doc_date,
+        status=status,
+        status_upper=str(status).upper(),
+        business=business,
+        customer_name=customer_name,
+        items=items,
+        subtotal=subtotal,
+        discount_total=discount_total,
+        vat_total=vat_total,
+        grand_total=grand_total,
+        payment_method=payment_method,
+        currency=currency,
+        page_width_mm=paper_width_mm,
+        page_height_mm=page_height_mm,
+        font_size_pt=font_size_pt,
+        logo_uri=_logo_uri(business) if config["logo_enabled"] else None,
+        config=config,
+    )
+
+
+def _thermal_width_mm(business: Business, width_override: int | None = None) -> int:
+    if width_override in (58, 80):
+        return width_override
+    try:
+        return int((business.thermal_paper_width or "80mm").replace("mm", ""))
+    except ValueError:
+        return 80
+
+
+def render_invoice_thermal_html(invoice, business: Business, customer: Customer, width_override: int | None = None) -> str:
+    payment_method = invoice.payments[-1].method if invoice.payments else None
+    return render_thermal_html(
+        doc_type="Invoice",
+        number=invoice.number,
+        doc_date=invoice.invoice_date.strftime(_py_date_format(business.date_format)),
+        status=invoice.status.value if hasattr(invoice.status, "value") else invoice.status,
+        business=business,
+        customer_name=customer.name if customer else None,
+        items=invoice.items,
+        subtotal=float(invoice.subtotal),
+        discount_total=float(invoice.discount_total),
+        vat_total=float(invoice.vat_total),
+        grand_total=float(invoice.grand_total),
+        payment_method=payment_method,
+        currency=_currency_symbol(business),
+        paper_width_mm=_thermal_width_mm(business, width_override),
+    )
+
+
+def render_quotation_thermal_html(quotation, business: Business, customer: Customer, width_override: int | None = None) -> str:
+    return render_thermal_html(
+        doc_type="Quotation",
+        number=quotation.number,
+        doc_date=quotation.quotation_date.strftime(_py_date_format(business.date_format)),
+        status=quotation.status.value if hasattr(quotation.status, "value") else quotation.status,
+        business=business,
+        customer_name=customer.name if customer else None,
+        items=quotation.items,
+        subtotal=float(quotation.subtotal),
+        discount_total=float(quotation.discount_total),
+        vat_total=float(quotation.vat_total),
+        grand_total=float(quotation.grand_total),
+        payment_method=None,
+        currency=_currency_symbol(business),
+        paper_width_mm=_thermal_width_mm(business, width_override),
+    )
+
+
+def render_thermal_sample_html(
+    business: Business,
+    doc_type: str = "Invoice",
+    config_override: dict | None = None,
+    width_override: int | None = None,
+) -> str:
+    """Renders the thermal template with fabricated data — used by Design
+    Studio's Thermal Receipt tab live preview."""
+    from datetime import date
+
+    items = [_SampleItem("Visa Renewal Service", 1, 350.0, 500.0, 0.0, float(business.default_vat_rate))]
+    subtotal = sum(i.qty * i.unit_price - i.discount for i in items)
+    vat_total = sum((i.qty * i.unit_price - i.discount) * (i.vat_rate / 100) for i in items)
+    grand_total = subtotal + vat_total
+
+    return render_thermal_html(
+        doc_type=doc_type,
+        number="INV-00001",
+        doc_date=date.today().strftime(_py_date_format(business.date_format)),
+        status="paid",
+        business=business,
+        customer_name=_SampleCustomer.name,
+        items=items,
+        subtotal=round(subtotal, 2),
+        discount_total=0.0,
+        vat_total=round(vat_total, 2),
+        grand_total=round(grand_total, 2),
+        payment_method="Cash",
+        currency=_currency_symbol(business),
+        paper_width_mm=_thermal_width_mm(business, width_override),
+        config_override=config_override,
+    )
+
+
 class _SampleItem:
     def __init__(self, description: str, qty: float, unit_price: float, govt_fee: float, discount: float, vat_rate: float):
         self.description = description

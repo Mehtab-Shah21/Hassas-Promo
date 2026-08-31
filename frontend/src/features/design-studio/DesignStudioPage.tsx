@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { updateBusiness } from "../../api/businesses";
-import { fetchPreviewHtml, getDefaultTemplateConfig, type TemplateConfig } from "../../api/designStudio";
+import {
+  fetchPreviewHtml,
+  fetchThermalPreviewHtml,
+  getDefaultTemplateConfig,
+  getDefaultThermalConfig,
+  type TemplateConfig,
+  type ThermalConfig,
+} from "../../api/designStudio";
 import { useBusiness } from "../../context/BusinessContext";
 
 const BILL_TO_FIELD_OPTIONS = [
@@ -20,6 +27,43 @@ const COLOR_PRESETS: { name: string; primary: string; accent: string }[] = [
 ];
 
 export default function DesignStudioPage() {
+  const { activeBusiness } = useBusiness();
+  const [tab, setTab] = useState<"a4" | "thermal">("a4");
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-ink">Design Studio — {activeBusiness?.name}</h1>
+        <div className="flex gap-2">
+          <TabButton active={tab === "a4"} onClick={() => setTab("a4")}>
+            A4 Invoice
+          </TabButton>
+          <TabButton active={tab === "thermal"} onClick={() => setTab("thermal")}>
+            Thermal Receipt
+          </TabButton>
+        </div>
+      </div>
+
+      {tab === "a4" ? <A4Tab /> : <ThermalTab />}
+    </div>
+  );
+}
+
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+        active ? "border-accent bg-accent/10 text-accent" : "border-line text-muted hover:bg-wash-1"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function A4Tab() {
   const { activeBusiness, refreshBusinesses } = useBusiness();
   const [config, setConfig] = useState<TemplateConfig | null>(null);
   const [previewHtml, setPreviewHtml] = useState("");
@@ -72,8 +116,7 @@ export default function DesignStudioPage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-ink">Design Studio — {activeBusiness?.name}</h1>
+      <div className="mb-4 flex justify-end">
         <div className="flex items-center gap-3">
           {message && <span className="text-sm text-accent-green">{message}</span>}
           <button
@@ -182,6 +225,140 @@ export default function DesignStudioPage() {
           <p className="mb-2 text-xs font-medium uppercase text-muted">Live preview (sample data)</p>
           <div className="overflow-hidden rounded-md border border-line bg-surface shadow-raised" style={{ aspectRatio: "1 / 1.3" }}>
             <iframe title="Invoice preview" srcDoc={previewHtml} className="h-full w-full" style={{ border: "none" }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const THERMAL_PREVIEW_PX_WIDTH: Record<58 | 80, number> = { 58: 240, 80: 320 };
+
+function ThermalTab() {
+  const { activeBusiness, refreshBusinesses } = useBusiness();
+  const [config, setConfig] = useState<ThermalConfig | null>(null);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewWidth, setPreviewWidth] = useState<58 | 80>(80);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!activeBusiness) return;
+    getDefaultThermalConfig().then((defaults) => {
+      setConfig({ ...defaults, ...(activeBusiness.thermal_template_config as Partial<ThermalConfig> | null) });
+    });
+    setPreviewWidth(activeBusiness.thermal_paper_width === "58mm" ? 58 : 80);
+  }, [activeBusiness?.id]);
+
+  useEffect(() => {
+    if (!config) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchThermalPreviewHtml(config, previewWidth).then(setPreviewHtml);
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [config, previewWidth]);
+
+  function set<K extends keyof ThermalConfig>(key: K, value: ThermalConfig[K]) {
+    setConfig((c) => (c ? { ...c, [key]: value } : c));
+  }
+
+  async function handleSave() {
+    if (!activeBusiness || !config) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      await updateBusiness(activeBusiness.id, { thermal_template_config: config as unknown as Record<string, unknown> });
+      await refreshBusinesses();
+      setMessage("Saved. This design now drives the printed thermal receipt.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!config) return <p className="text-sm text-muted">Loading...</p>;
+
+  return (
+    <div>
+      <div className="mb-4 flex justify-end">
+        <div className="flex items-center gap-3">
+          {message && <span className="text-sm text-accent-green">{message}</span>}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save"}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6">
+        <div className="space-y-5">
+          <Section title="Logo">
+            <Checkbox label="Show logo" checked={config.logo_enabled} onChange={(v) => set("logo_enabled", v)} />
+          </Section>
+
+          <Section title="Text">
+            <div>
+              <span className="mb-1.5 block text-sm text-muted">Header text (under business name)</span>
+              <input
+                value={config.header_text}
+                onChange={(e) => set("header_text", e.target.value)}
+                className="w-full rounded-md border border-line bg-bg px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none"
+              />
+            </div>
+            <div>
+              <span className="mb-1.5 block text-sm text-muted">Footer / thank-you text</span>
+              <input
+                value={config.footer_text}
+                onChange={(e) => set("footer_text", e.target.value)}
+                className="w-full rounded-md border border-line bg-bg px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none"
+              />
+            </div>
+            <FieldRow label="Font size">
+              <select
+                value={config.font_size}
+                onChange={(e) => set("font_size", e.target.value as ThermalConfig["font_size"])}
+                className="rounded-md border border-line bg-bg px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none"
+              >
+                <option value="small">Small</option>
+                <option value="normal">Normal</option>
+                <option value="large">Large</option>
+              </select>
+            </FieldRow>
+          </Section>
+
+          <Section title="Lines to show">
+            <Checkbox label="Customer name" checked={config.show_customer_name} onChange={(v) => set("show_customer_name", v)} />
+            <Checkbox label="Payment method" checked={config.show_payment_method} onChange={(v) => set("show_payment_method", v)} />
+            <Checkbox label="VAT breakdown" checked={config.show_tax_breakdown} onChange={(v) => set("show_tax_breakdown", v)} />
+            <Checkbox label='"Reprint / duplicate" notice' checked={config.show_reprint_notice} onChange={(v) => set("show_reprint_notice", v)} />
+          </Section>
+        </div>
+
+        <div className="col-span-2 rounded-lg border border-line bg-bg p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-medium uppercase text-muted">Live preview (sample data)</p>
+            <div className="flex gap-2">
+              <TabButton active={previewWidth === 58} onClick={() => setPreviewWidth(58)}>
+                58mm
+              </TabButton>
+              <TabButton active={previewWidth === 80} onClick={() => setPreviewWidth(80)}>
+                80mm
+              </TabButton>
+            </div>
+          </div>
+          <div className="flex justify-center">
+            <div
+              className="overflow-hidden rounded-md border border-line bg-surface shadow-raised"
+              style={{ width: THERMAL_PREVIEW_PX_WIDTH[previewWidth], height: 560 }}
+            >
+              <iframe title="Thermal receipt preview" srcDoc={previewHtml} className="h-full w-full" style={{ border: "none" }} />
+            </div>
           </div>
         </div>
       </div>

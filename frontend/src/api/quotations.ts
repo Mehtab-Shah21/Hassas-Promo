@@ -62,3 +62,11 @@ export async function fetchQuotationPdfBlob(id: number): Promise<Blob> {
   const res = await apiClient.get(`/api/quotations/${id}/pdf`, { responseType: "blob" });
   return res.data;
 }
+
+export async function fetchQuotationThermalPdfBlob(id: number, width?: 58 | 80): Promise<Blob> {
+  const res = await apiClient.get(`/api/quotations/${id}/thermal-pdf`, {
+    params: width ? { width } : undefined,
+    responseType: "blob",
+  });
+  return res.data;
+}

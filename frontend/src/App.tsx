@@ -19,6 +19,7 @@ import BackupPage from "./features/settings/pages/BackupPage";
 import CompanyProfilePage from "./features/settings/pages/CompanyProfilePage";
 import FeatureFlagsPage from "./features/settings/pages/FeatureFlagsPage";
 import InvoiceDefaultsPage from "./features/settings/pages/InvoiceDefaultsPage";
+import PrintSettingsPage from "./features/settings/pages/PrintSettingsPage";
 import QuotationDefaultsPage from "./features/settings/pages/QuotationDefaultsPage";
 import NotificationsPage from "./features/notifications/NotificationsPage";
 import QuotationCreatePage from "./features/quotations/QuotationCreatePage";
@@ -105,6 +106,7 @@ function App() {
           <Route path="regional" element={<RegionalPage />} />
           <Route path="invoice-defaults" element={<InvoiceDefaultsPage />} />
           <Route path="quotation-defaults" element={<QuotationDefaultsPage />} />
+          <Route path="print" element={<PrintSettingsPage />} />
           <Route path="features" element={<FeatureFlagsPage />} />
           <Route path="security" element={<SecurityPage />} />
           <Route path="backup" element={<BackupPage />} />
