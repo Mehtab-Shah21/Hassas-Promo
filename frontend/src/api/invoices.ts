@@ -67,3 +67,13 @@ export async function recordPayment(
 ): Promise<void> {
   await apiClient.post(`/api/invoices/${id}/payments`, payload);
 }
+
+export async function fetchInvoicePreviewBlob(id: number): Promise<Blob> {
+  const res = await apiClient.get(`/api/invoices/${id}/preview`, { responseType: "blob" });
+  return res.data;
+}
+
+export async function fetchInvoicePdfBlob(id: number): Promise<Blob> {
+  const res = await apiClient.get(`/api/invoices/${id}/pdf`, { responseType: "blob" });
+  return res.data;
+}

@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getServerUrl } from "../../api/client";
 import { getCustomer } from "../../api/customers";
-import { convertQuotation, getQuotation, updateQuotationStatus } from "../../api/quotations";
+import {
+  convertQuotation,
+  fetchQuotationPdfBlob,
+  fetchQuotationPreviewBlob,
+  getQuotation,
+  updateQuotationStatus,
+} from "../../api/quotations";
 import type { Customer, Quotation, QuotationStatus, TransactionType } from "../../api/types";
+import { openBlobDocument } from "../../utils/openBlobDocument";
 
 const STATUS_OPTIONS: QuotationStatus[] = ["draft", "sent", "accepted", "rejected"];
 
@@ -16,6 +22,7 @@ export default function QuotationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
   const [convertType, setConvertType] = useState<TransactionType>("credit");
+  const [docError, setDocError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -50,6 +57,24 @@ export default function QuotationDetailPage() {
   }
 
   if (loading || !quotation) return <p className="text-sm text-muted">Loading...</p>;
+
+  async function handlePreview() {
+    setDocError(null);
+    try {
+      await openBlobDocument(() => fetchQuotationPreviewBlob(quotation!.id), `${quotation!.number}-preview.html`);
+    } catch {
+      setDocError("Could not load the preview.");
+    }
+  }
+
+  async function handlePdf() {
+    setDocError(null);
+    try {
+      await openBlobDocument(() => fetchQuotationPdfBlob(quotation!.id), `${quotation!.number}.pdf`);
+    } catch {
+      setDocError("Could not generate the PDF.");
+    }
+  }
 
   return (
     <div>
@@ -100,24 +125,24 @@ export default function QuotationDetailPage() {
                 </button>
               </>
             )}
-            <a
-              href={`${getServerUrl()}/api/quotations/${quotation.id}/preview`}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              type="button"
+              onClick={handlePreview}
               className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
               Preview
-            </a>
-            <a
-              href={`${getServerUrl()}/api/quotations/${quotation.id}/pdf`}
-              target="_blank"
-              rel="noreferrer"
+            </button>
+            <button
+              type="button"
+              onClick={handlePdf}
               className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
               Print / PDF
-            </a>
+            </button>
           </div>
         </div>
+
+        {docError && <p className="mb-4 text-sm text-danger">{docError}</p>}
 
         <table className="mb-4 w-full text-sm">
           <thead className="text-left text-xs font-semibold uppercase text-muted">

@@ -1,11 +1,17 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getServerUrl } from "../../api/client";
 import { getCustomer } from "../../api/customers";
-import { getInvoice, recordPayment, updateInvoiceStatus } from "../../api/invoices";
+import {
+  fetchInvoicePdfBlob,
+  fetchInvoicePreviewBlob,
+  getInvoice,
+  recordPayment,
+  updateInvoiceStatus,
+} from "../../api/invoices";
 import type { Customer, Invoice, InvoiceStatus } from "../../api/types";
 import Modal from "../../components/Modal";
 import { Field, SaveButton, TextInput } from "../../components/form/Field";
+import { openBlobDocument } from "../../utils/openBlobDocument";
 
 const STATUS_OPTIONS: InvoiceStatus[] = ["draft", "sent", "paid", "partial", "void"];
 
@@ -17,6 +23,7 @@ export default function InvoiceDetailPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPayment, setShowPayment] = useState(false);
+  const [docError, setDocError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -43,6 +50,24 @@ export default function InvoiceDetailPage() {
   if (loading || !invoice) return <p className="text-sm text-muted">Loading...</p>;
 
   const balanceDue = invoice.grand_total - invoice.amount_paid;
+
+  async function handlePreview() {
+    setDocError(null);
+    try {
+      await openBlobDocument(() => fetchInvoicePreviewBlob(invoice!.id), `${invoice!.number}-preview.html`);
+    } catch {
+      setDocError("Could not load the preview.");
+    }
+  }
+
+  async function handlePdf() {
+    setDocError(null);
+    try {
+      await openBlobDocument(() => fetchInvoicePdfBlob(invoice!.id), `${invoice!.number}.pdf`);
+    } catch {
+      setDocError("Could not generate the PDF.");
+    }
+  }
 
   return (
     <div>
@@ -78,24 +103,24 @@ export default function InvoiceDetailPage() {
                 Record payment
               </button>
             )}
-            <a
-              href={`${getServerUrl()}/api/invoices/${invoice.id}/preview`}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              type="button"
+              onClick={handlePreview}
               className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
               Preview
-            </a>
-            <a
-              href={`${getServerUrl()}/api/invoices/${invoice.id}/pdf`}
-              target="_blank"
-              rel="noreferrer"
+            </button>
+            <button
+              type="button"
+              onClick={handlePdf}
               className="rounded-md border border-line px-3 py-1.5 text-sm hover:bg-wash-1"
             >
               Print / PDF
-            </a>
+            </button>
           </div>
         </div>
+
+        {docError && <p className="mb-4 text-sm text-danger">{docError}</p>}
 
         <table className="mb-4 w-full text-sm">
           <thead className="text-left text-xs font-semibold uppercase text-muted">

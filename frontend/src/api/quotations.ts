@@ -52,3 +52,13 @@ export async function convertQuotation(
   });
   return res.data;
 }
+
+export async function fetchQuotationPreviewBlob(id: number): Promise<Blob> {
+  const res = await apiClient.get(`/api/quotations/${id}/preview`, { responseType: "blob" });
+  return res.data;
+}
+
+export async function fetchQuotationPdfBlob(id: number): Promise<Blob> {
+  const res = await apiClient.get(`/api/quotations/${id}/pdf`, { responseType: "blob" });
+  return res.data;
+}
