@@ -12,6 +12,7 @@ from app.models import (  # noqa: F401  ensure models are registered
     Business,
     Coupon,
     Customer,
+    Employee,
     FeatureFlag,
     Invoice,
     InvoiceItem,

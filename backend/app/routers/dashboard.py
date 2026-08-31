@@ -8,8 +8,8 @@ from app.core.db import get_db
 from app.core.deps import require_active_business_id, require_admin
 from app.models.attendance import Attendance, AttendanceStatus
 from app.models.customer import Customer
+from app.models.employee import Employee
 from app.models.invoice import Invoice, InvoiceStatus
-from app.models.user import User, UserRole
 from app.schemas.dashboard import DashboardSummary, RecentInvoice, TopCustomer
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -86,8 +86,11 @@ def dashboard_summary(
     ]
 
     today = date.today()
-    employees = db.query(User).filter(User.role == UserRole.employee, User.is_active.is_(True)).all()
-    today_records = {a.user_id: a.status for a in db.query(Attendance).filter(Attendance.date == today).all()}
+    employees = db.query(Employee).filter(Employee.business_id == business_id, Employee.is_active.is_(True)).all()
+    today_records = {
+        a.employee_id: a.status
+        for a in db.query(Attendance).filter(Attendance.business_id == business_id, Attendance.date == today).all()
+    }
     attendance_present_today = sum(1 for e in employees if today_records.get(e.id) == AttendanceStatus.present)
     attendance_absent_today = sum(1 for e in employees if today_records.get(e.id) == AttendanceStatus.absent)
 

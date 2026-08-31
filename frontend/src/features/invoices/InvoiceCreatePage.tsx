@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { listCustomers, listEmployees } from "../../api/customers";
 import { createInvoice, type InvoiceItemPayload } from "../../api/invoices";
-import type { Customer, TransactionType } from "../../api/types";
+import type { Customer, PaymentMethod } from "../../api/types";
 import { TextArea, TextInput } from "../../components/form/Field";
 import SearchCombobox from "../../components/SearchCombobox";
 import { useBusiness } from "../../context/BusinessContext";
@@ -18,7 +18,7 @@ export default function InvoiceCreatePage() {
   const navigate = useNavigate();
   const defaultVat = activeBusiness?.default_vat_rate ?? 0;
 
-  const [transactionType, setTransactionType] = useState<TransactionType>("cash");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [employees, setEmployees] = useState<Customer[]>([]);
   const [employeeId, setEmployeeId] = useState<number | "">("");
@@ -37,9 +37,12 @@ export default function InvoiceCreatePage() {
 
   useEffect(() => {
     if (!activeBusiness) return;
-    setNotes(transactionType === "cash" ? activeBusiness.default_invoice_notes_cash ?? "" : activeBusiness.default_invoice_notes_credit ?? "");
-    setTerms(transactionType === "cash" ? activeBusiness.default_invoice_terms_cash ?? "" : activeBusiness.default_invoice_terms_credit ?? "");
-  }, [transactionType, activeBusiness]);
+    // The business's two default note/term sets predate payment methods
+    // (cash vs. credit); cash keeps the "cash" set, card/online use the
+    // other set, same as credit did.
+    setNotes(paymentMethod === "cash" ? activeBusiness.default_invoice_notes_cash ?? "" : activeBusiness.default_invoice_notes_credit ?? "");
+    setTerms(paymentMethod === "cash" ? activeBusiness.default_invoice_terms_cash ?? "" : activeBusiness.default_invoice_terms_credit ?? "");
+  }, [paymentMethod, activeBusiness]);
 
   useEffect(() => {
     if (customer?.type === "company") {
@@ -93,7 +96,7 @@ export default function InvoiceCreatePage() {
       const invoice = await createInvoice({
         customer_id: customer.id,
         employee_customer_id: employeeId || null,
-        transaction_type: transactionType,
+        payment_method: paymentMethod,
         invoice_date: invoiceDate,
         due_date: dueDate || null,
         notes,
@@ -118,15 +121,16 @@ export default function InvoiceCreatePage() {
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
           <div className="rounded-lg border border-line bg-surface p-4">
-            <div className="mb-3 flex gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="radio" checked={transactionType === "cash"} onChange={() => setTransactionType("cash")} />
-                Cash (paid)
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="radio" checked={transactionType === "credit"} onChange={() => setTransactionType("credit")} />
-                Credit (pending)
-              </label>
+            <div className="mb-3">
+              <span className="mb-1 block text-sm font-medium text-muted">Payment method</span>
+              <div className="flex gap-4">
+                {(["cash", "card", "online"] as const).map((m) => (
+                  <label key={m} className="flex items-center gap-2 text-sm capitalize">
+                    <input type="radio" checked={paymentMethod === m} onChange={() => setPaymentMethod(m)} />
+                    {m}
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="mb-3">

@@ -10,7 +10,7 @@ import {
   getQuotation,
   updateQuotationStatus,
 } from "../../api/quotations";
-import type { Customer, Quotation, QuotationStatus, TransactionType } from "../../api/types";
+import type { Customer, PaymentMethod, Quotation, QuotationStatus } from "../../api/types";
 import PrintPreviewModal from "../../components/PrintPreviewModal";
 
 const STATUS_OPTIONS: QuotationStatus[] = ["draft", "sent", "accepted", "rejected"];
@@ -23,7 +23,7 @@ export default function QuotationDetailPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
-  const [convertType, setConvertType] = useState<TransactionType>("credit");
+  const [convertMethod, setConvertMethod] = useState<PaymentMethod>("cash");
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   async function load() {
@@ -51,7 +51,7 @@ export default function QuotationDetailPage() {
     if (!quotation) return;
     setConverting(true);
     try {
-      const result = await convertQuotation(quotation.id, convertType);
+      const result = await convertQuotation(quotation.id, convertMethod);
       navigate(`/invoices/${result.invoice_id}`);
     } finally {
       setConverting(false);
@@ -93,12 +93,13 @@ export default function QuotationDetailPage() {
                   ))}
                 </select>
                 <select
-                  value={convertType}
-                  onChange={(e) => setConvertType(e.target.value as TransactionType)}
+                  value={convertMethod}
+                  onChange={(e) => setConvertMethod(e.target.value as PaymentMethod)}
                   className="rounded-md border border-line px-2 py-1.5 text-sm focus:border-accent focus:outline-none"
                 >
-                  <option value="credit">Credit</option>
                   <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="online">Online</option>
                 </select>
                 <button
                   onClick={handleConvert}

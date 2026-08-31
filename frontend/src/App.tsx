@@ -25,6 +25,7 @@ import NotificationsPage from "./features/notifications/NotificationsPage";
 import QuotationCreatePage from "./features/quotations/QuotationCreatePage";
 import QuotationDetailPage from "./features/quotations/QuotationDetailPage";
 import QuotationsListPage from "./features/quotations/QuotationsListPage";
+import ReconciliationPage from "./features/reconciliation/ReconciliationPage";
 import ReportsPage from "./features/reports/ReportsPage";
 import RegionalPage from "./features/settings/pages/RegionalPage";
 import ServicesPage from "./features/services/ServicesPage";
@@ -67,6 +68,14 @@ function App() {
           element={
             <AdminOnlyRoute>
               <AttendancePage />
+            </AdminOnlyRoute>
+          }
+        />
+        <Route
+          path="reconciliation"
+          element={
+            <AdminOnlyRoute>
+              <ReconciliationPage />
             </AdminOnlyRoute>
           }
         />

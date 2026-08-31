@@ -10,7 +10,7 @@ from app.core.deps import get_current_user, require_active_business_id
 from app.models.business import Business
 from app.models.coupon import Coupon
 from app.models.customer import Customer
-from app.models.invoice import Invoice, InvoiceItem, InvoiceStatus, Payment, TransactionType
+from app.models.invoice import ClearedStatus, Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentMethod
 from app.models.service import Service
 from app.schemas.invoice import (
     InvoiceCreate,
@@ -141,10 +141,11 @@ def create_invoice(
 
     totals = calc_invoice_totals(line_calcs, line_discounts, coupon)
 
-    is_cash = payload.transaction_type == TransactionType.cash
-    invoice_status = InvoiceStatus.paid if is_cash else InvoiceStatus.sent
-    amount_paid = totals.grand_total if is_cash else 0.0
-
+    # Every invoice created through this flow is paid immediately — the
+    # invoice records how it was paid (payment_method), not whether it's
+    # still owed. Cash clears on the spot; card/online start pending until
+    # reconciled in the Reconciliation view.
+    is_cash = payload.payment_method == PaymentMethod.cash
     number = reserve_invoice_number(db, business)
 
     invoice = Invoice(
@@ -152,17 +153,17 @@ def create_invoice(
         number=number,
         customer_id=customer.id,
         employee_customer_id=payload.employee_customer_id,
-        transaction_type=payload.transaction_type,
+        payment_method=payload.payment_method,
         invoice_date=payload.invoice_date,
         due_date=payload.due_date,
-        status=invoice_status,
+        status=InvoiceStatus.paid,
         subtotal=totals.subtotal,
         discount_total=totals.discount_total,
         coupon_id=coupon.id if coupon else None,
         vat_total=totals.vat_total,
         govt_fee_total=totals.govt_fee_total,
         grand_total=totals.grand_total,
-        amount_paid=amount_paid,
+        amount_paid=totals.grand_total,
         notes=payload.notes,
         terms=payload.terms,
         show_bank_details=payload.show_bank_details,
@@ -172,16 +173,18 @@ def create_invoice(
     db.add(invoice)
     db.flush()
 
-    if is_cash:
-        db.add(
-            Payment(
-                invoice_id=invoice.id,
-                amount=totals.grand_total,
-                method="cash",
-                paid_on=payload.invoice_date,
-                reference=None,
-            )
+    db.add(
+        Payment(
+            invoice_id=invoice.id,
+            amount=totals.grand_total,
+            method=payload.payment_method.value,
+            paid_on=payload.invoice_date,
+            reference=None,
+            payment_method=payload.payment_method,
+            cleared_status=ClearedStatus.received if is_cash else ClearedStatus.pending,
+            received_at=payload.invoice_date if is_cash else None,
         )
+    )
 
     write_audit_log(
         db, user_id=current_user.id, business_id=business_id, action="create",
@@ -319,7 +322,13 @@ def record_payment(
     if invoice.status == InvoiceStatus.void:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot record payment on a void invoice")
 
-    payment = Payment(invoice_id=invoice.id, **payload.model_dump())
+    is_cash = payload.payment_method == PaymentMethod.cash
+    payment = Payment(
+        invoice_id=invoice.id,
+        **payload.model_dump(),
+        cleared_status=ClearedStatus.received if is_cash else ClearedStatus.pending,
+        received_at=payload.paid_on if is_cash else None,
+    )
     db.add(payment)
 
     invoice.amount_paid = float(invoice.amount_paid) + payload.amount

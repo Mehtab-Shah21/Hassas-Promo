@@ -1,6 +1,6 @@
 import { apiClient } from "./client";
 import type { InvoiceItemPayload } from "./invoices";
-import type { PaginatedQuotations, Quotation, QuotationStatus, TransactionType } from "./types";
+import type { PaginatedQuotations, PaymentMethod, Quotation, QuotationStatus } from "./types";
 
 export interface QuotationCreatePayload {
   customer_id: number;
@@ -45,10 +45,10 @@ export async function updateQuotationStatus(id: number, status: QuotationStatus)
 
 export async function convertQuotation(
   id: number,
-  transactionType: TransactionType,
+  paymentMethod: PaymentMethod,
 ): Promise<{ invoice_id: number; invoice_number: string }> {
   const res = await apiClient.post(`/api/quotations/${id}/convert`, null, {
-    params: { transaction_type: transactionType },
+    params: { payment_method: paymentMethod },
   });
   return res.data;
 }

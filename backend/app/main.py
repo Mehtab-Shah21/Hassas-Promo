@@ -15,10 +15,12 @@ from app.routers import (
     customers,
     dashboard,
     design_studio,
+    employees,
     feature_flags,
     invoices,
     notifications,
     quotations,
+    reconciliation,
     reports,
     services,
     users,
@@ -47,8 +49,10 @@ app.include_router(services.router)
 app.include_router(coupons.router)
 app.include_router(invoices.router)
 app.include_router(quotations.router)
+app.include_router(reconciliation.router)
 app.include_router(dashboard.router)
 app.include_router(notifications.router)
+app.include_router(employees.router)
 app.include_router(attendance.router)
 app.include_router(reports.router)
 app.include_router(audit_log.router)

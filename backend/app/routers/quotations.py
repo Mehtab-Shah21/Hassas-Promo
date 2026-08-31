@@ -10,7 +10,7 @@ from app.core.deps import get_current_user, require_active_business_id
 from app.models.business import Business
 from app.models.coupon import Coupon
 from app.models.customer import Customer
-from app.models.invoice import Invoice, InvoiceItem, InvoiceStatus, TransactionType
+from app.models.invoice import ClearedStatus, Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentMethod
 from app.models.quotation import Quotation, QuotationItem, QuotationStatus
 from app.models.service import Service
 from app.schemas.quotation import (
@@ -233,7 +233,7 @@ def update_status(
 @router.post("/{quotation_id}/convert", status_code=status.HTTP_201_CREATED)
 def convert_to_invoice(
     quotation_id: int,
-    transaction_type: TransactionType = Query(default=TransactionType.credit),
+    payment_method: PaymentMethod = Query(default=PaymentMethod.cash),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -247,25 +247,26 @@ def convert_to_invoice(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Quotation already converted")
 
     business = db.get(Business, business_id)
-    is_cash = transaction_type == TransactionType.cash
+    is_cash = payment_method == PaymentMethod.cash
     number = reserve_invoice_number(db, business)
+    today = date.today()
 
     invoice = Invoice(
         business_id=business_id,
         number=number,
         customer_id=quotation.customer_id,
         employee_customer_id=quotation.employee_customer_id,
-        transaction_type=transaction_type,
-        invoice_date=date.today(),
+        payment_method=payment_method,
+        invoice_date=today,
         due_date=None,
-        status=InvoiceStatus.paid if is_cash else InvoiceStatus.sent,
+        status=InvoiceStatus.paid,
         subtotal=quotation.subtotal,
         discount_total=quotation.discount_total,
         coupon_id=quotation.coupon_id,
         vat_total=quotation.vat_total,
         govt_fee_total=quotation.govt_fee_total,
         grand_total=quotation.grand_total,
-        amount_paid=quotation.grand_total if is_cash else 0,
+        amount_paid=quotation.grand_total,
         notes=quotation.notes,
         terms=quotation.terms,
         show_bank_details=quotation.show_bank_details,
@@ -286,6 +287,19 @@ def convert_to_invoice(
     )
     db.add(invoice)
     db.flush()
+
+    db.add(
+        Payment(
+            invoice_id=invoice.id,
+            amount=quotation.grand_total,
+            method=payment_method.value,
+            paid_on=today,
+            reference=None,
+            payment_method=payment_method,
+            cleared_status=ClearedStatus.received if is_cash else ClearedStatus.pending,
+            received_at=today if is_cash else None,
+        )
+    )
 
     quotation.status = QuotationStatus.converted
     quotation.converted_invoice_id = invoice.id

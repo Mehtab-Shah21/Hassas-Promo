@@ -4,6 +4,7 @@ from app.models.backup_settings import BackupSettings
 from app.models.business import Business
 from app.models.coupon import Coupon
 from app.models.customer import Customer
+from app.models.employee import Employee
 from app.models.feature_flag import FeatureFlag
 from app.models.invoice import Invoice, InvoiceItem, Payment
 from app.models.notification import Notification, NotificationReminder
@@ -18,6 +19,7 @@ __all__ = [
     "Business",
     "Coupon",
     "Customer",
+    "Employee",
     "FeatureFlag",
     "Invoice",
     "InvoiceItem",

@@ -8,9 +8,15 @@ from app.core.db import Base
 from app.models.mixins import TimestampMixin
 
 
-class TransactionType(str, enum.Enum):
+class PaymentMethod(str, enum.Enum):
     cash = "cash"
-    credit = "credit"
+    card = "card"
+    online = "online"
+
+
+class ClearedStatus(str, enum.Enum):
+    pending = "pending"
+    received = "received"
 
 
 class InvoiceStatus(str, enum.Enum):
@@ -30,7 +36,7 @@ class Invoice(TimestampMixin, Base):
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), nullable=False, index=True)
     employee_customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id"), nullable=True)
 
-    transaction_type: Mapped[TransactionType] = mapped_column(Enum(TransactionType), nullable=False)
+    payment_method: Mapped[PaymentMethod] = mapped_column(Enum(PaymentMethod), nullable=False, default=PaymentMethod.cash)
     invoice_date: Mapped[date] = mapped_column(Date, nullable=False)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[InvoiceStatus] = mapped_column(Enum(InvoiceStatus), default=InvoiceStatus.draft, nullable=False)
@@ -81,5 +87,14 @@ class Payment(TimestampMixin, Base):
     method: Mapped[str] = mapped_column(String(50), nullable=False)
     paid_on: Mapped[date] = mapped_column(Date, nullable=False)
     reference: Mapped[str | None] = mapped_column(String(255))
+
+    # payment_method is the coarse cash|card|online bucket reconciliation
+    # groups by; `method` above stays free-text (bank_transfer/cheque/other)
+    # for the existing manual "record a payment" flow. Cash clears
+    # immediately; card/online start pending until an admin marks them
+    # received in the Reconciliation view.
+    payment_method: Mapped[PaymentMethod] = mapped_column(Enum(PaymentMethod), nullable=False, default=PaymentMethod.cash)
+    cleared_status: Mapped[ClearedStatus] = mapped_column(Enum(ClearedStatus), nullable=False, default=ClearedStatus.received)
+    received_at: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     invoice: Mapped[Invoice] = relationship(back_populates="payments")

@@ -132,7 +132,8 @@ export interface Coupon {
   valid_to: string | null;
 }
 
-export type TransactionType = "cash" | "credit";
+export type PaymentMethod = "cash" | "card" | "online";
+export type ClearedStatus = "pending" | "received";
 export type InvoiceStatus = "draft" | "sent" | "paid" | "partial" | "overdue" | "void";
 
 export interface InvoiceItem {
@@ -154,6 +155,9 @@ export interface Payment {
   method: string;
   paid_on: string;
   reference: string | null;
+  payment_method: PaymentMethod;
+  cleared_status: ClearedStatus;
+  received_at: string | null;
 }
 
 export interface Invoice {
@@ -162,7 +166,7 @@ export interface Invoice {
   number: string;
   customer_id: number;
   employee_customer_id: number | null;
-  transaction_type: TransactionType;
+  payment_method: PaymentMethod;
   invoice_date: string;
   due_date: string | null;
   status: InvoiceStatus;
@@ -184,7 +188,7 @@ export interface InvoiceListItem {
   id: number;
   number: string;
   customer_id: number;
-  transaction_type: TransactionType;
+  payment_method: PaymentMethod;
   invoice_date: string;
   due_date: string | null;
   status: InvoiceStatus;
@@ -199,18 +203,47 @@ export interface PaginatedInvoices {
   page_size: number;
 }
 
+export interface ReconciliationEntry {
+  payment_id: number;
+  invoice_id: number;
+  invoice_number: string;
+  customer_name: string;
+  payment_method: PaymentMethod;
+  amount: number;
+  paid_on: string;
+  cleared_status: ClearedStatus;
+  received_at: string | null;
+}
+
+export interface ReconciliationResponse {
+  date: string;
+  entries: ReconciliationEntry[];
+  total_collected: number;
+  total_pending: number;
+}
+
+export interface Employee {
+  id: number;
+  business_id: number;
+  name: string;
+  role: string | null;
+  phone_code: string | null;
+  phone: string | null;
+  is_active: boolean;
+}
+
 export type AttendanceStatus = "present" | "absent" | "leave";
 
 export interface DayAttendanceEntry {
-  user_id: number;
-  user_name: string;
+  employee_id: number;
+  employee_name: string;
   status: AttendanceStatus | null;
   note: string | null;
 }
 
 export interface EmployeeTotals {
-  user_id: number;
-  user_name: string;
+  employee_id: number;
+  employee_name: string;
   present: number;
   absent: number;
   leave: number;

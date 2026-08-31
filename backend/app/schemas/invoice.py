@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import BaseModel, model_validator
 
-from app.models.invoice import InvoiceStatus, TransactionType
+from app.models.invoice import ClearedStatus, InvoiceStatus, PaymentMethod
 
 
 class InvoiceItemCreate(BaseModel):
@@ -45,6 +45,7 @@ class PaymentCreate(BaseModel):
     method: str
     paid_on: date
     reference: str | None = None
+    payment_method: PaymentMethod = PaymentMethod.cash
 
 
 class PaymentResponse(BaseModel):
@@ -54,6 +55,9 @@ class PaymentResponse(BaseModel):
     method: str
     paid_on: date
     reference: str | None
+    payment_method: PaymentMethod
+    cleared_status: ClearedStatus
+    received_at: date | None
 
     model_config = {"from_attributes": True}
 
@@ -61,7 +65,7 @@ class PaymentResponse(BaseModel):
 class InvoiceCreate(BaseModel):
     customer_id: int
     employee_customer_id: int | None = None
-    transaction_type: TransactionType
+    payment_method: PaymentMethod
     invoice_date: date
     due_date: date | None = None
     notes: str | None = None
@@ -87,7 +91,7 @@ class InvoiceResponse(BaseModel):
     number: str
     customer_id: int
     employee_customer_id: int | None
-    transaction_type: TransactionType
+    payment_method: PaymentMethod
     invoice_date: date
     due_date: date | None
     status: InvoiceStatus
@@ -111,7 +115,7 @@ class InvoiceListItem(BaseModel):
     id: int
     number: str
     customer_id: int
-    transaction_type: TransactionType
+    payment_method: PaymentMethod
     invoice_date: date
     due_date: date | None
     status: InvoiceStatus
@@ -139,3 +143,22 @@ class InvoiceKpis(BaseModel):
     overdue_amount: float
     void_count: int
     void_amount: float
+
+
+class ReconciliationEntry(BaseModel):
+    payment_id: int
+    invoice_id: int
+    invoice_number: str
+    customer_name: str
+    payment_method: PaymentMethod
+    amount: float
+    paid_on: date
+    cleared_status: ClearedStatus
+    received_at: date | None
+
+
+class ReconciliationResponse(BaseModel):
+    date: date
+    entries: list[ReconciliationEntry]
+    total_collected: float
+    total_pending: float

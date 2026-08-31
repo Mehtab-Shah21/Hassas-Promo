@@ -16,10 +16,10 @@ class AttendanceStatus(str, enum.Enum):
 
 class Attendance(TimestampMixin, Base):
     __tablename__ = "attendance"
-    __table_args__ = (UniqueConstraint("user_id", "date", name="uq_attendance_user_date"),)
+    __table_args__ = (UniqueConstraint("employee_id", "date", name="uq_attendance_employee_date"),)
 
     business_id: Mapped[int] = mapped_column(ForeignKey("businesses.id"), nullable=False, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id"), nullable=False, index=True)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[AttendanceStatus] = mapped_column(Enum(AttendanceStatus), nullable=False)
     note: Mapped[str | None] = mapped_column(String(500))

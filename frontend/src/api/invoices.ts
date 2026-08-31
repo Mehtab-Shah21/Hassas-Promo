@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { Invoice, InvoiceKpis, InvoiceStatus, PaginatedInvoices, TransactionType } from "./types";
+import type { Invoice, InvoiceKpis, InvoiceStatus, PaginatedInvoices, PaymentMethod } from "./types";
 
 export interface InvoiceItemPayload {
   service_id?: number | null;
@@ -16,7 +16,7 @@ export interface InvoiceItemPayload {
 export interface InvoiceCreatePayload {
   customer_id: number;
   employee_customer_id?: number | null;
-  transaction_type: TransactionType;
+  payment_method: PaymentMethod;
   invoice_date: string;
   due_date?: string | null;
   notes?: string | null;
@@ -63,7 +63,7 @@ export async function updateInvoiceStatus(id: number, status: InvoiceStatus): Pr
 
 export async function recordPayment(
   id: number,
-  payload: { amount: number; method: string; paid_on: string; reference?: string | null },
+  payload: { amount: number; method: string; paid_on: string; reference?: string | null; payment_method?: PaymentMethod },
 ): Promise<void> {
   await apiClient.post(`/api/invoices/${id}/payments`, payload);
 }

@@ -6,7 +6,7 @@ from app.models.attendance import AttendanceStatus
 
 
 class AttendanceMark(BaseModel):
-    user_id: int
+    employee_id: int
     date: date
     status: AttendanceStatus
     note: str | None = None
@@ -15,7 +15,7 @@ class AttendanceMark(BaseModel):
 class AttendanceResponse(BaseModel):
     id: int
     business_id: int
-    user_id: int
+    employee_id: int
     date: date
     status: AttendanceStatus
     note: str | None
@@ -24,8 +24,8 @@ class AttendanceResponse(BaseModel):
 
 
 class DayAttendanceEntry(BaseModel):
-    user_id: int
-    user_name: str
+    employee_id: int
+    employee_name: str
     status: AttendanceStatus | None
     note: str | None
 
@@ -36,8 +36,8 @@ class DayAttendanceResponse(BaseModel):
 
 
 class EmployeeTotals(BaseModel):
-    user_id: int
-    user_name: str
+    employee_id: int
+    employee_name: str
     present: int
     absent: int
     leave: int

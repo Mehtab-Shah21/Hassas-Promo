@@ -68,14 +68,14 @@ def sales_report(
                 "number": i.number,
                 "date": i.invoice_date.isoformat(),
                 "customer": customers.get(i.customer_id, "—"),
-                "type": i.transaction_type.value,
+                "payment_method": i.payment_method.value,
                 "status": i.status.value,
                 "total": float(i.grand_total),
             }
             for i in sorted(invoices, key=lambda x: x.invoice_date, reverse=True)
         ]
         if export == "csv":
-            return rows_to_csv_response("sales_by_invoice.csv", ["number", "date", "customer", "type", "status", "total"], rows)
+            return rows_to_csv_response("sales_by_invoice.csv", ["number", "date", "customer", "payment_method", "status", "total"], rows)
         return rows
 
     # by_service

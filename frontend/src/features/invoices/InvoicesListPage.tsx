@@ -114,7 +114,7 @@ export default function InvoicesListPage() {
             <tr>
               <th className="px-4 py-2">Number</th>
               <th className="px-4 py-2">Date</th>
-              <th className="px-4 py-2">Type</th>
+              <th className="px-4 py-2">Payment</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2 text-right">Total</th>
               <th className="px-4 py-2 text-right">Paid</th>
@@ -138,7 +138,7 @@ export default function InvoicesListPage() {
                 <tr key={inv.id} onClick={() => navigate(`/invoices/${inv.id}`)} className="cursor-pointer hover:bg-wash-1">
                   <td className="px-4 py-2 font-medium text-ink">{inv.number}</td>
                   <td className="px-4 py-2 text-muted">{inv.invoice_date}</td>
-                  <td className="px-4 py-2 capitalize text-muted">{inv.transaction_type}</td>
+                  <td className="px-4 py-2 capitalize text-muted">{inv.payment_method}</td>
                   <td className="px-4 py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_COLORS[inv.status]}`}>
                       {inv.status}

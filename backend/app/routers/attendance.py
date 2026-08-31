@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.deps import require_active_business_id, require_admin
 from app.models.attendance import Attendance, AttendanceStatus
-from app.models.user import User, UserRole
+from app.models.employee import Employee
 from app.schemas.attendance import (
     AttendanceMark,
     AttendanceResponse,
@@ -20,11 +20,11 @@ from app.services.audit import write_audit_log
 router = APIRouter(prefix="/api/attendance", tags=["attendance"])
 
 
-def _active_employees(db: Session) -> list[User]:
+def _active_employees(db: Session, business_id: int) -> list[Employee]:
     return (
-        db.query(User)
-        .filter(User.role == UserRole.employee, User.is_active.is_(True))
-        .order_by(User.first_name)
+        db.query(Employee)
+        .filter(Employee.business_id == business_id, Employee.is_active.is_(True))
+        .order_by(Employee.name)
         .all()
     )
 
@@ -38,7 +38,7 @@ def mark_attendance(
 ):
     existing = (
         db.query(Attendance)
-        .filter(Attendance.user_id == payload.user_id, Attendance.date == payload.date)
+        .filter(Attendance.employee_id == payload.employee_id, Attendance.date == payload.date)
         .first()
     )
     if existing:
@@ -48,7 +48,7 @@ def mark_attendance(
         write_audit_log(
             db, user_id=current_user.id, business_id=business_id, action="update",
             entity_type="attendance", entity_id=existing.id,
-            description=f"Marked user {payload.user_id} as {payload.status.value} on {payload.date}",
+            description=f"Marked employee {payload.employee_id} as {payload.status.value} on {payload.date}",
         )
         db.commit()
         db.refresh(existing)
@@ -56,7 +56,7 @@ def mark_attendance(
 
     record = Attendance(
         business_id=business_id,
-        user_id=payload.user_id,
+        employee_id=payload.employee_id,
         date=payload.date,
         status=payload.status,
         note=payload.note,
@@ -66,7 +66,7 @@ def mark_attendance(
     write_audit_log(
         db, user_id=current_user.id, business_id=business_id, action="create",
         entity_type="attendance", entity_id=record.id,
-        description=f"Marked user {payload.user_id} as {payload.status.value} on {payload.date}",
+        description=f"Marked employee {payload.employee_id} as {payload.status.value} on {payload.date}",
     )
     db.commit()
     db.refresh(record)
@@ -76,15 +76,19 @@ def mark_attendance(
 @router.get("/day", response_model=DayAttendanceResponse)
 def day_attendance(
     date_: date = Query(alias="date"),
+    business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
     current_user=Depends(require_admin),
 ):
-    employees = _active_employees(db)
-    records = {a.user_id: a for a in db.query(Attendance).filter(Attendance.date == date_).all()}
+    employees = _active_employees(db, business_id)
+    records = {
+        a.employee_id: a
+        for a in db.query(Attendance).filter(Attendance.business_id == business_id, Attendance.date == date_).all()
+    }
     entries = [
         DayAttendanceEntry(
-            user_id=emp.id,
-            user_name=emp.display_name or f"{emp.first_name} {emp.last_name or ''}".strip(),
+            employee_id=emp.id,
+            employee_name=emp.name,
             status=records[emp.id].status if emp.id in records else None,
             note=records[emp.id].note if emp.id in records else None,
         )
@@ -97,21 +101,26 @@ def day_attendance(
 def totals(
     date_from: date = Query(...),
     date_to: date = Query(...),
+    business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
     current_user=Depends(require_admin),
 ):
-    employees = _active_employees(db)
-    records = db.query(Attendance).filter(Attendance.date >= date_from, Attendance.date <= date_to).all()
+    employees = _active_employees(db, business_id)
+    records = (
+        db.query(Attendance)
+        .filter(Attendance.business_id == business_id, Attendance.date >= date_from, Attendance.date <= date_to)
+        .all()
+    )
 
     counts: dict[int, dict[str, int]] = {emp.id: {"present": 0, "absent": 0, "leave": 0} for emp in employees}
     for r in records:
-        if r.user_id in counts:
-            counts[r.user_id][r.status.value] += 1
+        if r.employee_id in counts:
+            counts[r.employee_id][r.status.value] += 1
 
     return [
         EmployeeTotals(
-            user_id=emp.id,
-            user_name=emp.display_name or f"{emp.first_name} {emp.last_name or ''}".strip(),
+            employee_id=emp.id,
+            employee_name=emp.name,
             present=counts[emp.id]["present"],
             absent=counts[emp.id]["absent"],
             leave=counts[emp.id]["leave"],
@@ -121,10 +130,17 @@ def totals(
 
 
 @router.get("/today-strip", response_model=TodayStrip)
-def today_strip(db: Session = Depends(get_db), current_user=Depends(require_admin)):
+def today_strip(
+    business_id: int = Depends(require_active_business_id),
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
     today = date.today()
-    employees = _active_employees(db)
-    records = {a.user_id: a.status for a in db.query(Attendance).filter(Attendance.date == today).all()}
+    employees = _active_employees(db, business_id)
+    records = {
+        a.employee_id: a.status
+        for a in db.query(Attendance).filter(Attendance.business_id == business_id, Attendance.date == today).all()
+    }
     present = sum(1 for e in employees if records.get(e.id) == AttendanceStatus.present)
     absent = sum(1 for e in employees if records.get(e.id) == AttendanceStatus.absent)
     leave = sum(1 for e in employees if records.get(e.id) == AttendanceStatus.leave)
