@@ -162,7 +162,9 @@ export default function AppShell() {
     }
   }, [collapsed]);
 
-  const visibleBusinesses = businesses.filter((b) => b.name === "Main" || isEnabled("iim"));
+  const visibleBusinesses = businesses.filter(
+    (b) => b.name === "Main" || (user?.role === "admin" && isEnabled("iim")),
+  );
   const visibleItems = NAV_ITEMS.filter(
     (item) => (!item.adminOnly || user?.role === "admin") && (!item.flag || isEnabled(item.flag)),
   );
