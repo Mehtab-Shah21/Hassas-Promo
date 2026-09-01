@@ -30,6 +30,7 @@ from app.services.pdf import (
     render_invoice_html,
     render_invoice_thermal_html,
     render_pdf,
+    resolve_page_border,
 )
 
 router = APIRouter(prefix="/api/invoices", tags=["invoices"])
@@ -346,7 +347,7 @@ def record_payment(
     return payment
 
 
-def _render_html_for_invoice(db: Session, invoice_id: int, business_id: int) -> str:
+def _render_html_for_invoice(db: Session, invoice_id: int, business_id: int, for_pdf: bool = False) -> str:
     invoice = (
         db.query(Invoice)
         .options(selectinload(Invoice.items))
@@ -367,6 +368,7 @@ def _render_html_for_invoice(db: Session, invoice_id: int, business_id: int) -> 
         customer=customer,
         employee=employee,
         coupon_code=coupon.code if coupon else None,
+        suppress_css_border=for_pdf,
     )
 
 
@@ -389,9 +391,10 @@ def download_invoice_pdf(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    html = _render_html_for_invoice(db, invoice_id, business_id)
+    html = _render_html_for_invoice(db, invoice_id, business_id, for_pdf=True)
+    business = db.get(Business, business_id)
     try:
-        pdf_bytes = render_pdf(html)
+        pdf_bytes = render_pdf(html, page_border=resolve_page_border(business, "invoice"))
     except PdfEngineUnavailable as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     return Response(content=pdf_bytes, media_type="application/pdf")

@@ -28,6 +28,7 @@ from app.services.pdf import (
     render_pdf,
     render_quotation_html,
     render_quotation_thermal_html,
+    resolve_page_border,
 )
 
 router = APIRouter(prefix="/api/quotations", tags=["quotations"])
@@ -314,7 +315,7 @@ def convert_to_invoice(
     return {"invoice_id": invoice.id, "invoice_number": invoice.number}
 
 
-def _render_html_for_quotation(db: Session, quotation_id: int, business_id: int) -> str:
+def _render_html_for_quotation(db: Session, quotation_id: int, business_id: int, for_pdf: bool = False) -> str:
     quotation = (
         db.query(Quotation).options(selectinload(Quotation.items)).filter(Quotation.id == quotation_id).first()
     )
@@ -327,7 +328,12 @@ def _render_html_for_quotation(db: Session, quotation_id: int, business_id: int)
     coupon = db.get(Coupon, quotation.coupon_id) if quotation.coupon_id else None
 
     return render_quotation_html(
-        quotation=quotation, business=business, customer=customer, employee=employee, coupon_code=coupon.code if coupon else None
+        quotation=quotation,
+        business=business,
+        customer=customer,
+        employee=employee,
+        coupon_code=coupon.code if coupon else None,
+        suppress_css_border=for_pdf,
     )
 
 
@@ -348,9 +354,10 @@ def download_quotation_pdf(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    html = _render_html_for_quotation(db, quotation_id, business_id)
+    html = _render_html_for_quotation(db, quotation_id, business_id, for_pdf=True)
+    business = db.get(Business, business_id)
     try:
-        pdf_bytes = render_pdf(html)
+        pdf_bytes = render_pdf(html, page_border=resolve_page_border(business, "quotation"))
     except PdfEngineUnavailable as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     return Response(content=pdf_bytes, media_type="application/pdf")

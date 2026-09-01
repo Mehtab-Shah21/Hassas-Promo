@@ -54,6 +54,20 @@ DEFAULT_TEMPLATE_CONFIG = {
 # much larger than "normal", not a naive 2x/3x jump).
 MARGIN_MM = {"narrow": 4, "normal": 6, "wide": 7}
 
+# A4 in points, and the page-border geometry: xhtml2pdf can't draw a single
+# border around the whole page from CSS (see the long comment in
+# document.html.jinja2's <style> for what was tried and why it broke), so
+# _add_page_border draws it directly with reportlab and merges it onto
+# every rendered page instead — used only for the actual PDF. The on-screen
+# preview is rendered by a real browser (no xhtml2pdf involved), where a
+# plain CSS border on body works correctly with no such bug, so the
+# template still carries a CSS border + min-height for that path; render_*
+# calls headed for xhtml2pdf pass suppress_css_border=True to keep it out
+# of xhtml2pdf's own input so the two border techniques never stack.
+A4_HEIGHT_MM = 297
+A4_WIDTH_PT = 210 * 72 / 25.4
+A4_HEIGHT_PT = 297 * 72 / 25.4
+
 # xhtml2pdf/reportlab only reliably renders its 3 built-in generic families —
 # every other named font (DejaVu, Georgia, Inter, ...) silently falls back to
 # one of these regardless of what's requested (verified: custom @font-face
@@ -217,14 +231,25 @@ def render_document_html(
     terms: str | None,
     config_override: dict | None = None,
     base_url: str | None = None,
+    suppress_css_border: bool = False,
 ) -> str:
     template = _env.get_template("document.html.jinja2")
     config = resolve_template_config(business, doc_kind, config_override)
+    if suppress_css_border:
+        # xhtml2pdf's CSS border sits in front of this HTML — the browser
+        # preview handles it fine, xhtml2pdf doesn't (see the <style>
+        # comment). The real PDF's border is drawn separately by
+        # _add_page_border() in render_pdf(), so this HTML must not carry
+        # the CSS one at all or the PDF ends up with both.
+        config = dict(config)
+        config["show_border"] = False
     date_fmt = _py_date_format(business.date_format)
     currency = _currency_symbol(business)
     logo_uri, logo_width, logo_height = (
         _logo_info(business, base_url, 200, 60) if config["logo_enabled"] else (None, None, None)
     )
+    margin_mm = MARGIN_MM.get(config["margins"], 6)
+    body_min_height_mm = A4_HEIGHT_MM - 4 * margin_mm  # @page margin + body margin, top and bottom
 
     return template.render(
         doc_type=doc_type,
@@ -255,13 +280,21 @@ def render_document_html(
         logo_uri=logo_uri,
         logo_width=logo_width,
         logo_height=logo_height,
-        margin_mm=MARGIN_MM.get(config["margins"], 6),
+        margin_mm=margin_mm,
+        body_min_height_mm=body_min_height_mm,
         config=config,
         amount_in_words=number_to_words(grand_total, business.base_currency) if config["show_amount_in_words"] else None,
     )
 
 
-def render_invoice_html(invoice, business: Business, customer: Customer, employee: Customer | None, coupon_code: str | None = None) -> str:
+def render_invoice_html(
+    invoice,
+    business: Business,
+    customer: Customer,
+    employee: Customer | None,
+    coupon_code: str | None = None,
+    suppress_css_border: bool = False,
+) -> str:
     return render_document_html(
         doc_kind="invoice",
         doc_type="Tax Invoice",
@@ -285,10 +318,18 @@ def render_invoice_html(invoice, business: Business, customer: Customer, employe
         amount_paid=float(invoice.amount_paid),
         notes=invoice.notes,
         terms=invoice.terms,
+        suppress_css_border=suppress_css_border,
     )
 
 
-def render_quotation_html(quotation, business: Business, customer: Customer, employee: Customer | None, coupon_code: str | None = None) -> str:
+def render_quotation_html(
+    quotation,
+    business: Business,
+    customer: Customer,
+    employee: Customer | None,
+    coupon_code: str | None = None,
+    suppress_css_border: bool = False,
+) -> str:
     return render_document_html(
         doc_kind="quotation",
         doc_type="Quotation",
@@ -312,6 +353,7 @@ def render_quotation_html(quotation, business: Business, customer: Customer, emp
         amount_paid=0.0,
         notes=quotation.notes,
         terms=quotation.terms,
+        suppress_css_border=suppress_css_border,
     )
 
 
@@ -580,12 +622,60 @@ def _resolve_local_uri(uri: str, _rel: str | None) -> str:
     return uri
 
 
-def render_pdf(html: str) -> bytes:
+def resolve_page_border(business: Business, doc_kind: str, config_override: dict | None = None) -> tuple[bool, float]:
+    """What render_pdf needs to draw the page border overlay, resolved from
+    the same per-business/per-doc-type Design Studio config used for the
+    HTML — kept as a tiny separate lookup since render_pdf only receives
+    raw HTML, not the business/config that produced it."""
+    config = resolve_template_config(business, doc_kind, config_override)
+    return bool(config["show_border"]), MARGIN_MM.get(config["margins"], 6)
+
+
+def _add_page_border(pdf_bytes: bytes, margin_mm: float) -> bytes:
+    """Draws one rectangle border on every page and merges it onto the
+    already-rendered PDF, instead of trying to get xhtml2pdf's CSS box
+    model to draw it (see document.html.jinja2's <style> comment for the
+    two CSS approaches that were tried and why both broke). This sidesteps
+    xhtml2pdf entirely, so it reliably spans the full page between the
+    same margins the content uses, on every page of a multi-page document,
+    independent of how much content is on any given page."""
+    import io
+
+    from pypdf import PdfReader, PdfWriter
+    from reportlab.pdfgen import canvas
+
+    inset_pt = (2 * margin_mm) * 72 / 25.4  # @page margin + body's own margin, matching the content's visible edge
+
+    overlay_buf = io.BytesIO()
+    c = canvas.Canvas(overlay_buf, pagesize=(A4_WIDTH_PT, A4_HEIGHT_PT))
+    c.setStrokeColorRGB(226 / 255, 232 / 255, 240 / 255)
+    c.setLineWidth(0.75)
+    c.rect(inset_pt, inset_pt, A4_WIDTH_PT - 2 * inset_pt, A4_HEIGHT_PT - 2 * inset_pt, stroke=1, fill=0)
+    c.save()
+    overlay_buf.seek(0)
+    overlay_page = PdfReader(overlay_buf).pages[0]
+
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    writer = PdfWriter()
+    for page in reader.pages:
+        page.merge_page(overlay_page)
+        writer.add_page(page)
+
+    out = io.BytesIO()
+    writer.write(out)
+    return out.getvalue()
+
+
+def render_pdf(html: str, page_border: tuple[bool, float] | None = None) -> bytes:
     """xhtml2pdf is pure Python (no native GTK/Pango runtime, unlike
     WeasyPrint) so it bundles cleanly into a PyInstaller exe — see
     packaging/README.md. Its HTML/CSS support is weaker than WeasyPrint's
     (no flexbox/grid, limited box model) — see QUESTIONS.md for what that
-    means for the shared template's fidelity."""
+    means for the shared template's fidelity.
+
+    page_border, from resolve_page_border(), is (show_border, margin_mm)
+    for an A4 invoice/quotation — omitted (None) for thermal receipts,
+    which have no such setting and a different page geometry entirely."""
     import io
 
     from xhtml2pdf import pisa
@@ -594,4 +684,7 @@ def render_pdf(html: str) -> bytes:
     result = pisa.CreatePDF(src=html, dest=buffer, link_callback=_resolve_local_uri)
     if result.err:
         raise PdfEngineUnavailable(f"xhtml2pdf failed to render the PDF (err={result.err}).")
-    return buffer.getvalue()
+    pdf_bytes = buffer.getvalue()
+    if page_border and page_border[0]:
+        pdf_bytes = _add_page_border(pdf_bytes, page_border[1])
+    return pdf_bytes

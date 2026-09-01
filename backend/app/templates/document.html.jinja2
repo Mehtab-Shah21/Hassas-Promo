@@ -23,7 +23,27 @@
      margin_mm (4/6/8, from the Design Studio Margins control: narrow/
      normal/wide) stays capped at 8mm for the same reason — stress-tested
      up to that point across every preset/table-style/font-size/content
-     combination, still one page every time. #}
+     combination, still one page every time.
+
+     The border/min-height below is for the on-screen preview ONLY — a
+     real browser (this HTML is shown via a srcDoc iframe, no xhtml2pdf
+     involved) draws a body border as one box exactly as CSS says, so it's
+     safe here. It is NOT safe for xhtml2pdf: verified by rendering to an
+     actual image, `border` set directly on body got redrawn by xhtml2pdf
+     around EVERY direct child block instead of once around the page (the
+     parties table, the notes/terms table, the footer each got their own
+     separate box), and wrapping everything in one outer single-cell table
+     so there was only one element to draw a border on — the usual
+     xhtml2pdf fix for "border applies to every row" bugs elsewhere in
+     this file — broke width instead: the nested table collapsed to a
+     sliver on the left of the page regardless of width:100%/table-layout:
+     fixed on both the table and the cell (a reportlab limitation with
+     percentage widths more than one table deep). So the actual PDF's
+     border is drawn separately in Python (pdf.py, _add_page_border) as a
+     reportlab canvas rectangle merged onto each page — and render_*_html
+     calls headed for xhtml2pdf pass suppress_css_border=True so this CSS
+     border/min-height never reaches xhtml2pdf's input at all, only the
+     browser preview's. #}
   @page { size: A4; margin: {{ margin_mm }}mm; }
   * { box-sizing: border-box; }
   body {
@@ -32,8 +52,10 @@
     line-height: 1.45;
     color: #1e293b;
     margin: {{ margin_mm }}mm;
-    {% if config.show_border %}border: 1px solid #e2e8f0;{% endif %}
-    position: relative;
+    {% if config.show_border %}
+    border: 1px solid #e2e8f0;
+    min-height: {{ body_min_height_mm }}mm;
+    {% endif %}
   }
   .accent { color: {{ accent_color }}; }
   .primary { color: {{ primary_color }}; }
