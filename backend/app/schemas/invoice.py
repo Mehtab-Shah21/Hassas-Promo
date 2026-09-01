@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.models.invoice import ClearedStatus, InvoiceStatus, PaymentMethod
 
@@ -41,7 +41,7 @@ class InvoiceItemResponse(BaseModel):
 
 
 class PaymentCreate(BaseModel):
-    amount: float
+    amount: float = Field(gt=0)
     method: str
     paid_on: date
     reference: str | None = None

@@ -138,9 +138,10 @@ def create_notification(
     customer = db.get(Customer, payload.customer_id)
     if not customer or customer.business_id != business_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer not found")
-    service = db.get(Service, payload.service_id)
-    if not service or service.business_id != business_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Service not found")
+    if payload.service_id is not None:
+        service = db.get(Service, payload.service_id)
+        if not service or service.business_id != business_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Service not found")
 
     notification = Notification(
         business_id=business_id,
@@ -178,7 +179,7 @@ def update_notification(
     if not notification or notification.business_id != business_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found")
     data = payload.model_dump(exclude_unset=True)
-    if "service_id" in data:
+    if data.get("service_id") is not None:
         service = db.get(Service, data["service_id"])
         if not service or service.business_id != business_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Service not found")

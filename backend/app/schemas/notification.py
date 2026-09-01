@@ -20,7 +20,7 @@ class ReminderResponse(BaseModel):
 
 class NotificationCreate(BaseModel):
     customer_id: int
-    service_id: int
+    service_id: int | None = None
     note: str | None = None
     target_date: date
     visibility_modules: list[str] = []

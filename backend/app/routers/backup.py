@@ -50,6 +50,13 @@ def get_settings(db: Session = Depends(get_db), current_user=Depends(require_adm
 def update_settings(
     payload: BackupSettingsUpdate, db: Session = Depends(get_db), current_user=Depends(require_admin)
 ):
+    if payload.backup_folder is None:
+        row = _get_or_create_settings(db)
+        row.backup_folder = None
+        db.commit()
+        db.refresh(row)
+        return row
+
     folder = Path(payload.backup_folder)
     try:
         folder.mkdir(parents=True, exist_ok=True)

@@ -10,7 +10,7 @@ class BackupSettingsResponse(BaseModel):
 
 
 class BackupSettingsUpdate(BaseModel):
-    backup_folder: str
+    backup_folder: str | None
 
 
 class BackupFileInfo(BaseModel):
