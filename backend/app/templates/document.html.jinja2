@@ -4,10 +4,10 @@
 <meta charset="utf-8" />
 <title>{{ doc_type }} {{ number }}</title>
 <style>
-  @page { size: A4; margin: 22mm 18mm; }
+  @page { size: A4; margin: 16mm; }
   * { box-sizing: border-box; }
   body {
-    font-family: {{ 'DejaVu Serif, Georgia, serif' if config.font_family == 'serif' else 'DejaVu Sans, Arial, sans-serif' }};
+    font-family: {{ font_family_css }};
     font-size: {{ '9.5pt' if config.font_size == 'small' else '12pt' if config.font_size == 'large' else '10.5pt' }};
     line-height: 1.45;
     color: #1e293b;
@@ -33,7 +33,7 @@
     font-size: 1.9em;
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.3pt;
     color: {{ primary_color }};
     text-align: right;
     margin: 0 0 4px;
@@ -55,7 +55,7 @@
   table.parties td { width: 50%; vertical-align: top; }
   table.parties td.party-right { text-align: right; }
   .party-label {
-    font-size: 0.76em; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; font-weight: bold;
+    font-size: 0.76em; text-transform: uppercase; letter-spacing: 0.5pt; color: #94a3b8; font-weight: bold;
     margin-bottom: 5px;
     {% if config.layout_preset == 'modern' %}border-left: 3px solid {{ accent_color }}; padding-left: 6px;{% endif %}
   }
@@ -69,7 +69,7 @@
     color: white;
     font-size: 0.8em;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.4pt;
     padding: 8px 10px;
     text-align: left;
   }
@@ -105,30 +105,36 @@
   .amount-words { margin-top: 10px; font-size: 0.85em; font-style: italic; color: #475569; text-align: right; }
   table.notes-terms { width: 100%; border-collapse: collapse; margin-top: 22px; font-size: 0.85em; }
   table.notes-terms td { width: 50%; vertical-align: top; padding-right: 12px; }
-  .notes-terms .label { font-size: 0.76em; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
+  .notes-terms .label { font-size: 0.76em; text-transform: uppercase; letter-spacing: 0.5pt; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
   .notes-terms .body-text { line-height: 1.5; }
   .bank { margin-top: 16px; font-size: 0.85em; border: 1px solid #e2e8f0; padding: 12px; border-radius: 4px; }
-  .bank .label { font-size: 0.76em; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
+  .bank .label { font-size: 0.76em; text-transform: uppercase; letter-spacing: 0.5pt; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
   .bank .body-text { line-height: 1.6; }
   .signature { margin-top: 40px; font-size: 0.85em; }
   .signature .line { width: 220px; border-top: 1px solid #334155; padding-top: 4px; color: #64748b; }
   .footer { margin-top: 24px; text-align: center; font-size: 0.8em; color: #94a3b8; }
   .status-badge {
     display: inline-block; padding: 3px 11px; border-radius: 10px;
-    font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.03em; font-weight: bold;
+    font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.4pt; font-weight: bold;
     background: #f1f5f9; color: {{ accent_color }};
   }
-  .watermark {
-    position: fixed; top: 40%; left: 10%; width: 80%;
-    font-size: 80pt; font-weight: bold; color: {{ accent_color }};
-    opacity: 0.08; transform: rotate(-30deg); text-align: center;
-    text-transform: uppercase; z-index: -1;
-  }
+
+  {% if config.layout_preset == 'minimal' %}
+  {# Minimal: no borders/fills, just generous whitespace and lightweight
+     type — overrides the base (non-preset) rules above, which is safe
+     since these declarations come later in the stylesheet. #}
+  table.header { border-bottom: none; }
+  table.header td { padding-bottom: 20px; }
+  .biz-name { font-weight: normal; }
+  table.items th { background: white; color: #64748b; border-bottom: 2px solid #1e293b; font-weight: normal; }
+  table.items td { border-bottom: 1px solid #f8fafc; padding: 10px; }
+  .status-badge { background: white; border: 1px solid #e2e8f0; }
+  .totals tr.grand td { border-top: 2px solid #1e293b; background: white; color: #1e293b; }
+  .totals tr.grand td.label { color: #1e293b; }
+  {% endif %}
 </style>
 </head>
 <body>
-
-  {% if config.show_watermark %}<div class="watermark">{{ status }}</div>{% endif %}
 
   <table class="header">
     <tr>

@@ -5,9 +5,11 @@ import {
   fetchThermalPreviewHtml,
   getDefaultTemplateConfig,
   getDefaultThermalConfig,
+  type DocKind,
   type TemplateConfig,
   type ThermalConfig,
 } from "../../api/designStudio";
+import type { Business } from "../../api/types";
 import { useBusiness } from "../../context/BusinessContext";
 
 const BILL_TO_FIELD_OPTIONS = [
@@ -24,27 +26,85 @@ const COLOR_PRESETS: { name: string; primary: string; accent: string }[] = [
   { name: "Rose / Amber", primary: "#E11D48", accent: "#D97706" },
   { name: "Blue / Cyan", primary: "#1D4ED8", accent: "#0891B2" },
   { name: "Amber / Orange", primary: "#B45309", accent: "#EA580C" },
+  { name: "Charcoal / Gold", primary: "#292524", accent: "#CA8A04" },
+  { name: "Forest / Lime", primary: "#166534", accent: "#65A30D" },
+];
+
+// The only 3 fonts xhtml2pdf reliably renders in the actual PDF (verified —
+// custom @font-face TTF embedding fails on this stack even with a valid
+// local file). Named for what they really are, not for a font we can't
+// deliver — the live preview and the PDF always show the same one.
+const FONT_FAMILY_OPTIONS: { value: TemplateConfig["font_family"]; label: string }[] = [
+  { value: "sans", label: "Sans-serif (Helvetica)" },
+  { value: "serif", label: "Serif (Times)" },
+  { value: "mono", label: "Monospace (Courier)" },
+];
+
+const LAYOUT_PRESETS: { value: TemplateConfig["layout_preset"]; title: string; description: string }[] = [
+  { value: "classic", title: "Classic", description: "White header, colored heading text, bottom border." },
+  { value: "modern", title: "Modern", description: "Full-width colored header band with white text." },
+  { value: "minimal", title: "Minimal", description: "No fills or borders, generous spacing, lightweight type." },
 ];
 
 export default function DesignStudioPage() {
   const { activeBusiness } = useBusiness();
-  const [tab, setTab] = useState<"a4" | "thermal">("a4");
+  const [topTab, setTopTab] = useState<"a4" | "thermal" | "barcode">("a4");
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-ink">Design Studio — {activeBusiness?.name}</h1>
         <div className="flex gap-2">
-          <TabButton active={tab === "a4"} onClick={() => setTab("a4")}>
-            A4 Invoice
+          <TabButton active={topTab === "a4"} onClick={() => setTopTab("a4")}>
+            A4 Documents
           </TabButton>
-          <TabButton active={tab === "thermal"} onClick={() => setTab("thermal")}>
+          <TabButton active={topTab === "thermal"} onClick={() => setTopTab("thermal")}>
             Thermal Receipt
+          </TabButton>
+          <TabButton active={topTab === "barcode"} onClick={() => setTopTab("barcode")}>
+            Barcode Labels
           </TabButton>
         </div>
       </div>
 
-      {tab === "a4" ? <A4Tab /> : <ThermalTab />}
+      {topTab === "a4" && <A4DocumentsTab />}
+      {topTab === "thermal" && <ThermalTab />}
+      {topTab === "barcode" && <PlaceholderPanel title="Barcode Labels" note="Not built yet — this is a placeholder tab, not a working design." />}
+    </div>
+  );
+}
+
+function A4DocumentsTab() {
+  const [docType, setDocType] = useState<DocKind | "delivery_note">("invoice");
+
+  return (
+    <div>
+      <div className="mb-4 flex gap-2">
+        <TabButton active={docType === "invoice"} onClick={() => setDocType("invoice")}>
+          Invoice
+        </TabButton>
+        <TabButton active={docType === "quotation"} onClick={() => setDocType("quotation")}>
+          Quotation
+        </TabButton>
+        <TabButton active={docType === "delivery_note"} onClick={() => setDocType("delivery_note")}>
+          Delivery Note
+        </TabButton>
+      </div>
+
+      {docType === "delivery_note" ? (
+        <PlaceholderPanel title="Delivery Note" note="Not a document type this app generates — this is a labeled placeholder, not a faked design." />
+      ) : (
+        <A4ConfigEditor docType={docType} />
+      )}
+    </div>
+  );
+}
+
+function PlaceholderPanel({ title, note }: { title: string; note: string }) {
+  return (
+    <div className="rounded-lg border border-dashed border-line bg-surface p-10 text-center">
+      <p className="text-sm font-semibold text-ink">{title}</p>
+      <p className="mt-1 text-sm text-muted">{note}</p>
     </div>
   );
 }
@@ -63,7 +123,21 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-function A4Tab() {
+/** Reads the "other" document type's already-saved config out of the raw
+ * stored template_config JSON, so saving one doc type's tab never destroys
+ * the other's. Handles both the new {invoice:{},quotation:{}} shape and a
+ * pre-existing flat config (legacy — applied to both kinds). */
+function otherDocConfig(business: Business, thisDocType: DocKind): Record<string, unknown> | undefined {
+  const stored = business.template_config;
+  if (!stored || typeof stored !== "object") return undefined;
+  const otherKey: DocKind = thisDocType === "invoice" ? "quotation" : "invoice";
+  const nested = stored[otherKey];
+  if (nested && typeof nested === "object") return nested as Record<string, unknown>;
+  if ("primary_color" in stored) return stored;
+  return undefined;
+}
+
+function A4ConfigEditor({ docType }: { docType: DocKind }) {
   const { activeBusiness, refreshBusinesses } = useBusiness();
   const [config, setConfig] = useState<TemplateConfig | null>(null);
   const [previewHtml, setPreviewHtml] = useState("");
@@ -71,23 +145,31 @@ function A4Tab() {
   const [message, setMessage] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  function loadConfig() {
     if (!activeBusiness) return;
-    getDefaultTemplateConfig().then((defaults) => {
-      setConfig({ ...defaults, ...(activeBusiness.template_config as Partial<TemplateConfig> | null) });
+    getDefaultTemplateConfig(docType).then((defaults) => {
+      const stored = activeBusiness.template_config as Record<string, unknown> | null;
+      const nested = stored && typeof stored[docType] === "object" ? (stored[docType] as Partial<TemplateConfig>) : null;
+      const legacyFlat = stored && "primary_color" in stored ? (stored as unknown as Partial<TemplateConfig>) : null;
+      setConfig({ ...defaults, ...(nested ?? legacyFlat ?? {}) });
     });
-  }, [activeBusiness?.id]);
+  }
+
+  useEffect(() => {
+    loadConfig();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeBusiness?.id, docType]);
 
   useEffect(() => {
     if (!config) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      fetchPreviewHtml(config).then(setPreviewHtml);
+      fetchPreviewHtml(docType, config).then(setPreviewHtml);
     }, 300);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [config]);
+  }, [config, docType]);
 
   function set<K extends keyof TemplateConfig>(key: K, value: TemplateConfig[K]) {
     setConfig((c) => (c ? { ...c, [key]: value } : c));
@@ -104,12 +186,22 @@ function A4Tab() {
     setSaving(true);
     setMessage(null);
     try {
-      await updateBusiness(activeBusiness.id, { template_config: config as unknown as Record<string, unknown> });
+      const other = otherDocConfig(activeBusiness, docType);
+      const merged = {
+        invoice: docType === "invoice" ? config : other,
+        quotation: docType === "quotation" ? config : other,
+      };
+      await updateBusiness(activeBusiness.id, { template_config: merged as unknown as Record<string, unknown> });
       await refreshBusinesses();
-      setMessage("Saved. This design now drives the live invoice PDF.");
+      setMessage(`Saved. This design now drives the live ${docType} PDF.`);
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleReset() {
+    setMessage(null);
+    loadConfig();
   }
 
   if (!config) return <p className="text-sm text-muted">Loading...</p>;
@@ -119,6 +211,9 @@ function A4Tab() {
       <div className="mb-4 flex justify-end">
         <div className="flex items-center gap-3">
           {message && <span className="text-sm text-accent-green">{message}</span>}
+          <button onClick={handleReset} className="rounded-md border border-line px-4 py-2 text-sm font-medium hover:bg-wash-1">
+            Reset
+          </button>
           <button
             onClick={handleSave}
             disabled={saving}
@@ -131,23 +226,36 @@ function A4Tab() {
 
       <div className="grid grid-cols-3 gap-6">
         <div className="space-y-5">
+          <Section title="Layout Template">
+            <div className="grid grid-cols-2 gap-2.5">
+              {LAYOUT_PRESETS.map((preset) => (
+                <button
+                  key={preset.value}
+                  type="button"
+                  onClick={() => set("layout_preset", preset.value)}
+                  className={`rounded-md border p-2 text-left ${
+                    config.layout_preset === preset.value ? "border-accent bg-accent/5" : "border-line hover:bg-wash-1"
+                  }`}
+                >
+                  <LayoutThumbnail preset={preset.value} primary={config.primary_color} accent={config.accent_color} />
+                  <p className="mt-1.5 text-xs font-semibold text-ink">{preset.title}</p>
+                  <p className="text-[11px] leading-snug text-muted">{preset.description}</p>
+                </button>
+              ))}
+            </div>
+          </Section>
+
           <Section title="Colors">
-            <FieldRow label="Primary color">
-              <input type="color" value={config.primary_color} onChange={(e) => set("primary_color", e.target.value)} className="h-9 w-16 rounded border border-line bg-bg" />
-            </FieldRow>
-            <FieldRow label="Accent color">
-              <input type="color" value={config.accent_color} onChange={(e) => set("accent_color", e.target.value)} className="h-9 w-16 rounded border border-line bg-bg" />
-            </FieldRow>
             <div>
               <span className="mb-1.5 block text-sm text-muted">Presets</span>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 {COLOR_PRESETS.map((preset) => (
                   <button
                     key={preset.name}
                     type="button"
                     title={preset.name}
                     onClick={() => setConfig((c) => (c ? { ...c, primary_color: preset.primary, accent_color: preset.accent } : c))}
-                    className={`h-7 w-7 rounded-full border-2 ${
+                    className={`h-8 w-8 rounded-full border-2 ${
                       config.primary_color === preset.primary && config.accent_color === preset.accent
                         ? "border-ink"
                         : "border-line"
@@ -157,19 +265,28 @@ function A4Tab() {
                 ))}
               </div>
             </div>
+            <FieldRow label="Primary">
+              <div className="flex items-center gap-2">
+                <input type="color" value={config.primary_color} onChange={(e) => set("primary_color", e.target.value)} className="h-8 w-10 rounded border border-line bg-bg" />
+                <span className="font-mono text-xs text-muted">{config.primary_color}</span>
+              </div>
+            </FieldRow>
+            <FieldRow label="Accent">
+              <div className="flex items-center gap-2">
+                <input type="color" value={config.accent_color} onChange={(e) => set("accent_color", e.target.value)} className="h-8 w-10 rounded border border-line bg-bg" />
+                <span className="font-mono text-xs text-muted">{config.accent_color}</span>
+              </div>
+            </FieldRow>
           </Section>
 
-          <Section title="Layout & Typography">
-            <FieldRow label="Layout preset">
-              <select value={config.layout_preset} onChange={(e) => set("layout_preset", e.target.value)} className="rounded-md border border-line bg-bg px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none">
-                <option value="classic">Classic</option>
-                <option value="modern">Modern</option>
-              </select>
-            </FieldRow>
+          <Section title="Typography">
             <FieldRow label="Font family">
               <select value={config.font_family} onChange={(e) => set("font_family", e.target.value as TemplateConfig["font_family"])} className="rounded-md border border-line bg-bg px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none">
-                <option value="sans">Sans-serif</option>
-                <option value="serif">Serif</option>
+                {FONT_FAMILY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </FieldRow>
             <FieldRow label="Font size">
@@ -204,17 +321,16 @@ function A4Tab() {
             </FieldRow>
           </Section>
 
-          <Section title="Content">
+          <Section title="Content Options">
             <Checkbox label="Sender block (From)" checked={config.show_sender_block} onChange={(v) => set("show_sender_block", v)} />
             <Checkbox label="Tax (VAT) breakdown" checked={config.show_tax_breakdown} onChange={(v) => set("show_tax_breakdown", v)} />
             <Checkbox label="Notes" checked={config.show_notes} onChange={(v) => set("show_notes", v)} />
             <Checkbox label="Terms & conditions" checked={config.show_terms} onChange={(v) => set("show_terms", v)} />
             <Checkbox label="Signature line" checked={config.show_signature} onChange={(v) => set("show_signature", v)} />
-            <Checkbox label="Watermark (status)" checked={config.show_watermark} onChange={(v) => set("show_watermark", v)} />
             <Checkbox label="Amount in words" checked={config.show_amount_in_words} onChange={(v) => set("show_amount_in_words", v)} />
           </Section>
 
-          <Section title="Bill-To fields">
+          <Section title="Customer Details">
             {BILL_TO_FIELD_OPTIONS.map((opt) => (
               <Checkbox key={opt.key} label={opt.label} checked={config.bill_to_fields.includes(opt.key)} onChange={() => toggleBillToField(opt.key)} />
             ))}
@@ -222,12 +338,46 @@ function A4Tab() {
         </div>
 
         <div className="col-span-2 rounded-lg border border-line bg-bg p-4">
-          <p className="mb-2 text-xs font-medium uppercase text-muted">Live preview (sample data)</p>
+          <p className="mb-2 text-xs font-medium uppercase text-muted">Live preview — {docType} (sample data)</p>
           <div className="overflow-hidden rounded-md border border-line bg-surface shadow-raised" style={{ aspectRatio: "1 / 1.3" }}>
-            <iframe title="Invoice preview" srcDoc={previewHtml} className="h-full w-full" style={{ border: "none" }} />
+            <iframe title="Document preview" srcDoc={previewHtml} className="h-full w-full" style={{ border: "none" }} />
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LayoutThumbnail({ preset, primary, accent }: { preset: TemplateConfig["layout_preset"]; primary: string; accent: string }) {
+  if (preset === "modern") {
+    return (
+      <div className="h-14 w-full overflow-hidden rounded border border-line bg-white">
+        <div className="h-4 w-full" style={{ background: primary }} />
+        <div className="mt-1.5 space-y-1 px-1.5">
+          <div className="h-1 w-3/4 rounded-sm bg-slate-200" />
+          <div className="h-1 w-1/2 rounded-sm bg-slate-200" />
+        </div>
+      </div>
+    );
+  }
+  if (preset === "minimal") {
+    return (
+      <div className="h-14 w-full overflow-hidden rounded border border-line bg-white p-1.5">
+        <div className="h-1 w-1/3 rounded-sm bg-slate-300" />
+        <div className="mt-2.5 space-y-1.5">
+          <div className="h-0.5 w-full bg-slate-100" />
+          <div className="h-0.5 w-full bg-slate-100" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="h-14 w-full overflow-hidden rounded border border-line bg-white p-1.5">
+      <div className="flex items-center justify-between border-b-2 pb-1" style={{ borderColor: primary }}>
+        <div className="h-1.5 w-1/3 rounded-sm bg-slate-300" />
+        <div className="h-1.5 w-1/4 rounded-sm" style={{ background: accent }} />
+      </div>
+      <div className="mt-1.5 h-1 w-full rounded-sm bg-slate-200" />
     </div>
   );
 }

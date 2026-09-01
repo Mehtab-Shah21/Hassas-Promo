@@ -26,10 +26,10 @@ UPLOAD_DIR = Path(settings.upload_dir)
 _env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=True)
 
 DEFAULT_TEMPLATE_CONFIG = {
-    "layout_preset": "classic",
+    "layout_preset": "classic",  # classic | modern | minimal
     "primary_color": "#4F46E5",
     "accent_color": "#7C3AED",
-    "font_family": "sans",  # sans | serif
+    "font_family": "sans",  # sans | serif | mono — see FONT_FAMILY_CSS below
     "font_size": "normal",  # small | normal | large
     "logo_enabled": True,
     "logo_position": "left",  # left | center | right
@@ -38,17 +38,40 @@ DEFAULT_TEMPLATE_CONFIG = {
     "show_notes": True,
     "show_terms": True,
     "show_signature": False,
-    "show_watermark": False,
     "show_amount_in_words": False,
     "table_style": "simple",  # simple | striped | bordered
     "bill_to_fields": ["email", "phone", "address", "tax_id"],
 }
 
+# xhtml2pdf/reportlab only reliably renders its 3 built-in generic families —
+# every other named font (DejaVu, Georgia, Inter, ...) silently falls back to
+# one of these regardless of what's requested (verified: custom @font-face
+# TTF embedding fails on this stack even with a valid local file — the
+# in-flow CSS keyword is what actually decides the output font). So the
+# config only offers these three, honestly labeled, and the CSS names them
+# for what they really render as rather than pretending otherwise.
+FONT_FAMILY_CSS = {
+    "sans": "Helvetica, Arial, sans-serif",
+    "serif": "Times-Roman, Georgia, serif",
+    "mono": "Courier, monospace",
+}
 
-def resolve_template_config(business: Business, override: dict | None = None) -> dict:
+DOC_KINDS = ("invoice", "quotation")
+
+
+def resolve_template_config(business: Business, doc_kind: str, override: dict | None = None) -> dict:
+    """template_config is one JSON blob shaped {"invoice": {...}, "quotation": {...}}
+    so each document type has its own saved design. A pre-existing flat config
+    (saved before per-document-type configs existed) is treated as applying to
+    both kinds — this needs no Alembic migration since it's read/written
+    entirely in Python against the existing JSON column."""
     config = dict(DEFAULT_TEMPLATE_CONFIG)
-    if business.template_config and isinstance(business.template_config, dict):
-        config.update(business.template_config)
+    stored = business.template_config
+    if isinstance(stored, dict):
+        if isinstance(stored.get(doc_kind), dict):
+            config.update(stored[doc_kind])
+        elif "primary_color" in stored or "layout_preset" in stored:
+            config.update(stored)
     if override:
         config.update(override)
     return config
@@ -123,6 +146,7 @@ def _py_date_format(fmt: str) -> str:
 
 def render_document_html(
     *,
+    doc_kind: str,
     doc_type: str,
     number: str,
     doc_date: date,
@@ -147,7 +171,7 @@ def render_document_html(
     config_override: dict | None = None,
 ) -> str:
     template = _env.get_template("document.html.jinja2")
-    config = resolve_template_config(business, config_override)
+    config = resolve_template_config(business, doc_kind, config_override)
     date_fmt = _py_date_format(business.date_format)
     currency = _currency_symbol(business)
 
@@ -176,6 +200,7 @@ def render_document_html(
         currency=currency,
         primary_color=config["primary_color"],
         accent_color=config["accent_color"],
+        font_family_css=FONT_FAMILY_CSS.get(config["font_family"], FONT_FAMILY_CSS["sans"]),
         logo_uri=_logo_uri(business) if config["logo_enabled"] else None,
         config=config,
         amount_in_words=number_to_words(grand_total, business.base_currency) if config["show_amount_in_words"] else None,
@@ -184,6 +209,7 @@ def render_document_html(
 
 def render_invoice_html(invoice, business: Business, customer: Customer, employee: Customer | None, coupon_code: str | None = None) -> str:
     return render_document_html(
+        doc_kind="invoice",
         doc_type="Tax Invoice",
         number=invoice.number,
         doc_date=invoice.invoice_date,
@@ -210,6 +236,7 @@ def render_invoice_html(invoice, business: Business, customer: Customer, employe
 
 def render_quotation_html(quotation, business: Business, customer: Customer, employee: Customer | None, coupon_code: str | None = None) -> str:
     return render_document_html(
+        doc_kind="quotation",
         doc_type="Quotation",
         number=quotation.number,
         doc_date=quotation.quotation_date,
@@ -418,10 +445,10 @@ class _SampleCustomer:
     id_value = "100234567800003"
 
 
-def render_sample_html(business: Business, doc_type: str = "Tax Invoice", config_override: dict | None = None) -> str:
+def render_sample_html(business: Business, doc_kind: str = "invoice", config_override: dict | None = None) -> str:
     """Renders the shared template with fabricated data — used by the Design
     Studio live preview so admins can see their branding without needing a
-    real invoice."""
+    real invoice/quotation."""
     from datetime import date, timedelta
 
     items = [
@@ -432,13 +459,15 @@ def render_sample_html(business: Business, doc_type: str = "Tax Invoice", config
     vat_total = sum((i.qty * i.unit_price - i.discount) * (i.vat_rate / 100) for i in items)
     govt_fee_total = sum(i.govt_fee * i.qty for i in items)
     grand_total = subtotal + vat_total + govt_fee_total
+    is_quotation = doc_kind == "quotation"
 
     return render_document_html(
-        doc_type=doc_type,
-        number="INV-00001",
+        doc_kind=doc_kind,
+        doc_type="Quotation" if is_quotation else "Tax Invoice",
+        number="QTN-00001" if is_quotation else "INV-00001",
         doc_date=date.today(),
         due_date=date.today() + timedelta(days=14),
-        due_label="Due Date",
+        due_label="Valid Until" if is_quotation else "Due Date",
         status="sent",
         business=business,
         customer=_SampleCustomer(),
@@ -453,14 +482,30 @@ def render_sample_html(business: Business, doc_type: str = "Tax Invoice", config
         govt_fee_total=round(govt_fee_total, 2),
         grand_total=round(grand_total, 2),
         amount_paid=0.0,
-        notes=business.default_invoice_notes_credit or "Thank you for your business.",
-        terms=business.default_invoice_terms_credit or "Payment due within 14 days.",
+        notes=(business.default_quotation_notes if is_quotation else business.default_invoice_notes_credit) or "Thank you for your business.",
+        terms=(business.default_quotation_terms if is_quotation else business.default_invoice_terms_credit) or "Payment due within 14 days.",
         config_override=config_override,
     )
 
 
 class PdfEngineUnavailable(RuntimeError):
     pass
+
+
+def _resolve_local_uri(uri: str, _rel: str | None) -> str:
+    """xhtml2pdf's own file:// resolution mis-parses Windows drive-letter
+    URIs (file:///C:/...) and silently drops the resource — confirmed by
+    tracing it directly: without this callback, a local logo <img> never
+    makes it into the PDF at all, no error, just missing. This strips the
+    URI down to a plain filesystem path xhtml2pdf can actually open."""
+    if uri.startswith("file://"):
+        from urllib.parse import unquote, urlparse
+
+        path = unquote(urlparse(uri).path)
+        if path.startswith("/") and len(path) > 2 and path[2] == ":":
+            path = path.lstrip("/")  # file:///C:/... -> C:/...
+        return path
+    return uri
 
 
 def render_pdf(html: str) -> bytes:
@@ -474,7 +519,7 @@ def render_pdf(html: str) -> bytes:
     from xhtml2pdf import pisa
 
     buffer = io.BytesIO()
-    result = pisa.CreatePDF(src=html, dest=buffer)
+    result = pisa.CreatePDF(src=html, dest=buffer, link_callback=_resolve_local_uri)
     if result.err:
         raise PdfEngineUnavailable(f"xhtml2pdf failed to render the PDF (err={result.err}).")
     return buffer.getvalue()
