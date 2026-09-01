@@ -126,13 +126,22 @@ def _currency_symbol(business: Business) -> str:
     return symbols.get(business.base_currency, business.base_currency)
 
 
-def _logo_uri(business: Business) -> str | None:
+def _logo_uri(business: Business, base_url: str | None = None) -> str | None:
     if not business.logo_path:
         return None
     filename = business.logo_path.rsplit("/", 1)[-1]
     file_path = UPLOAD_DIR / filename
     if not file_path.exists():
         return None
+    if base_url:
+        # Browser-rendered previews (Design Studio's live preview iframe)
+        # can't load file:// URIs — browsers block local filesystem access
+        # from web content regardless of same-origin/srcDoc, unlike
+        # xhtml2pdf's server-side renderer which has no such sandbox. Serve
+        # it over HTTP from the app's own /uploads static mount instead,
+        # resolved against whatever host:port the browser actually used to
+        # reach this request (so it works on localhost and over the LAN).
+        return f"{base_url.rstrip('/')}/uploads/{filename}"
     return file_path.resolve().as_uri()
 
 
@@ -169,6 +178,7 @@ def render_document_html(
     notes: str | None,
     terms: str | None,
     config_override: dict | None = None,
+    base_url: str | None = None,
 ) -> str:
     template = _env.get_template("document.html.jinja2")
     config = resolve_template_config(business, doc_kind, config_override)
@@ -201,7 +211,7 @@ def render_document_html(
         primary_color=config["primary_color"],
         accent_color=config["accent_color"],
         font_family_css=FONT_FAMILY_CSS.get(config["font_family"], FONT_FAMILY_CSS["sans"]),
-        logo_uri=_logo_uri(business) if config["logo_enabled"] else None,
+        logo_uri=_logo_uri(business, base_url) if config["logo_enabled"] else None,
         config=config,
         amount_in_words=number_to_words(grand_total, business.base_currency) if config["show_amount_in_words"] else None,
     )
@@ -301,6 +311,7 @@ def render_thermal_html(
     currency: str,
     paper_width_mm: int,
     config_override: dict | None = None,
+    base_url: str | None = None,
 ) -> str:
     template = _env.get_template("thermal_receipt.html.jinja2")
     config = resolve_thermal_config(business, config_override)
@@ -332,7 +343,7 @@ def render_thermal_html(
         page_width_mm=paper_width_mm,
         page_height_mm=page_height_mm,
         font_size_pt=font_size_pt,
-        logo_uri=_logo_uri(business) if config["logo_enabled"] else None,
+        logo_uri=_logo_uri(business, base_url) if config["logo_enabled"] else None,
         config=config,
     )
 
@@ -390,6 +401,7 @@ def render_thermal_sample_html(
     doc_type: str = "Invoice",
     config_override: dict | None = None,
     width_override: int | None = None,
+    base_url: str | None = None,
 ) -> str:
     """Renders the thermal template with fabricated data — used by Design
     Studio's Thermal Receipt tab live preview."""
@@ -416,6 +428,7 @@ def render_thermal_sample_html(
         currency=_currency_symbol(business),
         paper_width_mm=_thermal_width_mm(business, width_override),
         config_override=config_override,
+        base_url=base_url,
     )
 
 
@@ -445,7 +458,12 @@ class _SampleCustomer:
     id_value = "100234567800003"
 
 
-def render_sample_html(business: Business, doc_kind: str = "invoice", config_override: dict | None = None) -> str:
+def render_sample_html(
+    business: Business,
+    doc_kind: str = "invoice",
+    config_override: dict | None = None,
+    base_url: str | None = None,
+) -> str:
     """Renders the shared template with fabricated data — used by the Design
     Studio live preview so admins can see their branding without needing a
     real invoice/quotation."""
@@ -485,6 +503,7 @@ def render_sample_html(business: Business, doc_kind: str = "invoice", config_ove
         notes=(business.default_quotation_notes if is_quotation else business.default_invoice_notes_credit) or "Thank you for your business.",
         terms=(business.default_quotation_terms if is_quotation else business.default_invoice_terms_credit) or "Payment due within 14 days.",
         config_override=config_override,
+        base_url=base_url,
     )
 
 
