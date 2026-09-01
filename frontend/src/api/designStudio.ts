@@ -19,6 +19,7 @@ export interface TemplateConfig {
   table_style: "simple" | "striped" | "bordered";
   bill_to_fields: string[];
   margins: "narrow" | "normal" | "wide";
+  show_border: boolean;
 }
 
 export async function getDefaultTemplateConfig(docType: DocKind): Promise<TemplateConfig> {

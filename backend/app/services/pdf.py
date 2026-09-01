@@ -42,6 +42,7 @@ DEFAULT_TEMPLATE_CONFIG = {
     "table_style": "simple",  # simple | striped | bordered
     "bill_to_fields": ["email", "phone", "address", "tax_id"],
     "margins": "normal",  # narrow | normal | wide
+    "show_border": True,  # page border around the A4 document body
 }
 
 # Values chosen and then stress-tested (multiple presets, table styles, font

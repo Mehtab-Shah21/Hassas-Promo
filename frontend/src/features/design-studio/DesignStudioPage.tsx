@@ -310,6 +310,7 @@ function A4ConfigEditor({ docType }: { docType: DocKind }) {
                 <option value="wide">Wide</option>
               </select>
             </FieldRow>
+            <Checkbox label="Page border" checked={config.show_border} onChange={(v) => set("show_border", v)} />
           </Section>
 
           <Section title="Logo">
