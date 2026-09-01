@@ -8,9 +8,9 @@ from app.core.db import get_db
 from app.core.deps import require_active_business_id, require_admin
 from app.models.attendance import Attendance
 from app.models.customer import Customer
+from app.models.employee import Employee
 from app.models.invoice import Invoice, InvoiceItem, InvoiceStatus
 from app.models.quotation import Quotation
-from app.models.user import User, UserRole
 from app.services.csv_export import rows_to_csv_response
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
@@ -311,19 +311,29 @@ def attendance_summary_report(
     date_from: date | None = None,
     date_to: date | None = None,
     export: str | None = None,
+    business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
     current_user=Depends(require_admin),
 ) -> Any:
     d_from, d_to = _period(date_from, date_to)
-    employees = db.query(User).filter(User.role == UserRole.employee, User.is_active.is_(True)).order_by(User.first_name).all()
-    records = db.query(Attendance).filter(Attendance.date >= d_from, Attendance.date <= d_to).all()
+    employees = (
+        db.query(Employee)
+        .filter(Employee.business_id == business_id, Employee.is_active.is_(True))
+        .order_by(Employee.name)
+        .all()
+    )
+    records = (
+        db.query(Attendance)
+        .filter(Attendance.business_id == business_id, Attendance.date >= d_from, Attendance.date <= d_to)
+        .all()
+    )
     counts = {e.id: {"present": 0, "absent": 0, "leave": 0} for e in employees}
     for r in records:
-        if r.user_id in counts:
-            counts[r.user_id][r.status.value] += 1
+        if r.employee_id in counts:
+            counts[r.employee_id][r.status.value] += 1
     rows = [
         {
-            "employee": e.display_name or f"{e.first_name} {e.last_name or ''}".strip(),
+            "employee": e.name,
             "present": counts[e.id]["present"],
             "absent": counts[e.id]["absent"],
             "leave": counts[e.id]["leave"],
