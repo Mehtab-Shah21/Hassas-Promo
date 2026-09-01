@@ -18,15 +18,20 @@
      xhtml2pdf's pagination, silently splitting a document that fits on
      one page into 3-4 near-empty pages (confirmed via each page's actual
      decoded content — not a rendering glitch, a real bug in how it frames
-     a padded root element). body margin does not have this problem. #}
-  @page { size: A4; margin: 6mm; }
+     a padded root element). body margin does not have this problem.
+
+     margin_mm (4/6/8, from the Design Studio Margins control: narrow/
+     normal/wide) stays capped at 8mm for the same reason — stress-tested
+     up to that point across every preset/table-style/font-size/content
+     combination, still one page every time. #}
+  @page { size: A4; margin: {{ margin_mm }}mm; }
   * { box-sizing: border-box; }
   body {
     font-family: {{ font_family_css }};
     font-size: {{ '9.5pt' if config.font_size == 'small' else '12pt' if config.font_size == 'large' else '10.5pt' }};
     line-height: 1.45;
     color: #1e293b;
-    margin: 6mm;
+    margin: {{ margin_mm }}mm;
     border: 1px solid #e2e8f0;
     position: relative;
   }
@@ -38,7 +43,7 @@
      background, colored heading text, bottom border. Modern: a full-width
      colored band with white text — see the layout_preset block below for
      the override. */
-  table.header { width: 100%; border-collapse: collapse; margin: 6mm 0 18px; border-bottom: 3px solid {{ primary_color }}; }
+  table.header { width: 100%; border-collapse: collapse; margin: {{ margin_mm }}mm 0 18px; border-bottom: 3px solid {{ primary_color }}; }
   table.header td { vertical-align: top; padding-bottom: 12px; }
   table.header td.header-right { text-align: right; }
   .logo-line { margin: 0 0 4px; }
@@ -128,7 +133,7 @@
   .bank .body-text { line-height: 1.6; }
   .signature { margin-top: 40px; font-size: 0.85em; }
   .signature .line { width: 220px; border-top: 1px solid #334155; padding-top: 4px; color: #64748b; }
-  .footer { margin: 24px 0 6mm; text-align: center; font-size: 0.8em; color: #94a3b8; }
+  .footer { margin: 24px 0 {{ margin_mm }}mm; text-align: center; font-size: 0.8em; color: #94a3b8; }
   .status-badge {
     display: inline-block; padding: 3px 11px; border-radius: 10px;
     font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.4pt; font-weight: bold;
@@ -155,7 +160,7 @@
   <table class="header">
     <tr>
       <td class="header-left">
-        {% if logo_uri %}<p class="logo-line" style="text-align: {{ 'right' if config.logo_position == 'right' else 'center' if config.logo_position == 'center' else 'left' }};"><img class="logo" src="{{ logo_uri }}" /></p>{% endif %}
+        {% if logo_uri %}<p class="logo-line" style="text-align: {{ 'right' if config.logo_position == 'right' else 'center' if config.logo_position == 'center' else 'left' }};"><img class="logo" src="{{ logo_uri }}" width="{{ logo_width }}" height="{{ logo_height }}" /></p>{% endif %}
         <p class="biz-name">{{ business.legal_name or business.name }}</p>
         {% if business.address_line1 %}<p class="biz-line">{{ business.address_line1 }}{% if business.address_line2 %}, {{ business.address_line2 }}{% endif %}</p>{% endif %}
         {% if business.city or business.country %}<p class="biz-line">{{ [business.city, business.state, business.country] | select | join(', ') }}</p>{% endif %}

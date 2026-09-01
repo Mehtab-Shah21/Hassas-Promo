@@ -303,6 +303,13 @@ function A4ConfigEditor({ docType }: { docType: DocKind }) {
                 <option value="bordered">Bordered</option>
               </select>
             </FieldRow>
+            <FieldRow label="Margins">
+              <select value={config.margins} onChange={(e) => set("margins", e.target.value as TemplateConfig["margins"])} className="rounded-md border border-line bg-bg px-2 py-1.5 text-sm text-ink focus:border-accent focus:outline-none">
+                <option value="narrow">Narrow</option>
+                <option value="normal">Normal</option>
+                <option value="wide">Wide</option>
+              </select>
+            </FieldRow>
           </Section>
 
           <Section title="Logo">

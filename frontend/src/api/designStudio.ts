@@ -18,6 +18,7 @@ export interface TemplateConfig {
   show_amount_in_words: boolean;
   table_style: "simple" | "striped" | "bordered";
   bill_to_fields: string[];
+  margins: "narrow" | "normal" | "wide";
 }
 
 export async function getDefaultTemplateConfig(docType: DocKind): Promise<TemplateConfig> {

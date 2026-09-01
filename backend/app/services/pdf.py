@@ -41,7 +41,17 @@ DEFAULT_TEMPLATE_CONFIG = {
     "show_amount_in_words": False,
     "table_style": "simple",  # simple | striped | bordered
     "bill_to_fields": ["email", "phone", "address", "tax_id"],
+    "margins": "normal",  # narrow | normal | wide
 }
+
+# Values chosen and then stress-tested (multiple presets, table styles, font
+# sizes, a signature+amount-in-words combo, 10-line-item invoice) — margin
+# on the shared A4 template's body is safe up to ~6mm per side; going wider
+# risks reintroducing the blank-extra-page pagination bug from the last
+# round (xhtml2pdf's page-height accounting doesn't scale the same way
+# @page and body margin do, so "wide" split across both is deliberately not
+# much larger than "normal", not a naive 2x/3x jump).
+MARGIN_MM = {"narrow": 4, "normal": 6, "wide": 7}
 
 # xhtml2pdf/reportlab only reliably renders its 3 built-in generic families —
 # every other named font (DejaVu, Georgia, Inter, ...) silently falls back to
@@ -126,13 +136,40 @@ def _currency_symbol(business: Business) -> str:
     return symbols.get(business.base_currency, business.base_currency)
 
 
-def _logo_uri(business: Business, base_url: str | None = None) -> str | None:
+_MM_TO_PX = 3.7795  # 96dpi, matches how the templates' other mm-based sizes are meant to read on screen
+
+
+def _logo_fit_px(file_path: Path, max_width_px: float, max_height_px: float) -> tuple[int, int]:
+    """xhtml2pdf ignores CSS max-width/max-height/object-fit on <img> entirely
+    — confirmed by generating a real PDF with a large uploaded photo: it drew
+    at the image's native pixel size (hundreds of points), overlapping the
+    header so badly it could look like the logo wasn't there at all. xhtml2pdf
+    does respect explicit width/height HTML attributes, so the fix is to
+    compute the aspect-preserving fit size here and set those attributes
+    directly instead of relying on CSS to constrain a replaced element."""
+    try:
+        from PIL import Image
+
+        with Image.open(file_path) as img:
+            w, h = img.size
+    except Exception:
+        return int(max_width_px), int(max_height_px)
+    if w <= 0 or h <= 0:
+        return int(max_width_px), int(max_height_px)
+    scale = min(max_width_px / w, max_height_px / h, 1.0)  # never upscale a small logo
+    return max(1, round(w * scale)), max(1, round(h * scale))
+
+
+def _logo_info(
+    business: Business, base_url: str | None, max_width_px: float, max_height_px: float
+) -> tuple[str | None, int | None, int | None]:
     if not business.logo_path:
-        return None
+        return None, None, None
     filename = business.logo_path.rsplit("/", 1)[-1]
     file_path = UPLOAD_DIR / filename
     if not file_path.exists():
-        return None
+        return None, None, None
+    width_px, height_px = _logo_fit_px(file_path, max_width_px, max_height_px)
     if base_url:
         # Browser-rendered previews (Design Studio's live preview iframe)
         # can't load file:// URIs — browsers block local filesystem access
@@ -141,8 +178,8 @@ def _logo_uri(business: Business, base_url: str | None = None) -> str | None:
         # it over HTTP from the app's own /uploads static mount instead,
         # resolved against whatever host:port the browser actually used to
         # reach this request (so it works on localhost and over the LAN).
-        return f"{base_url.rstrip('/')}/uploads/{filename}"
-    return file_path.resolve().as_uri()
+        return f"{base_url.rstrip('/')}/uploads/{filename}", width_px, height_px
+    return file_path.resolve().as_uri(), width_px, height_px
 
 
 def _py_date_format(fmt: str) -> str:
@@ -184,6 +221,9 @@ def render_document_html(
     config = resolve_template_config(business, doc_kind, config_override)
     date_fmt = _py_date_format(business.date_format)
     currency = _currency_symbol(business)
+    logo_uri, logo_width, logo_height = (
+        _logo_info(business, base_url, 200, 60) if config["logo_enabled"] else (None, None, None)
+    )
 
     return template.render(
         doc_type=doc_type,
@@ -211,7 +251,10 @@ def render_document_html(
         primary_color=config["primary_color"],
         accent_color=config["accent_color"],
         font_family_css=FONT_FAMILY_CSS.get(config["font_family"], FONT_FAMILY_CSS["sans"]),
-        logo_uri=_logo_uri(business, base_url) if config["logo_enabled"] else None,
+        logo_uri=logo_uri,
+        logo_width=logo_width,
+        logo_height=logo_height,
+        margin_mm=MARGIN_MM.get(config["margins"], 6),
         config=config,
         amount_in_words=number_to_words(grand_total, business.base_currency) if config["show_amount_in_words"] else None,
     )
@@ -323,6 +366,13 @@ def render_thermal_html(
     # without wasting a meter of blank paper.
     page_height_mm = min(400, max(120, 60 + num_items * 8))
     font_size_pt = _THERMAL_FONT_PT.get(config["font_size"], 8)
+    logo_max_width_px = (paper_width_mm - 10) * _MM_TO_PX
+    logo_max_height_px = 16 * _MM_TO_PX
+    logo_uri, logo_width, logo_height = (
+        _logo_info(business, base_url, logo_max_width_px, logo_max_height_px)
+        if config["logo_enabled"]
+        else (None, None, None)
+    )
 
     return template.render(
         doc_type=doc_type,
@@ -343,7 +393,9 @@ def render_thermal_html(
         page_width_mm=paper_width_mm,
         page_height_mm=page_height_mm,
         font_size_pt=font_size_pt,
-        logo_uri=_logo_uri(business, base_url) if config["logo_enabled"] else None,
+        logo_uri=logo_uri,
+        logo_width=logo_width,
+        logo_height=logo_height,
         config=config,
     )
 

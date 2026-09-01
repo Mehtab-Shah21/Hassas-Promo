@@ -32,7 +32,7 @@
 </head>
 <body>
 
-  {% if logo_uri %}<p class="center"><img class="logo" src="{{ logo_uri }}" /></p>{% endif %}
+  {% if logo_uri %}<p class="center"><img class="logo" src="{{ logo_uri }}" width="{{ logo_width }}" height="{{ logo_height }}" /></p>{% endif %}
   <p class="center bold biz-name">{{ business.name }}</p>
   {% if config.header_text %}<p class="center">{{ config.header_text }}</p>{% endif %}
 
