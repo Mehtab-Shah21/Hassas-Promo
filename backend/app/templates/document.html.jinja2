@@ -4,14 +4,30 @@
 <meta charset="utf-8" />
 <title>{{ doc_type }} {{ number }}</title>
 <style>
-  @page { size: A4; margin: 16mm; }
+  {# @page margin alone only affects the actual PDF — browsers ignore it
+     for on-screen rendering (it's a print-only rule), so the live preview
+     iframe showed content flush to the edges even though the real PDF had
+     proper margins. Keeping @page down to a small hardware-safety buffer
+     (some printers can't print all the way to the paper edge) and moving
+     the real, visible spacing onto body's own margin — which both a
+     browser AND xhtml2pdf render — means the preview and the PDF now show
+     the same spacing, from the single template both already share.
+
+     This has to be `margin`, not `padding`: tested directly against this
+     template — body padding (even alone, with no border) reliably breaks
+     xhtml2pdf's pagination, silently splitting a document that fits on
+     one page into 3-4 near-empty pages (confirmed via each page's actual
+     decoded content — not a rendering glitch, a real bug in how it frames
+     a padded root element). body margin does not have this problem. #}
+  @page { size: A4; margin: 6mm; }
   * { box-sizing: border-box; }
   body {
     font-family: {{ font_family_css }};
     font-size: {{ '9.5pt' if config.font_size == 'small' else '12pt' if config.font_size == 'large' else '10.5pt' }};
     line-height: 1.45;
     color: #1e293b;
-    margin: 0;
+    margin: 6mm;
+    border: 1px solid #e2e8f0;
     position: relative;
   }
   .accent { color: {{ accent_color }}; }
@@ -22,7 +38,7 @@
      background, colored heading text, bottom border. Modern: a full-width
      colored band with white text — see the layout_preset block below for
      the override. */
-  table.header { width: 100%; border-collapse: collapse; margin-bottom: 18px; border-bottom: 3px solid {{ primary_color }}; }
+  table.header { width: 100%; border-collapse: collapse; margin: 6mm 0 18px; border-bottom: 3px solid {{ primary_color }}; }
   table.header td { vertical-align: top; padding-bottom: 12px; }
   table.header td.header-right { text-align: right; }
   .logo-line { margin: 0 0 4px; }
@@ -112,7 +128,7 @@
   .bank .body-text { line-height: 1.6; }
   .signature { margin-top: 40px; font-size: 0.85em; }
   .signature .line { width: 220px; border-top: 1px solid #334155; padding-top: 4px; color: #64748b; }
-  .footer { margin-top: 24px; text-align: center; font-size: 0.8em; color: #94a3b8; }
+  .footer { margin: 24px 0 6mm; text-align: center; font-size: 0.8em; color: #94a3b8; }
   .status-badge {
     display: inline-block; padding: 3px 11px; border-radius: 10px;
     font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.4pt; font-weight: bold;
