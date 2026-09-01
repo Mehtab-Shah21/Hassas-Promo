@@ -55,8 +55,8 @@ export default function FeatureFlagsPage() {
               } disabled:opacity-50`}
             >
               <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-transform ${
-                  flag.enabled ? "translate-x-5" : "translate-x-0.5"
+                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-transform ${
+                  flag.enabled ? "translate-x-5" : "translate-x-0"
                 }`}
               />
             </button>
