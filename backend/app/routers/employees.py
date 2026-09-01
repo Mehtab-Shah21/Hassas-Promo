@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import get_current_user, require_active_business_id, require_admin
+from app.core.deps import require_active_business_id, require_admin
 from app.models.employee import Employee
 from app.schemas.employee import EmployeeCreate, EmployeeResponse, EmployeeUpdate
 from app.services.audit import write_audit_log
@@ -15,7 +15,7 @@ def list_employees(
     active_only: bool = Query(default=True),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_admin),
 ):
     q = db.query(Employee).filter(Employee.business_id == business_id)
     if active_only:

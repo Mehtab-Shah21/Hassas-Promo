@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import get_current_user, require_active_business_id
+from app.core.deps import require_active_business_id, require_admin
 from app.models.business import Business
 from app.services.pdf import (
     DEFAULT_TEMPLATE_CONFIG,
@@ -27,7 +27,7 @@ def _validate_doc_kind(doc_type: str) -> str:
 @router.get("/defaults")
 def get_defaults(
     doc_type: str = Query(default="invoice"),
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_admin),
 ):
     _validate_doc_kind(doc_type)
     return DEFAULT_TEMPLATE_CONFIG
@@ -40,7 +40,7 @@ def preview(
     config: str | None = Query(default=None, description="URL-encoded JSON config override for an unsaved draft"),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_admin),
 ):
     _validate_doc_kind(doc_type)
     business = db.get(Business, business_id)
@@ -58,7 +58,7 @@ def preview(
 
 
 @router.get("/thermal-defaults")
-def get_thermal_defaults(current_user=Depends(get_current_user)):
+def get_thermal_defaults(current_user=Depends(require_admin)):
     return DEFAULT_THERMAL_CONFIG
 
 
@@ -69,7 +69,7 @@ def thermal_preview(
     width: int | None = Query(default=None, description="Override the business's stored paper width: 58 or 80"),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_admin),
 ):
     business = db.get(Business, business_id)
     if not business:
