@@ -93,39 +93,31 @@ export default function ReconciliationPage() {
           <p className="rounded-lg border border-dashed border-line p-8 text-center text-sm text-muted">
             No card or online payments for this date.
           </p>
-        : <table className="w-full table-fixed text-sm">
-            <colgroup>
-              <col className="w-[16%]" />
-              <col className="w-[26%]" />
-              <col className="w-[13%]" />
-              <col className="w-[13%]" />
-              <col className="w-[14%]" />
-              <col className="w-[18%]" />
-            </colgroup>
+        : <table className="w-full text-sm">
             <thead className="text-left text-xs font-semibold uppercase text-muted">
               <tr>
-                <th className="px-4 py-1.5">Invoice</th>
-                <th className="px-4 py-1.5">Customer</th>
-                <th className="px-4 py-1.5">Method</th>
-                <th className="px-4 py-1.5 text-right">Amount</th>
-                <th className="px-4 py-1.5">Status</th>
+                <th className="whitespace-nowrap px-4 py-1.5">Invoice</th>
+                <th className="whitespace-nowrap px-4 py-1.5">Customer</th>
+                <th className="whitespace-nowrap px-4 py-1.5">Method</th>
+                <th className="whitespace-nowrap px-4 py-1.5 text-right">Amount</th>
+                <th className="whitespace-nowrap px-4 py-1.5">Status</th>
                 <th className="px-4 py-1.5"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {data.entries.map((e) => (
                 <tr key={e.payment_id}>
-                  <td className="truncate px-4 py-2 font-medium text-ink">
+                  <td className="whitespace-nowrap px-4 py-2 font-medium text-ink">
                     {e.invoice_number}
                   </td>
-                  <td className="truncate px-4 py-2 text-muted">{e.customer_name}</td>
-                  <td className="truncate px-4 py-2 capitalize text-muted">
+                  <td className="whitespace-nowrap px-4 py-2 text-muted">{e.customer_name}</td>
+                  <td className="whitespace-nowrap px-4 py-2 capitalize text-muted">
                     {e.payment_method}
                   </td>
-                  <td className="px-4 py-2 text-right text-muted">
+                  <td className="whitespace-nowrap px-4 py-2 text-right text-muted">
                     {e.amount.toFixed(2)}
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="whitespace-nowrap px-4 py-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_STYLES[e.cleared_status]}`}>
                       {e.cleared_status}
