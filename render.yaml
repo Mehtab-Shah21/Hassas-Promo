@@ -8,6 +8,16 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     envVars:
+      # Pins the build to a Python version with prebuilt wheels for every
+      # pin in requirements.txt. Render defaulted to 3.14 (no wheel yet for
+      # pydantic-core 2.27.2 on 3.14, and Render's build filesystem can't
+      # compile it from source), which broke the build — this is Render's
+      # own documented env-var mechanism for pinning it, kept in sync with
+      # backend/runtime.txt (which is what actually governs it when
+      # rootDir: backend is set, since Render reads runtime.txt from the
+      # deploy root).
+      - key: PYTHON_VERSION
+        value: "3.11.9"
       # Generated once by Render and kept stable across deploys — real JWTs
       # for this demo, not the "dev-secret-key-change-in-production" default.
       - key: SECRET_KEY
