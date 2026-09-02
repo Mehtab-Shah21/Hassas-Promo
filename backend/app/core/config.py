@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -64,6 +64,37 @@ class Settings(BaseSettings):
     # defaults to localhost-only. Overridable via env for the packaged service.
     host: str = "127.0.0.1"
     port: int = 8000
+
+    # --- Web-demo deployment only (Render + Vercel) — see DEPLOY.md. Both
+    # default to their existing offline/LAN behavior (off / unset) so a
+    # normal dev run or packaged install is completely unaffected. ---
+
+    # The deployed frontend's origin (e.g. https://my-app.vercel.app), added
+    # to cors_origins alongside the existing localhost dev origins — see
+    # main.py. Not needed for local dev or the LAN install (employee PCs
+    # never make a cross-origin browser request, they're the same origin
+    # via ServerConfigGate's configured server URL, not CORS).
+    frontend_origin: str | None = None
+
+    # Render's ephemeral filesystem means a fresh container can start with
+    # no database at all — run Alembic to head and the idempotent seed on
+    # every boot so the demo always has data. Off by default: a dev running
+    # `uvicorn app.main:app` locally, or the packaged .exe (which already
+    # runs its own migration/seed step in packaging/run_server.py), doesn't
+    # need or want this running on every reload/restart too.
+    run_migrations_on_startup: bool = False
+
+    @field_validator("database_url")
+    @classmethod
+    def _normalize_postgres_scheme(cls, v: str) -> str:
+        # Managed Postgres providers (Render included) commonly hand out
+        # "postgres://" URLs, a scheme SQLAlchemy 1.4+ rejects outright —
+        # it wants "postgresql://". Normalizing here means switching
+        # DATABASE_URL from SQLite to Render Postgres is really just an env
+        # var change, no code change, exactly as intended.
+        if v.startswith("postgres://"):
+            return "postgresql://" + v[len("postgres://") :]
+        return v
 
 
 settings = Settings()

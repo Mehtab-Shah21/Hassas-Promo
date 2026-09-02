@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: pro-invoicing-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      # Generated once by Render and kept stable across deploys — real JWTs
+      # for this demo, not the "dev-secret-key-change-in-production" default.
+      - key: SECRET_KEY
+        generateValue: true
+      # Ephemeral-filesystem demo: runs Alembic to head + the idempotent
+      # seed (admin user, Main/IIM businesses) on every boot. See DEPLOY.md.
+      - key: RUN_MIGRATIONS_ON_STARTUP
+        value: "true"
+      # Set manually after the Vercel frontend is deployed — see DEPLOY.md
+      # step 3. Leaving this unset means the API is reachable but the
+      # browser will block cross-origin requests from the deployed frontend.
+      - key: FRONTEND_ORIGIN
+        sync: false
+      # Optional: leave unset to use the default ephemeral SQLite file (data
+      # resets on redeploy/restart — fine for a demo, it re-seeds itself).
+      # Set this to a Render Postgres "Internal Database URL" for a demo
+      # that needs to persist data between restarts — no code change needed,
+      # app/core/config.py already normalizes postgres:// -> postgresql://.
+      - key: DATABASE_URL
+        sync: false
+
+# This file describes the same setup as the manual Render dashboard steps
+# in DEPLOY.md. If Render's "New Blueprint" flow doesn't pick this file up
+# cleanly (schema conventions do drift between Render API versions), just
+# follow DEPLOY.md's manual settings instead — it's the authoritative,
+# always-correct path from a dashboard.
