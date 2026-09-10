@@ -1,7 +1,7 @@
 import enum
 from datetime import date
 
-from sqlalchemy import Boolean, Date, Enum, ForeignKey, Numeric, String
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -23,3 +23,9 @@ class Coupon(TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
     valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # max_uses=None means unlimited. Once times_used reaches max_uses, the
+    # coupon is auto-deactivated (is_active flips to False) — see
+    # _resolve_coupon/_apply_coupon_usage in routers/invoices.py and
+    # routers/quotations.py.
+    max_uses: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    times_used: Mapped[int] = mapped_column(Integer, default=0, nullable=False, server_default="0")

@@ -12,6 +12,7 @@ class CouponBase(BaseModel):
     is_active: bool = True
     valid_from: date | None = None
     valid_to: date | None = None
+    max_uses: int | None = None
 
 
 class CouponCreate(CouponBase):
@@ -25,10 +26,12 @@ class CouponUpdate(BaseModel):
     is_active: bool | None = None
     valid_from: date | None = None
     valid_to: date | None = None
+    max_uses: int | None = None
 
 
 class CouponResponse(CouponBase):
     id: int
     business_id: int
+    times_used: int
 
     model_config = {"from_attributes": True}

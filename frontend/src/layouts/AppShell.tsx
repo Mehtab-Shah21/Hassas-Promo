@@ -151,7 +151,7 @@ export default function AppShell() {
   const { user, logout } = useAuth();
   const { businesses, activeBusiness, setActiveBusinessId } = useBusiness();
   const { isEnabled } = useFeatureFlags();
-  const { moduleAlerts, badgeCount } = useNotifications();
+  const { badgeCount } = useNotifications();
   const [collapsed, setCollapsed] = useState<boolean>(() => readStoredCollapsed());
 
   useEffect(() => {
@@ -191,7 +191,6 @@ export default function AppShell() {
         <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-2 py-2">
           {visibleItems.map((item) => {
             const Icon = item.icon;
-            const hasAlert = item.to !== "/notifications" && moduleAlerts.has(item.to);
             return (
               <NavLink
                 key={item.to}
@@ -206,11 +205,6 @@ export default function AppShell() {
                 <span className={`flex min-w-0 items-center ${collapsed ? "" : "gap-2"}`}>
                   <span className="relative flex shrink-0 items-center justify-center">
                     <Icon size={18} />
-                    {hasAlert && (
-                      <span
-                        className={`absolute h-2 w-2 rounded-full bg-danger ${collapsed ? "-right-0.5 -top-0.5" : "-right-1 -top-1"}`}
-                      />
-                    )}
                     {collapsed && item.to === "/notifications" && badgeCount > 0 && (
                       <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-bg">
                         {badgeCount > 9 ? "9+" : badgeCount}

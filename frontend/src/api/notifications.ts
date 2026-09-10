@@ -23,7 +23,6 @@ export async function createNotification(payload: {
   service_id: number;
   note?: string | null;
   target_date: string;
-  visibility_modules: string[];
   reminders: ReminderInput[];
 }): Promise<void> {
   await apiClient.post("/api/notifications", payload);

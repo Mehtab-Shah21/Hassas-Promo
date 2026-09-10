@@ -3,7 +3,6 @@ import { createNotification, type ReminderInput } from "../../api/notifications"
 import { listCustomers } from "../../api/customers";
 import { listServices } from "../../api/services";
 import type { Customer, ReminderUnit, Service } from "../../api/types";
-import { NOTIFIABLE_MODULES } from "../../constants/notifiableModules";
 import Modal from "../../components/Modal";
 import SearchCombobox from "../../components/SearchCombobox";
 import { Field, SaveButton, TextArea, TextInput } from "../../components/form/Field";
@@ -19,7 +18,6 @@ export default function NotificationFormModal({
   const [service, setService] = useState<Service | null>(null);
   const [note, setNote] = useState("");
   const [targetDate, setTargetDate] = useState("");
-  const [visibilityModules, setVisibilityModules] = useState<string[]>([]);
   const [reminders, setReminders] = useState<ReminderInput[]>([{ offset_value: 1, offset_unit: "week" }]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,10 +31,6 @@ export default function NotificationFormModal({
     const res = await listServices({ search: query || undefined, page: 1, page_size: 15 });
     return res.items;
   }, []);
-
-  function toggleModule(to: string) {
-    setVisibilityModules((prev) => (prev.includes(to) ? prev.filter((m) => m !== to) : [...prev, to]));
-  }
 
   function updateReminder(i: number, patch: Partial<ReminderInput>) {
     setReminders((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -59,7 +53,6 @@ export default function NotificationFormModal({
         service_id: service.id,
         note: note || null,
         target_date: targetDate,
-        visibility_modules: visibilityModules,
         reminders,
       });
       onSaved();
@@ -120,25 +113,6 @@ export default function NotificationFormModal({
         <Field label="Note">
           <TextArea rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
-
-        <div>
-          <span className="mb-1 block text-sm font-medium text-muted">Visible on</span>
-          <div className="grid grid-cols-2 gap-1.5 rounded-md border border-line p-3">
-            {NOTIFIABLE_MODULES.map((m) => (
-              <label key={m.to} className="flex items-center gap-2 text-sm text-ink">
-                <input
-                  type="checkbox"
-                  checked={visibilityModules.includes(m.to)}
-                  onChange={() => toggleModule(m.to)}
-                />
-                {m.label}
-              </label>
-            ))}
-          </div>
-          <p className="mt-1 text-xs text-muted">
-            Selected modules show a red dot in the nav while this notification is active.
-          </p>
-        </div>
 
         <div>
           <span className="mb-1 block text-sm font-medium text-muted">Reminders</span>

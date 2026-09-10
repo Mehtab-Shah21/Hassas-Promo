@@ -8,7 +8,6 @@ import { useFeatureFlags } from "./FeatureFlagsContext";
 interface NotificationsContextValue {
   badgeCount: number;
   activeNotifications: NotificationListItem[];
-  moduleAlerts: Set<string>;
   refresh: () => Promise<void>;
 }
 
@@ -37,17 +36,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeBusiness?.id]);
 
-  const moduleAlerts = useMemo(() => {
-    const set = new Set<string>();
-    for (const n of activeNotifications) {
-      for (const m of n.visibility_modules) set.add(m);
-    }
-    return set;
-  }, [activeNotifications]);
-
   const value = useMemo(
-    () => ({ badgeCount: activeNotifications.length, activeNotifications, moduleAlerts, refresh }),
-    [activeNotifications, moduleAlerts],
+    () => ({ badgeCount: activeNotifications.length, activeNotifications, refresh }),
+    [activeNotifications],
   );
 
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;

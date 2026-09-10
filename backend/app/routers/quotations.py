@@ -45,7 +45,21 @@ def _resolve_coupon(db: Session, business_id: int, code: str | None) -> Coupon |
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coupon is not active yet")
     if coupon.valid_to and coupon.valid_to < today:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coupon has expired")
+    if coupon.max_uses is not None and coupon.times_used >= coupon.max_uses:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coupon usage limit reached")
     return coupon
+
+
+def _record_coupon_use(coupon: Coupon | None) -> None:
+    """Call once an invoice is actually created with this coupon attached —
+    a quotation carrying a coupon doesn't count as a use until it converts.
+    Deactivates the coupon the moment its usage limit is hit.
+    """
+    if coupon is None:
+        return
+    coupon.times_used += 1
+    if coupon.max_uses is not None and coupon.times_used >= coupon.max_uses:
+        coupon.is_active = False
 
 
 def _build_lines(db: Session, business: Business, items, current_user):
@@ -247,6 +261,18 @@ def convert_to_invoice(
     if quotation.status == QuotationStatus.converted:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Quotation already converted")
 
+    # Re-check the coupon at conversion time, not just at quotation creation
+    # — other invoices may have exhausted its usage limit (and auto-
+    # deactivated it) in the meantime.
+    coupon = db.get(Coupon, quotation.coupon_id) if quotation.coupon_id else None
+    if coupon is not None and (
+        not coupon.is_active or (coupon.max_uses is not None and coupon.times_used >= coupon.max_uses)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Coupon on this quotation is no longer valid (usage limit reached or deactivated)",
+        )
+
     business = db.get(Business, business_id)
     is_cash = payment_method == PaymentMethod.cash
     number = reserve_invoice_number(db, business)
@@ -286,6 +312,7 @@ def convert_to_invoice(
             for qi in quotation.items
         ],
     )
+    _record_coupon_use(coupon)
     db.add(invoice)
     db.flush()
 

@@ -130,6 +130,8 @@ export interface Coupon {
   is_active: boolean;
   valid_from: string | null;
   valid_to: string | null;
+  max_uses: number | null;
+  times_used: number;
 }
 
 export type PaymentMethod = "cash" | "card" | "online";

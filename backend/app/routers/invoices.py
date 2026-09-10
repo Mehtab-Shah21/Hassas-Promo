@@ -55,7 +55,21 @@ def _resolve_coupon(db: Session, business_id: int, code: str | None) -> Coupon |
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coupon is not active yet")
     if coupon.valid_to and coupon.valid_to < today:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coupon has expired")
+    if coupon.max_uses is not None and coupon.times_used >= coupon.max_uses:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coupon usage limit reached")
     return coupon
+
+
+def _record_coupon_use(coupon: Coupon | None) -> None:
+    """Call once an invoice is actually created with this coupon attached.
+    Deactivates the coupon the moment its usage limit is hit, so it can't be
+    applied again without an admin explicitly re-enabling it.
+    """
+    if coupon is None:
+        return
+    coupon.times_used += 1
+    if coupon.max_uses is not None and coupon.times_used >= coupon.max_uses:
+        coupon.is_active = False
 
 
 @router.post("", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
@@ -171,6 +185,8 @@ def create_invoice(
         created_by=current_user.id,
         items=item_rows,
     )
+    _record_coupon_use(coupon)
+
     db.add(invoice)
     db.flush()
 

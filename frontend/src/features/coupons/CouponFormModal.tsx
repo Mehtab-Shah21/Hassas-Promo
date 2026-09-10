@@ -19,7 +19,6 @@ export default function CouponFormModal({
       code: "",
       discount_type: "percent",
       is_active: true,
-      valid_from: "",
       valid_to: "",
     },
   );
@@ -35,7 +34,7 @@ export default function CouponFormModal({
     setSaving(true);
     setError(null);
     try {
-      const payload = { ...form, valid_from: form.valid_from || null, valid_to: form.valid_to || null };
+      const payload = { ...form, valid_to: form.valid_to || null, max_uses: form.max_uses ?? null };
       const saved = isEdit ? await updateCoupon(coupon!.id, payload) : await createCoupon(payload);
       onSaved(saved);
     } catch {
@@ -79,13 +78,27 @@ export default function CouponFormModal({
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Valid from (optional)">
-            <TextInput type="date" value={form.valid_from ?? ""} onChange={(e) => setForm((f) => ({ ...f, valid_from: e.target.value }))} />
-          </Field>
           <Field label="Valid to (optional)">
             <TextInput type="date" value={form.valid_to ?? ""} onChange={(e) => setForm((f) => ({ ...f, valid_to: e.target.value }))} />
           </Field>
+          <Field label="Max uses (optional)">
+            <TextInput
+              type="number"
+              step="1"
+              min="1"
+              placeholder="Unlimited"
+              value={form.max_uses ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, max_uses: e.target.value === "" ? null : Number(e.target.value) }))}
+            />
+          </Field>
         </div>
+        {isEdit && (
+          <p className="text-xs text-muted">
+            Used {coupon!.times_used} time{coupon!.times_used === 1 ? "" : "s"}
+            {form.max_uses ? ` of ${form.max_uses}` : ""} so far. The coupon deactivates itself automatically once
+            the usage limit is reached.
+          </p>
+        )}
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"

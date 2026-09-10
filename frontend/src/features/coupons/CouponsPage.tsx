@@ -70,8 +70,8 @@ export default function CouponsPage() {
             <tr>
               <th className="px-4 py-2">Code</th>
               <th className="px-4 py-2">Discount</th>
-              <th className="px-4 py-2">Valid from</th>
               <th className="px-4 py-2">Valid to</th>
+              <th className="px-4 py-2">Uses</th>
               <th className="px-4 py-2">Status</th>
               {isAdmin && <th className="px-4 py-2"></th>}
             </tr>
@@ -96,8 +96,11 @@ export default function CouponsPage() {
                   <td className="px-4 py-2 text-muted">
                     {c.discount_type === "percent" ? `${c.value}%` : c.value.toFixed(2)}
                   </td>
-                  <td className="px-4 py-2 text-muted">{c.valid_from ?? "—"}</td>
                   <td className="px-4 py-2 text-muted">{c.valid_to ?? "—"}</td>
+                  <td className="px-4 py-2 text-muted">
+                    {c.times_used}
+                    {c.max_uses ? ` / ${c.max_uses}` : ""}
+                  </td>
                   <td className="px-4 py-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${

@@ -15,7 +15,6 @@ export default function ServiceFormModal({ service, categories, onClose, onSaved
   const isEdit = !!service;
   const [form, setForm] = useState<ServicePayload>(
     service ?? {
-      code: "",
       name: "",
       description: "",
       category_id: categories[0]?.id ?? null,
@@ -50,25 +49,20 @@ export default function ServiceFormModal({ service, categories, onClose, onSaved
             required
           />
         </Field>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Code">
-            <TextInput value={form.code ?? ""} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} />
-          </Field>
-          <Field label="Category">
-            <select
-              value={form.category_id ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value ? Number(e.target.value) : null }))}
-              className="w-full rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
-            >
-              <option value="">Uncategorized</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
+        <Field label="Category">
+          <select
+            value={form.category_id ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value ? Number(e.target.value) : null }))}
+            className="w-full rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
+          >
+            <option value="">Uncategorized</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Price (service fee)">
             <TextInput
