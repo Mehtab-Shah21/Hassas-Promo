@@ -4,14 +4,18 @@ import SearchCombobox from "../../components/SearchCombobox";
 import { useAuth } from "../../context/AuthContext";
 import type { Service } from "../../api/types";
 
+// qty/unit_price/govt_fee/discount are "" until the user types a value, so an
+// untouched field never silently submits as a real 0 (or, for qty, a real 1)
+// — see emptyLine(). vat_rate is excluded: it's pre-filled from a real business
+// setting (defaultVat), not a placeholder-shaped "0" problem.
 export interface LineItemState {
   key: string;
   service_id: number | null;
   description: string;
-  qty: number;
-  unit_price: number;
-  govt_fee: number;
-  discount: number;
+  qty: number | "";
+  unit_price: number | "";
+  govt_fee: number | "";
+  discount: number | "";
   vat_rate: number;
   save_as_service: boolean;
   isAdhoc: boolean;
@@ -22,18 +26,26 @@ export function emptyLine(defaultVat: number): LineItemState {
     key: crypto.randomUUID(),
     service_id: null,
     description: "",
-    qty: 1,
-    unit_price: 0,
-    govt_fee: 0,
-    discount: 0,
+    qty: "",
+    unit_price: "",
+    govt_fee: "",
+    discount: "",
     vat_rate: defaultVat,
     save_as_service: false,
     isAdhoc: false,
   };
 }
 
+// Blank qty/unit_price/discount contribute 0 to running totals instead of
+// throwing/NaN-ing while the user is still filling the row in; callers that
+// build the save payload validate qty/unit_price are actually filled first
+// (see InvoiceCreatePage/QuotationCreatePage handleSubmit).
+export function num(v: number | ""): number {
+  return v === "" ? 0 : v;
+}
+
 export function lineTotal(line: LineItemState) {
-  const net = Math.max(line.qty * line.unit_price - line.discount, 0);
+  const net = Math.max(num(line.qty) * num(line.unit_price) - num(line.discount), 0);
   const vat = net * (line.vat_rate / 100);
   return net + vat;
 }
@@ -123,40 +135,44 @@ export default function LineItemRow({
         <input
           type="number"
           min="0"
-          step="0.01"
+          step="1"
+          placeholder="1"
           value={line.qty}
-          onChange={(e) => onChange({ ...line, qty: Number(e.target.value) })}
-          className="w-20 rounded-md border border-line px-2 py-1 text-sm"
+          onChange={(e) => onChange({ ...line, qty: e.target.value === "" ? "" : Number(e.target.value) })}
+          className="w-20 rounded-md border border-line px-2 py-1 text-sm placeholder:text-muted"
         />
       </td>
       <td className="px-2 py-2 align-top">
         <input
           type="number"
           min="0"
-          step="0.01"
+          step="any"
+          placeholder="e.g. 1500"
           value={line.unit_price}
-          onChange={(e) => onChange({ ...line, unit_price: Number(e.target.value) })}
-          className="w-24 rounded-md border border-line px-2 py-1 text-sm"
+          onChange={(e) => onChange({ ...line, unit_price: e.target.value === "" ? "" : Number(e.target.value) })}
+          className="w-24 rounded-md border border-line px-2 py-1 text-sm placeholder:text-muted"
         />
       </td>
       <td className="px-2 py-2 align-top">
         <input
           type="number"
           min="0"
-          step="0.01"
+          step="any"
+          placeholder="e.g. 200"
           value={line.govt_fee}
-          onChange={(e) => onChange({ ...line, govt_fee: Number(e.target.value) })}
-          className="w-24 rounded-md border border-line px-2 py-1 text-sm"
+          onChange={(e) => onChange({ ...line, govt_fee: e.target.value === "" ? "" : Number(e.target.value) })}
+          className="w-24 rounded-md border border-line px-2 py-1 text-sm placeholder:text-muted"
         />
       </td>
       <td className="px-2 py-2 align-top">
         <input
           type="number"
           min="0"
-          step="0.01"
+          step="any"
+          placeholder="0"
           value={line.discount}
-          onChange={(e) => onChange({ ...line, discount: Number(e.target.value) })}
-          className="w-20 rounded-md border border-line px-2 py-1 text-sm"
+          onChange={(e) => onChange({ ...line, discount: e.target.value === "" ? "" : Number(e.target.value) })}
+          className="w-20 rounded-md border border-line px-2 py-1 text-sm placeholder:text-muted"
         />
       </td>
       <td className="px-2 py-2 align-top">

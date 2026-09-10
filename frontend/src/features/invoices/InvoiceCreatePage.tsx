@@ -7,7 +7,7 @@ import { TextArea, TextInput } from "../../components/form/Field";
 import SearchCombobox from "../../components/SearchCombobox";
 import { useBusiness } from "../../context/BusinessContext";
 import CustomerFormModal from "../customers/CustomerFormModal";
-import LineItemRow, { emptyLine, type LineItemState } from "./LineItemRow";
+import LineItemRow, { emptyLine, num, type LineItemState } from "./LineItemRow";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -66,9 +66,12 @@ export default function InvoiceCreatePage() {
     setLines((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
   }
 
-  const subtotal = lines.reduce((sum, l) => sum + Math.max(l.qty * l.unit_price - l.discount, 0), 0);
-  const vatTotal = lines.reduce((sum, l) => sum + Math.max(l.qty * l.unit_price - l.discount, 0) * (l.vat_rate / 100), 0);
-  const govtFeeTotal = lines.reduce((sum, l) => sum + l.govt_fee * l.qty, 0);
+  const subtotal = lines.reduce((sum, l) => sum + Math.max(num(l.qty) * num(l.unit_price) - num(l.discount), 0), 0);
+  const vatTotal = lines.reduce(
+    (sum, l) => sum + Math.max(num(l.qty) * num(l.unit_price) - num(l.discount), 0) * (l.vat_rate / 100),
+    0,
+  );
+  const govtFeeTotal = lines.reduce((sum, l) => sum + num(l.govt_fee) * num(l.qty), 0);
   const grandTotalPreview = subtotal + vatTotal + govtFeeTotal;
 
   async function handleSubmit() {
@@ -76,8 +79,8 @@ export default function InvoiceCreatePage() {
       setError("Select a customer first.");
       return;
     }
-    if (lines.some((l) => !l.description || l.unit_price < 0)) {
-      setError("Every line needs a description and a valid price.");
+    if (lines.some((l) => !l.description || l.qty === "" || l.unit_price === "" || l.unit_price < 0)) {
+      setError("Every line needs a description, a quantity, and a valid price.");
       return;
     }
     setSaving(true);
@@ -86,10 +89,10 @@ export default function InvoiceCreatePage() {
       const items: InvoiceItemPayload[] = lines.map((l) => ({
         service_id: l.service_id,
         description: l.description,
-        qty: l.qty,
-        unit_price: l.unit_price,
-        govt_fee: l.govt_fee,
-        discount: l.discount,
+        qty: num(l.qty),
+        unit_price: num(l.unit_price),
+        govt_fee: num(l.govt_fee),
+        discount: num(l.discount),
         vat_rate: l.vat_rate,
         save_as_service: l.save_as_service,
       }));

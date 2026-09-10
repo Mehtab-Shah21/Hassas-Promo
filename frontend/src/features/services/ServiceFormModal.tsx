@@ -18,8 +18,6 @@ export default function ServiceFormModal({ service, categories, onClose, onSaved
       code: "",
       name: "",
       description: "",
-      price: 0,
-      govt_fee: 0,
       category_id: categories[0]?.id ?? null,
       taxable: true,
       is_active: true,
@@ -75,19 +73,21 @@ export default function ServiceFormModal({ service, categories, onClose, onSaved
           <Field label="Price (service fee)">
             <TextInput
               type="number"
-              step="0.01"
+              step="any"
               min="0"
-              value={form.price ?? 0}
-              onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))}
+              placeholder="e.g. 1500"
+              value={form.price ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, price: e.target.value === "" ? undefined : Number(e.target.value) }))}
             />
           </Field>
           <Field label="Govt. fee">
             <TextInput
               type="number"
-              step="0.01"
+              step="any"
               min="0"
-              value={form.govt_fee ?? 0}
-              onChange={(e) => setForm((f) => ({ ...f, govt_fee: Number(e.target.value) }))}
+              placeholder="e.g. 200"
+              value={form.govt_fee ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, govt_fee: e.target.value === "" ? undefined : Number(e.target.value) }))}
             />
           </Field>
         </div>

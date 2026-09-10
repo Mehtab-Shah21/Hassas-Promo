@@ -382,7 +382,7 @@ function RecordPaymentModal({
     <Modal title="Record payment" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Amount">
-          <TextInput type="number" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          <TextInput type="number" step="any" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required />
         </Field>
         <Field label="Payment method">
           <select

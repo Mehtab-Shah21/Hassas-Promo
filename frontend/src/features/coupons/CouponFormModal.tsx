@@ -18,7 +18,6 @@ export default function CouponFormModal({
     coupon ?? {
       code: "",
       discount_type: "percent",
-      value: 0,
       is_active: true,
       valid_from: "",
       valid_to: "",
@@ -29,6 +28,10 @@ export default function CouponFormModal({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (form.value === undefined) {
+      setError("Enter a discount value.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -66,10 +69,12 @@ export default function CouponFormModal({
           <Field label="Value">
             <TextInput
               type="number"
-              step="0.01"
+              step="any"
               min="0"
-              value={form.value ?? 0}
-              onChange={(e) => setForm((f) => ({ ...f, value: Number(e.target.value) }))}
+              placeholder="e.g. 10"
+              value={form.value ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, value: e.target.value === "" ? undefined : Number(e.target.value) }))}
+              required
             />
           </Field>
         </div>
