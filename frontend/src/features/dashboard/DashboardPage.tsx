@@ -27,7 +27,7 @@ function EmployeeDashboard() {
       <div className="mt-6 flex gap-3">
         <button
           onClick={() => navigate("/invoices/new")}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
         >
           + Create invoice
         </button>
@@ -71,7 +71,7 @@ function AdminDashboard({
           <p className="text-sm text-muted">{businessName}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => navigate("/invoices/new")} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">
+          <button onClick={() => navigate("/invoices/new")} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity">
             + Create invoice
           </button>
           <button onClick={() => navigate("/customers")} className="rounded-md border border-line px-4 py-2 text-sm font-medium hover:bg-wash-1">
@@ -86,7 +86,7 @@ function AdminDashboard({
             key={p}
             onClick={() => setPeriod(p)}
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              period === p ? "bg-accent text-white" : "border border-line text-muted hover:bg-wash-1"
+              period === p ? "bg-accent text-ink" : "border border-line text-muted hover:bg-wash-1"
             }`}
           >
             {p === "month" ? "This month" : p === "year" ? "This year" : "All time"}

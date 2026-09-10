@@ -61,13 +61,13 @@ function ServerSetupForm({ onDone }: { onDone: () => void }) {
             onChange={(e) => setAddress(e.target.value)}
             placeholder="192.168.1.50:8000"
             autoFocus
-            className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
           />
           {error && <p className="text-sm text-danger">{error}</p>}
           <button
             type="submit"
             disabled={testing}
-            className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {testing ? "Connecting..." : "Connect"}
           </button>

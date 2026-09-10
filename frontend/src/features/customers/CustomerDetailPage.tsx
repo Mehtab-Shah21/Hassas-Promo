@@ -94,7 +94,7 @@ export default function CustomerDetailPage() {
             <h2 className="text-base font-semibold text-ink">Employees</h2>
             <button
               onClick={() => setAddingEmployee(true)}
-              className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
             >
               + Add employee
             </button>
@@ -120,7 +120,7 @@ export default function CustomerDetailPage() {
                     </td>
                     <td className="py-2 text-muted">{emp.email}</td>
                     <td className="py-2 text-right">
-                      <button onClick={() => setEditingEmployee(emp)} className="text-accent hover:underline">
+                      <button onClick={() => setEditingEmployee(emp)} className="text-link hover:underline">
                         Edit
                       </button>
                     </td>

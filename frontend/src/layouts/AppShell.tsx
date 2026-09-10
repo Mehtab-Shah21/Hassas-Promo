@@ -95,7 +95,7 @@ function NotificationBell() {
       >
         <Bell size={16} />
         {badgeCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-bg">
             {badgeCount > 9 ? "9+" : badgeCount}
           </span>
         )}
@@ -123,7 +123,7 @@ function NotificationBell() {
                     </button>
                     <button
                       onClick={() => handleAcknowledge(n.id)}
-                      className="rounded-md bg-accent px-2 py-1 text-white hover:opacity-90 transition-opacity"
+                      className="rounded-md bg-accent px-2 py-1 text-ink hover:opacity-90 transition-opacity"
                     >
                       Acknowledge
                     </button>
@@ -137,7 +137,7 @@ function NotificationBell() {
               setOpen(false);
               navigate("/notifications");
             }}
-            className="block w-full border-t border-line px-3 py-2 text-center text-sm font-medium text-accent hover:bg-wash-1"
+            className="block w-full border-t border-line px-3 py-2 text-center text-sm font-medium text-link hover:bg-wash-1"
           >
             View all
           </button>
@@ -200,7 +200,7 @@ export default function AppShell() {
                 className={({ isActive }) =>
                   `group relative flex items-center rounded-md text-sm font-medium transition-colors ${
                     collapsed ? "justify-center px-2 py-2" : "justify-between px-3 py-2"
-                  } ${isActive ? "bg-accent text-white" : "text-muted hover:bg-wash-1 hover:text-ink"}`
+                  } ${isActive ? "bg-accent text-ink" : "text-muted hover:bg-wash-1 hover:text-ink"}`
                 }
               >
                 <span className={`flex min-w-0 items-center ${collapsed ? "" : "gap-2"}`}>
@@ -212,7 +212,7 @@ export default function AppShell() {
                       />
                     )}
                     {collapsed && item.to === "/notifications" && badgeCount > 0 && (
-                      <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+                      <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-bg">
                         {badgeCount > 9 ? "9+" : badgeCount}
                       </span>
                     )}
@@ -220,7 +220,7 @@ export default function AppShell() {
                   {!collapsed && <span className="truncate">{item.label}</span>}
                 </span>
                 {!collapsed && item.to === "/notifications" && badgeCount > 0 && (
-                  <span className="rounded-full bg-danger px-1.5 py-0.5 text-xs font-semibold text-white">
+                  <span className="rounded-full bg-danger px-1.5 py-0.5 text-xs font-semibold text-bg">
                     {badgeCount}
                   </span>
                 )}
@@ -256,7 +256,7 @@ export default function AppShell() {
             {isEnabled("notifications") && <NotificationBell />}
             <ThemeToggle />
             <span className="text-sm text-muted">{user?.display_name ?? user?.email}</span>
-            <span className="rounded-full bg-wash-2 px-2 py-0.5 text-xs font-medium capitalize text-ink">
+            <span className="rounded-full bg-beige px-2 py-0.5 text-xs font-medium capitalize text-beige-ink">
               {user?.role}
             </span>
             <button onClick={logout} className="text-sm text-muted hover:text-ink">

@@ -51,7 +51,7 @@ export default function CouponsPage() {
         {isAdmin && (
           <button
             onClick={() => setShowForm(true)}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
           >
             + Add coupon
           </button>
@@ -109,7 +109,7 @@ export default function CouponsPage() {
                   </td>
                   {isAdmin && (
                     <td className="px-4 py-2 text-right">
-                      <button onClick={() => setEditing(c)} className="mr-3 text-accent hover:underline">
+                      <button onClick={() => setEditing(c)} className="mr-3 text-link hover:underline">
                         Edit
                       </button>
                       <button onClick={() => handleDeactivate(c)} className="text-danger hover:underline">

@@ -53,7 +53,7 @@ export default function CustomersListPage() {
         <h1 className="text-xl font-semibold text-ink">Customers</h1>
         <button
           onClick={() => setShowAdd(true)}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
         >
           + Add customer
         </button>

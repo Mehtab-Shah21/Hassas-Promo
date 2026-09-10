@@ -14,9 +14,9 @@ function monthStart() {
 }
 
 const STATUS_STYLES: Record<AttendanceStatus, string> = {
-  present: "bg-accent-green text-white",
-  absent: "bg-danger text-white",
-  leave: "bg-orange-50 text-white",
+  present: "bg-accent-green text-bg",
+  absent: "bg-danger text-bg",
+  leave: "bg-orange-50 text-bg",
 };
 
 export default function AttendancePage() {
@@ -191,7 +191,7 @@ function EmployeesModal({ onClose, onChanged }: { onClose: () => void; onChanged
   return (
     <Modal title="Manage employees" onClose={onClose} wide>
       <div className="mb-3 flex justify-end">
-        <button onClick={() => setEditing("new")} className="text-sm font-medium text-accent hover:underline">
+        <button onClick={() => setEditing("new")} className="text-sm font-medium text-link hover:underline">
           + Add employee
         </button>
       </div>
@@ -226,7 +226,7 @@ function EmployeesModal({ onClose, onChanged }: { onClose: () => void; onChanged
                 </td>
                 <td className="py-2 text-right">
                   <div className="flex justify-end gap-3 text-xs">
-                    <button onClick={() => setEditing(emp)} className="font-medium text-accent hover:underline">
+                    <button onClick={() => setEditing(emp)} className="font-medium text-link hover:underline">
                       Edit
                     </button>
                     <button onClick={() => handleToggleActive(emp)} className="font-medium text-muted hover:text-danger">

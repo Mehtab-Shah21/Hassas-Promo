@@ -17,16 +17,45 @@
    attribute.
    ========================================================================== */
 @theme {
-  /* Core roles (dark — the default/guide theme) */
-  --color-bg: #000000;
-  --color-surface: #333333;
-  --color-ink: #f8fafb;
-  --color-muted: #525c69;
-  --color-line: #212121;
-  --color-accent: #0077ff;
-  --color-danger: #c21b16;
+  /* Core roles (dark — the default/guide theme)
+     Client palette: #1B3C53 (bg) / #234C6A (surface) / #456882 (accent) /
+     #D2C1B6 (beige, secondary-accent-only, applied per-component via
+     bg-beige-equivalent utilities where needed — not a token here since it's
+     used sparingly). Body text #EEF2F6. Muted is nudged from the client's
+     #9FB2C4 to #B2C1D0 — #9FB2C4 only measures 4.17:1 on --color-surface
+     (cards), just under AA's 4.5:1; #B2C1D0 clears both bg and surface.
+     --color-line (borders) and --color-danger/-info/-accent-green (status
+     colors) are also lightened from a literal read of the brief so they
+     clear 4.5:1 as text on this navy background — see the contrast report
+     for exact ratios. --color-orange-50 already cleared AA unchanged.
+
+     --color-link is a new role: text-accent (plain link/active-tab text)
+     needed a color distinct from --color-accent because #456882 measures
+     only ~2:1 against this navy background — nowhere near AA. --color-accent
+     stays the client's exact steel blue for button/pill FILLS (paired with
+     #EEF2F6 text, which is readable at 5.25:1); --color-link is the same
+     hue lightened until link/active-tab TEXT clears 4.5:1 on bg and surface.
+     Both --color-accent and --color-link are pinned back to their original
+     pre-restyle values under body[data-theme="light"] below, since this
+     retune is dark-theme-only. */
+  --color-bg: #1b3c53;
+  --color-surface: #234c6a;
+  --color-ink: #eef2f6;
+  --color-muted: #b2c1d0;
+  --color-line: #769bb7;
+  --color-accent: #456882;
+  --color-link: #a8c0d1;
+  --color-danger: #f5a6a3;
   --color-warning: #fdfae1;
-  --color-info: #2066b0;
+  --color-info: #93beeb;
+
+  /* Secondary accent, per the brief: small highlights/badges/dividers only —
+     never body text. Fixed in both themes (not overridden under
+     body[data-theme="light"]) since it's a standalone brand chip color, not
+     derived from either theme's bg/surface. --color-beige-ink is the
+     required text color when text sits ON a beige fill (6.63:1). */
+  --color-beige: #d2c1b6;
+  --color-beige-ink: #1b3c53;
 
   /* Subtle wash/overlay tints for hover states, table header rows, pill
      backgrounds, etc. Named by strength, not color, on purpose — dark theme
@@ -53,7 +82,7 @@
   --color-accent-yellow: #fef3b8;
   --color-accent-purple: #a77bde;
   --color-accent-turquoise: #05b5ab;
-  --color-accent-green: #29ad49;
+  --color-accent-green: #4ed56e;
   --color-accent-brown: #ae914b;
   --color-accent-pink: #fb6dba;
   --color-accent-aqua: #55d0e0;
@@ -102,10 +131,11 @@
 }
 
 /* Light theme — not part of the source style guide (which only documents a
-   dark login-page capture), constructed to match: same accent/status colors
-   (vivid enough to work on both), neutrals inverted using the guide's own
-   extended gray scale so it stays visually related to the dark theme rather
-   than an unrelated palette. */
+   dark login-page capture), constructed to match: neutrals inverted using
+   the guide's own extended gray scale so it stays visually related to the
+   dark theme rather than an unrelated palette. Accent/status colors are
+   pinned to their own values below (see comment there) rather than shared
+   with the dark theme, now that dark's versions are tuned for a navy bg. */
 body[data-theme="light"] {
   --color-bg: var(--color-gray-10);
   --color-surface: #ffffff;
@@ -116,6 +146,17 @@ body[data-theme="light"] {
   --color-wash-2: rgb(0 0 0 / 6%);
   --color-wash-3: rgb(0 0 0 / 9%);
   --color-wash-4: rgb(0 0 0 / 12%);
+
+  /* The dark-theme restyle above repoints --color-accent to the client's
+     navy-palette steel blue and brightens --color-danger/-info/-accent-green
+     so they read on a navy background — all values tuned for the dark
+     surfaces above. None of that suits a white page, so the light theme
+     pins its own pre-existing values here to stay exactly as it was. */
+  --color-accent: #0077ff;
+  --color-link: #0077ff;
+  --color-danger: #c21b16;
+  --color-info: #2066b0;
+  --color-accent-green: #29ad49;
   color-scheme: light;
 }
 

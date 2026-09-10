@@ -144,7 +144,7 @@ export default function PrintPreviewModal({
               type="button"
               onClick={handlePrint}
               disabled={busy !== null}
-              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {busy === "print" ? "Preparing..." : "Print"}
             </button>
@@ -161,7 +161,7 @@ function FormatButton({ active, onClick, children }: { active: boolean; onClick:
       type="button"
       onClick={onClick}
       className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
-        active ? "border-accent bg-accent/10 text-accent" : "border-line text-muted hover:bg-wash-1"
+        active ? "border-link bg-link/10 text-link" : "border-line text-muted hover:bg-wash-1"
       }`}
     >
       {children}

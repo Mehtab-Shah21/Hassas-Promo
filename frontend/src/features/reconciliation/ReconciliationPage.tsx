@@ -13,8 +13,8 @@ function today() {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  pending: "bg-orange-50 text-white",
-  received: "bg-accent-green text-white",
+  pending: "bg-orange-50 text-bg",
+  received: "bg-accent-green text-bg",
 };
 
 export default function ReconciliationPage() {
@@ -128,7 +128,7 @@ export default function ReconciliationPage() {
                       <button
                         onClick={() => handleMarkReceived(e)}
                         disabled={markingId === e.payment_id}
-                        className="rounded-md bg-accent px-3 py-1 text-xs font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50">
+                        className="rounded-md bg-accent px-3 py-1 text-xs font-medium text-ink hover:opacity-90 transition-opacity disabled:opacity-50">
                         {markingId === e.payment_id ?
                           "Marking..."
                         : "Mark received"}

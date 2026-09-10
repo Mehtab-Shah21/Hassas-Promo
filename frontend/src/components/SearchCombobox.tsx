@@ -51,7 +51,7 @@ export default function SearchCombobox<T>({
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
-        className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
       />
       {open && (
         <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-line bg-surface shadow-floating">
@@ -83,7 +83,7 @@ export default function SearchCombobox<T>({
                 extraOption.onClick();
                 setOpen(false);
               }}
-              className="block w-full border-t border-line px-3 py-2 text-left text-sm font-medium text-accent hover:bg-wash-1"
+              className="block w-full border-t border-line px-3 py-2 text-left text-sm font-medium text-link hover:bg-wash-1"
             >
               {extraOption.label}
             </button>

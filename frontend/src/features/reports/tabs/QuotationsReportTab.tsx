@@ -26,7 +26,7 @@ export default function QuotationsReportTab() {
             <Stat label="Created" value={data.counts.created} />
             <Stat label="Pending" value={data.counts.pending} />
             <Stat label="Accepted" value={data.counts.accepted} accent="text-accent-green" />
-            <Stat label="Converted" value={data.counts.converted} accent="text-accent" />
+            <Stat label="Converted" value={data.counts.converted} accent="text-link" />
             <Stat label="Rejected" value={data.counts.rejected} accent="text-danger" />
           </div>
           <table className="w-full text-sm">

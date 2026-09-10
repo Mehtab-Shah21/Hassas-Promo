@@ -68,7 +68,7 @@ export default function ServicesPage() {
             </button>
             <button
               onClick={() => setShowForm(true)}
-              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
             >
               + Add service
             </button>
@@ -141,7 +141,7 @@ export default function ServicesPage() {
                   <td className="px-4 py-2 text-muted">{s.taxable ? "Yes" : "No"}</td>
                   {isAdmin && (
                     <td className="px-4 py-2 text-right">
-                      <button onClick={() => setEditingService(s)} className="text-accent hover:underline">
+                      <button onClick={() => setEditingService(s)} className="text-link hover:underline">
                         Edit
                       </button>
                     </td>

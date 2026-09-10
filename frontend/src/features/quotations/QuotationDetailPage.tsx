@@ -76,7 +76,7 @@ export default function QuotationDetailPage() {
           </div>
           <div className="flex items-center gap-3">
             {quotation.status === "converted" ? (
-              <span className="rounded-full bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent">
+              <span className="rounded-full bg-link/10 px-3 py-1.5 text-sm font-medium text-link">
                 Converted → Invoice #{quotation.converted_invoice_id}
               </span>
             ) : (
@@ -104,7 +104,7 @@ export default function QuotationDetailPage() {
                 <button
                   onClick={handleConvert}
                   disabled={converting}
-                  className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-ink hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {converting ? "Converting..." : "Convert to invoice"}
                 </button>

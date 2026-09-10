@@ -38,7 +38,7 @@ export default function LockScreen() {
               autoFocus
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
             />
           ) : (
             <input
@@ -49,13 +49,13 @@ export default function LockScreen() {
               autoFocus
               value={pin}
               onChange={(e) => setPin(e.target.value)}
-              className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm tracking-widest text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm tracking-widest text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
             />
           )}
           {error && <p className="text-sm text-danger">{error}</p>}
           <button
             type="submit"
-            className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+            className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink transition-opacity hover:opacity-90"
           >
             Unlock
           </button>
@@ -63,7 +63,7 @@ export default function LockScreen() {
             <button
               type="button"
               onClick={() => setUsePassword((v) => !v)}
-              className="text-accent hover:underline"
+              className="text-link hover:underline"
             >
               {usePassword ? "Use PIN instead" : "Use password instead"}
             </button>

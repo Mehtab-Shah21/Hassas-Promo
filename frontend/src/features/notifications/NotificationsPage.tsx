@@ -63,7 +63,7 @@ export default function NotificationsPage() {
         <h1 className="text-xl font-semibold text-ink">Notifications</h1>
         <button
           onClick={() => setShowForm(true)}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
         >
           + New notification
         </button>
@@ -101,7 +101,7 @@ export default function NotificationsPage() {
                   <button onClick={() => handleSnooze(n.id)} className="rounded-md border border-line px-3 py-1 hover:bg-wash-1">
                     Snooze 3d
                   </button>
-                  <button onClick={() => handleAcknowledge(n.id)} className="rounded-md bg-accent px-3 py-1 text-white hover:opacity-90 transition-opacity">
+                  <button onClick={() => handleAcknowledge(n.id)} className="rounded-md bg-accent px-3 py-1 text-ink hover:opacity-90 transition-opacity">
                     Acknowledge
                   </button>
                   <button onClick={() => handleDelete(n.id)} className="text-danger hover:underline">

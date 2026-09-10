@@ -111,7 +111,7 @@ export default function InvoiceDetailPage() {
           <button
             type="button"
             onClick={() => setShowPrintPreview(true)}
-            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
           >
             Print / Preview
           </button>
@@ -141,8 +141,8 @@ export default function InvoiceDetailPage() {
 
           {/* Summary tiles */}
           <div className="mt-6 grid grid-cols-3 gap-3.5">
-            <div className="rounded-xl bg-accent p-4 text-white">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Grand total</p>
+            <div className="rounded-xl bg-accent p-4 text-ink">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink/70">Grand total</p>
               <p className="mt-1.5 text-xl font-bold" style={HEADING_FONT}>
                 <span className="mr-1 text-xs font-medium opacity-70">{currency}</span>
                 {invoice.grand_total.toFixed(2)}
@@ -218,7 +218,7 @@ export default function InvoiceDetailPage() {
               <Row label="Discount" value={-invoice.discount_total} />
               <Row label="VAT" value={invoice.vat_total} />
               <Row label="Govt. fees" value={invoice.govt_fee_total} />
-              <div className="my-3 flex items-center justify-between rounded-lg bg-accent px-4 py-3 text-white">
+              <div className="my-3 flex items-center justify-between rounded-lg bg-accent px-4 py-3 text-ink">
                 <span className="text-sm opacity-85">Grand total</span>
                 <span className="text-xl font-bold" style={HEADING_FONT}>
                   <span className="mr-1 text-xs font-medium opacity-70">{currency}</span>
@@ -238,8 +238,8 @@ export default function InvoiceDetailPage() {
 
           {/* Notes */}
           {invoice.notes && (
-            <div className="mt-8 rounded-r-md border-l-[3px] border-accent bg-accent/5 p-4">
-              <h4 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-accent">Notes</h4>
+            <div className="mt-8 rounded-r-md border-l-[3px] border-link bg-link/5 p-4">
+              <h4 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-link">Notes</h4>
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted">{invoice.notes}</p>
             </div>
           )}

@@ -11,7 +11,7 @@ const STATUS_COLORS: Record<QuotationStatus, string> = {
   sent: "bg-info/10 text-info",
   accepted: "bg-accent-green/10 text-accent-green",
   rejected: "bg-danger/10 text-danger",
-  converted: "bg-accent/10 text-accent",
+  converted: "bg-link/10 text-link",
 };
 
 export default function QuotationsListPage() {
@@ -53,7 +53,7 @@ export default function QuotationsListPage() {
         <h1 className="text-xl font-semibold text-ink">Quotations</h1>
         <button
           onClick={() => navigate("/quotations/new")}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
         >
           + Create quotation
         </button>

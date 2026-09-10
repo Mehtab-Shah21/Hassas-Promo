@@ -85,7 +85,7 @@ export default function BackupPage() {
         <button
           onClick={handleBackupNow}
           disabled={running || !folder}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {running ? "Backing up..." : "Backup now"}
         </button>

@@ -50,7 +50,7 @@ export default function CategoriesModal({
           placeholder="New category name"
           className="flex-1 rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
         />
-        <button type="submit" className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">
+        <button type="submit" className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity">
           Add
         </button>
       </form>
@@ -75,7 +75,7 @@ export default function CategoriesModal({
                   setEditingId(c.id);
                   setEditingName(c.name);
                 }}
-                className="text-accent hover:underline"
+                className="text-link hover:underline"
               >
                 Rename
               </button>

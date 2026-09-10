@@ -115,7 +115,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       type="button"
       onClick={onClick}
       className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
-        active ? "border-accent bg-accent/10 text-accent" : "border-line text-muted hover:bg-wash-1"
+        active ? "border-link bg-link/10 text-link" : "border-line text-muted hover:bg-wash-1"
       }`}
     >
       {children}
@@ -217,7 +217,7 @@ function A4ConfigEditor({ docType }: { docType: DocKind }) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save"}
           </button>
@@ -234,7 +234,7 @@ function A4ConfigEditor({ docType }: { docType: DocKind }) {
                   type="button"
                   onClick={() => set("layout_preset", preset.value)}
                   className={`rounded-md border p-2 text-left ${
-                    config.layout_preset === preset.value ? "border-accent bg-accent/5" : "border-line hover:bg-wash-1"
+                    config.layout_preset === preset.value ? "border-link bg-link/5" : "border-line hover:bg-wash-1"
                   }`}
                 >
                   <LayoutThumbnail preset={preset.value} primary={config.primary_color} accent={config.accent_color} />
@@ -447,7 +447,7 @@ function ThermalTab() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save"}
           </button>

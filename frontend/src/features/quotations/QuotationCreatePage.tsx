@@ -196,7 +196,7 @@ export default function QuotationCreatePage() {
             <button
               type="button"
               onClick={() => setLines((prev) => [...prev, emptyLine(defaultVat)])}
-              className="mt-3 text-sm font-medium text-accent hover:underline"
+              className="mt-3 text-sm font-medium text-link hover:underline"
             >
               + Add line
             </button>
@@ -254,7 +254,7 @@ export default function QuotationCreatePage() {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full rounded-md bg-accent px-4 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full rounded-md bg-accent px-4 py-3 text-sm font-medium text-ink hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {saving ? "Saving..." : "Create quotation"}
           </button>

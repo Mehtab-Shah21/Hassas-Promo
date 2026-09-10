@@ -170,7 +170,7 @@ export default function NotificationFormModal({
           <button
             type="button"
             onClick={() => setReminders((prev) => [...prev, { offset_value: 1, offset_unit: "day" }])}
-            className="mt-2 text-sm font-medium text-accent hover:underline"
+            className="mt-2 text-sm font-medium text-link hover:underline"
           >
             + Add reminder
           </button>

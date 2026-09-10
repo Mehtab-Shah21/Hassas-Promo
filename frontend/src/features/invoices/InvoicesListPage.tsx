@@ -68,7 +68,7 @@ export default function InvoicesListPage() {
         <h1 className="text-xl font-semibold text-ink">Invoices</h1>
         <button
           onClick={() => navigate("/invoices/new")}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
         >
           + Create invoice
         </button>

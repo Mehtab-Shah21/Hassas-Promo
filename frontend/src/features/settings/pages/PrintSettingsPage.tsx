@@ -56,7 +56,7 @@ export default function PrintSettingsPage() {
               onClick={() => setThermalPaperWidth(opt.value)}
               className={`rounded-md border px-4 py-2 text-sm font-medium ${
                 thermalPaperWidth === opt.value
-                  ? "border-accent bg-accent/10 text-accent"
+                  ? "border-link bg-link/10 text-link"
                   : "border-line text-muted hover:bg-wash-1"
               }`}
             >

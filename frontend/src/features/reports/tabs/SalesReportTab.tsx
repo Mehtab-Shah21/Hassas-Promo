@@ -30,7 +30,7 @@ export default function SalesReportTab() {
           <button
             key={v}
             onClick={() => setSubView(v)}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium ${subView === v ? "bg-accent text-white" : "border border-line text-muted"}`}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium ${subView === v ? "bg-accent text-ink" : "border border-line text-muted"}`}
           >
             {v === "summary" ? "Summary" : v === "by_invoice" ? "By Invoice" : "By Service"}
           </button>
