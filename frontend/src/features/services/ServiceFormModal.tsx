@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from "react";
+import { DollarSign, FileText, FolderTree, Landmark, Type } from "lucide-react";
 import { createService, updateService, type ServicePayload } from "../../api/services";
-import { Field, SaveButton, TextArea, TextInput } from "../../components/form/Field";
+import { Field, ModalFooter, Select, TextArea, TextInput, Toggle } from "../../components/form/Field";
 import Modal from "../../components/Modal";
+import { useBusiness } from "../../context/BusinessContext";
+import { currencyLabel } from "../../utils/currency";
 import type { Service, ServiceCategory } from "../../api/types";
 
 interface Props {
@@ -12,6 +15,7 @@ interface Props {
 }
 
 export default function ServiceFormModal({ service, categories, onClose, onSaved }: Props) {
+  const { activeBusiness } = useBusiness();
   const isEdit = !!service;
   const [form, setForm] = useState<ServicePayload>(
     service ?? {
@@ -39,77 +43,81 @@ export default function ServiceFormModal({ service, categories, onClose, onSaved
     }
   }
 
+  const currency = currencyLabel(activeBusiness);
+
   return (
     <Modal title={isEdit ? "Edit service" : "Add service"} onClose={onClose}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Name">
-          <TextInput
-            value={form.name ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            required
-          />
-        </Field>
-        <Field label="Category">
-          <select
-            value={form.category_id ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value ? Number(e.target.value) : null }))}
-            className="w-full rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
-          >
-            <option value="">Uncategorized</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Price (service fee)">
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-5">
+          <Field label="Name" icon={Type}>
             <TextInput
-              type="number"
-              step="any"
-              min="0"
-              placeholder="e.g. 1500"
-              value={form.price ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, price: e.target.value === "" ? undefined : Number(e.target.value) }))}
+              value={form.name ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="e.g. Passport renewal"
+              required
             />
           </Field>
-          <Field label="Govt. fee">
-            <TextInput
-              type="number"
-              step="any"
-              min="0"
-              placeholder="e.g. 200"
-              value={form.govt_fee ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, govt_fee: e.target.value === "" ? undefined : Number(e.target.value) }))}
+
+          <Field label="Category" icon={FolderTree}>
+            <Select
+              value={form.category_id ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value ? Number(e.target.value) : null }))}
+            >
+              <option value="">Uncategorized</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Service fee" icon={DollarSign}>
+              <TextInput
+                type="number"
+                step="any"
+                min="0"
+                placeholder="1500"
+                prefix={currency}
+                value={form.price ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value === "" ? undefined : Number(e.target.value) }))}
+              />
+            </Field>
+            <Field label="Govt. fee" icon={Landmark}>
+              <TextInput
+                type="number"
+                step="any"
+                min="0"
+                placeholder="200"
+                prefix={currency}
+                value={form.govt_fee ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, govt_fee: e.target.value === "" ? undefined : Number(e.target.value) }))}
+              />
+            </Field>
+          </div>
+
+          <Field label="Description" hint="(optional)" icon={FileText}>
+            <TextArea
+              rows={3}
+              placeholder="Short summary shown to customers"
+              value={form.description ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </Field>
-        </div>
-        <Field label="Description">
-          <TextArea
-            rows={2}
-            value={form.description ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          />
-        </Field>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.taxable ?? true}
-            onChange={(e) => setForm((f) => ({ ...f, taxable: e.target.checked }))}
-            className="h-4 w-4 rounded border-line"
-          />
-          Taxable (VAT applies)
-        </label>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+          <div className="pt-1">
+            <Toggle
+              checked={form.taxable ?? true}
+              onChange={(checked) => setForm((f) => ({ ...f, taxable: checked }))}
+              label="Taxable (VAT applies)"
+            />
+          </div>
 
-        <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-wash-2">
-            Cancel
-          </button>
-          <SaveButton saving={saving} label={isEdit ? "Save changes" : "Create"} />
+          {error && <p className="text-sm text-danger">{error}</p>}
         </div>
+
+        <ModalFooter onCancel={onClose} saving={saving} submitLabel={isEdit ? "Save changes" : "Create service"} />
       </form>
     </Modal>
   );

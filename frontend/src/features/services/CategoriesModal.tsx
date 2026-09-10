@@ -5,6 +5,7 @@ import {
   updateServiceCategory,
 } from "../../api/services";
 import Modal from "../../components/Modal";
+import { TextInput } from "../../components/form/Field";
 import type { ServiceCategory } from "../../api/types";
 
 export default function CategoriesModal({
@@ -43,14 +44,17 @@ export default function CategoriesModal({
 
   return (
     <Modal title="Manage categories" onClose={onClose}>
-      <form onSubmit={handleAdd} className="mb-4 flex gap-2">
-        <input
+      <form onSubmit={handleAdd} className="mb-5 flex gap-2">
+        <TextInput
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="New category name"
-          className="flex-1 rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
+          className="flex-1"
         />
-        <button type="submit" className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity">
+        <button
+          type="submit"
+          className="rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-ink transition-all hover:opacity-90 active:scale-[0.98]"
+        >
           Add
         </button>
       </form>

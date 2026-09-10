@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { updateBusiness } from "../../../api/businesses";
 import { useBusiness } from "../../../context/BusinessContext";
-import { Field, SaveButton, TextArea, TextInput } from "../../../components/form/Field";
+import { Field, SaveButton, TextArea, TextInput, Toggle } from "../../../components/form/Field";
 
 export default function InvoiceDefaultsPage() {
   const { activeBusiness, refreshBusinesses } = useBusiness();
@@ -68,15 +68,13 @@ export default function InvoiceDefaultsPage() {
             onChange={(e) => setForm((f) => ({ ...f, default_vat_rate: e.target.value }))}
           />
         </Field>
-        <label className="flex items-center gap-2 self-end pb-2">
-          <input
-            type="checkbox"
+        <div className="flex items-end pb-2">
+          <Toggle
             checked={form.show_govt_fee_on_invoice}
-            onChange={(e) => setForm((f) => ({ ...f, show_govt_fee_on_invoice: e.target.checked }))}
-            className="h-4 w-4 rounded border-line"
+            onChange={(checked) => setForm((f) => ({ ...f, show_govt_fee_on_invoice: checked }))}
+            label="Show government fee on printed invoice"
           />
-          <span className="text-sm font-medium text-muted">Show government fee on printed invoice</span>
-        </label>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

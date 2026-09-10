@@ -4,7 +4,7 @@ import { listCustomers, listEmployees } from "../../api/customers";
 import type { InvoiceItemPayload } from "../../api/invoices";
 import { createQuotation } from "../../api/quotations";
 import type { Customer } from "../../api/types";
-import { TextArea, TextInput } from "../../components/form/Field";
+import { TextArea, TextInput, Toggle } from "../../components/form/Field";
 import SearchCombobox from "../../components/SearchCombobox";
 import { useBusiness } from "../../context/BusinessContext";
 import CustomerFormModal from "../customers/CustomerFormModal";
@@ -220,10 +220,9 @@ export default function QuotationCreatePage() {
                 <TextArea rows={3} value={terms} onChange={(e) => setTerms(e.target.value)} />
               </label>
             </div>
-            <label className="mt-3 flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={showBankDetails} onChange={(e) => setShowBankDetails(e.target.checked)} />
-              Include bank details on quotation
-            </label>
+            <div className="mt-3">
+              <Toggle checked={showBankDetails} onChange={setShowBankDetails} label="Include bank details on quotation" />
+            </div>
           </div>
         </div>
 

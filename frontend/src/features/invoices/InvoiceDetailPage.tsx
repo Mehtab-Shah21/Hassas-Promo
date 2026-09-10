@@ -7,6 +7,7 @@ import "@fontsource/space-grotesk/600.css";
 import "@fontsource/space-grotesk/700.css";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { Calendar, DollarSign, Hash, Wallet } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getCustomer } from "../../api/customers";
 import {
@@ -21,7 +22,7 @@ import {
 import type { Customer, Invoice, InvoiceStatus, PaymentMethod } from "../../api/types";
 import Modal from "../../components/Modal";
 import PrintPreviewModal from "../../components/PrintPreviewModal";
-import { Field, SaveButton, TextInput } from "../../components/form/Field";
+import { Field, ModalFooter, Select, TextInput } from "../../components/form/Field";
 import { useBusiness } from "../../context/BusinessContext";
 import { currencyLabel } from "../../utils/currency";
 
@@ -378,37 +379,40 @@ function RecordPaymentModal({
     }
   }
 
+  const { activeBusiness } = useBusiness();
+
   return (
     <Modal title="Record payment" onClose={onClose}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label="Amount">
-          <TextInput type="number" step="any" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} required />
-        </Field>
-        <Field label="Payment method">
-          <select
-            value={paymentMethod}
-            onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-            className="w-full rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
-          >
-            {METHOD_OPTIONS.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Paid on">
-          <TextInput type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} required />
-        </Field>
-        <Field label="Reference (optional)">
-          <TextInput value={reference} onChange={(e) => setReference(e.target.value)} />
-        </Field>
-        <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-wash-2">
-            Cancel
-          </button>
-          <SaveButton saving={saving} label="Record payment" />
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-5">
+          <Field label="Amount" icon={DollarSign}>
+            <TextInput
+              type="number"
+              step="any"
+              min="0"
+              prefix={currencyLabel(activeBusiness)}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
+          </Field>
+          <Field label="Payment method" icon={Wallet}>
+            <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}>
+              {METHOD_OPTIONS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Paid on" icon={Calendar}>
+            <TextInput type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} required />
+          </Field>
+          <Field label="Reference" hint="(optional)" icon={Hash}>
+            <TextInput value={reference} onChange={(e) => setReference(e.target.value)} />
+          </Field>
         </div>
+        <ModalFooter onCancel={onClose} saving={saving} submitLabel="Record payment" />
       </form>
     </Modal>
   );

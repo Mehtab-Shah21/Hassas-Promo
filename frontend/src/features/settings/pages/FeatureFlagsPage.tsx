@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../../api/client";
+import { Toggle } from "../../../components/form/Field";
 import type { FeatureFlag } from "../../../api/types";
 
 export default function FeatureFlagsPage() {
@@ -47,19 +48,7 @@ export default function FeatureFlagsPage() {
               <p className="text-sm font-medium text-ink">{flag.label}</p>
               <p className="text-xs text-muted">{flag.key}</p>
             </div>
-            <button
-              onClick={() => toggle(flag)}
-              disabled={savingKey === flag.key}
-              className={`relative h-6 w-11 rounded-full transition-colors ${
-                flag.enabled ? "bg-accent" : "bg-wash-4"
-              } disabled:opacity-50`}
-            >
-              <span
-                className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-transform ${
-                  flag.enabled ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
+            <Toggle checked={flag.enabled} onChange={() => toggle(flag)} disabled={savingKey === flag.key} />
           </li>
         ))}
       </ul>
