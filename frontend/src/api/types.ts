@@ -62,6 +62,14 @@ export interface FeatureFlag {
 
 export type CustomerType = "individual" | "company";
 export type IdKind = "vat_tax" | "national_id";
+export type Emirate =
+  | "Abu Dhabi"
+  | "Dubai"
+  | "Sharjah"
+  | "Ajman"
+  | "Umm Al Quwain"
+  | "Fujairah"
+  | "Ras Al Khaimah";
 
 export interface Customer {
   id: number;
@@ -80,6 +88,7 @@ export interface Customer {
   state: string | null;
   postal_code: string | null;
   country: string | null;
+  emirate: Emirate | null;
   notes: string | null;
   is_active: boolean;
 }

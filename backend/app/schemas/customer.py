@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from app.models.customer import CustomerType, IdKind
+from app.models.customer import CustomerType, Emirate, IdKind
 
 
 class CustomerBase(BaseModel):
@@ -18,6 +18,7 @@ class CustomerBase(BaseModel):
     state: str | None = None
     postal_code: str | None = None
     country: str | None = None
+    emirate: Emirate | None = None
     notes: str | None = None
     is_active: bool = True
 
@@ -41,6 +42,7 @@ class CustomerUpdate(BaseModel):
     state: str | None = None
     postal_code: str | None = None
     country: str | None = None
+    emirate: Emirate | None = None
     notes: str | None = None
     is_active: bool | None = None
 

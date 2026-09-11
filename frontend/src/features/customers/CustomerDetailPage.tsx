@@ -77,7 +77,8 @@ export default function CustomerDetailPage() {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <Info label="Email" value={customer.email} />
           <Info label="Phone" value={[customer.phone_code, customer.phone].filter(Boolean).join(" ")} />
-          <Info label="Tax / ID" value={customer.id_value} />
+          <Info label={customer.type === "company" ? "TRN No." : "Emirates ID"} value={customer.id_value} />
+          <Info label="Emirates" value={customer.emirate} />
           <Info
             label="Address"
             value={[customer.address_line1, customer.address_line2, customer.city, customer.state, customer.country]
