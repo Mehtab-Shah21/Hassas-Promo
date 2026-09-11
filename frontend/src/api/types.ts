@@ -309,6 +309,8 @@ export interface DashboardSummary {
   top_customers: DashboardTopCustomer[];
   attendance_present_today: number | null;
   attendance_absent_today: number | null;
+  reconciliation_collected: number;
+  reconciliation_pending: number;
 }
 
 export type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "converted";

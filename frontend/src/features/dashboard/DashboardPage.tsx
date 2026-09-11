@@ -98,10 +98,27 @@ function AdminDashboard({
         <p className="text-sm text-muted">Loading...</p>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-3 gap-4">
+          <div className="mb-4 grid grid-cols-3 gap-4">
             <KpiCard label="Total sales" value={summary.total_sales} sub={`${summary.invoice_count} invoices`} />
             <KpiCard label="Government fees paid to date" value={summary.govt_fees_paid_to_date} accent="text-orange-50" />
             <KpiCard label="VAT collected" value={summary.vat_collected} accent="text-accent-green" />
+          </div>
+
+          <div className="mb-6 grid grid-cols-2 gap-4">
+            <KpiCard
+              label="Total collected"
+              value={summary.reconciliation_collected}
+              sub="Card & online payments"
+              accent="text-accent-green"
+              onClick={() => navigate("/reconciliation")}
+            />
+            <KpiCard
+              label="Still pending clearance"
+              value={summary.reconciliation_pending}
+              sub="All-time, card & online"
+              accent="text-orange-50"
+              onClick={() => navigate("/reconciliation")}
+            />
           </div>
 
           <div className="mb-6 rounded-lg border border-line bg-surface p-4">
@@ -161,12 +178,38 @@ function AdminDashboard({
   );
 }
 
-function KpiCard({ label, value, sub, accent }: { label: string; value: number; sub?: string; accent?: string }) {
-  return (
-    <div className="rounded-lg border border-line bg-surface p-4">
+function KpiCard({
+  label,
+  value,
+  sub,
+  accent,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  sub?: string;
+  accent?: string;
+  onClick?: () => void;
+}) {
+  const content = (
+    <>
       <p className="text-xs font-medium uppercase text-muted">{label}</p>
       <p className={`text-2xl font-semibold ${accent ?? "text-ink"}`}>{value.toFixed(2)}</p>
       {sub && <p className="text-xs text-muted">{sub}</p>}
-    </div>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full rounded-lg border border-line bg-surface p-4 text-left transition-colors hover:bg-wash-1"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return <div className="rounded-lg border border-line bg-surface p-4">{content}</div>;
 }

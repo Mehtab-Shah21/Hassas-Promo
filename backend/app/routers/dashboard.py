@@ -11,6 +11,7 @@ from app.models.customer import Customer
 from app.models.employee import Employee
 from app.models.invoice import Invoice, InvoiceStatus
 from app.schemas.dashboard import DashboardSummary, RecentInvoice, TopCustomer
+from app.services.reconciliation import build_reconciliation_query, totals_from_payments
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -94,6 +95,15 @@ def dashboard_summary(
     attendance_present_today = sum(1 for e in employees if today_records.get(e.id) == AttendanceStatus.present)
     attendance_absent_today = sum(1 for e in employees if today_records.get(e.id) == AttendanceStatus.absent)
 
+    # Same query/calculation the Reconciliation page uses (see
+    # services/reconciliation.py): collected follows this dashboard's own
+    # period toggle, pending is deliberately unbounded (all-time) so old
+    # uncleared payments keep showing regardless of the selected period.
+    period_payments = build_reconciliation_query(db, business_id, date_from, date_to).all()
+    reconciliation_collected, _ = totals_from_payments(period_payments)
+    all_time_payments = build_reconciliation_query(db, business_id).all()
+    _, reconciliation_pending = totals_from_payments(all_time_payments)
+
     return DashboardSummary(
         period=period,
         total_sales=total_sales,
@@ -104,4 +114,6 @@ def dashboard_summary(
         top_customers=top_customers,
         attendance_present_today=attendance_present_today,
         attendance_absent_today=attendance_absent_today,
+        reconciliation_collected=reconciliation_collected,
+        reconciliation_pending=reconciliation_pending,
     )

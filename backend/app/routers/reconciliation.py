@@ -6,32 +6,36 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.db import get_db
 from app.core.deps import require_active_business_id, require_admin
 from app.models.customer import Customer
-from app.models.invoice import ClearedStatus, Invoice, Payment, PaymentMethod
+from app.models.invoice import Invoice, Payment, PaymentMethod
 from app.schemas.invoice import PaymentResponse, ReconciliationEntry, ReconciliationResponse
 from app.services.audit import write_audit_log
+from app.services.reconciliation import build_reconciliation_query, totals_from_payments
 
 router = APIRouter(prefix="/api/reconciliation", tags=["reconciliation"])
 
 
 @router.get("", response_model=ReconciliationResponse)
 def get_reconciliation(
-    for_date: date = Query(default_factory=date.today, alias="date"),
+    for_date: date | None = Query(default=None, alias="date"),
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    scope: str = Query(default="day", pattern="^(day|range)$"),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
     current_user=Depends(require_admin),
 ):
-    payments = (
-        db.query(Payment)
-        .join(Invoice, Payment.invoice_id == Invoice.id)
-        .options(selectinload(Payment.invoice))
-        .filter(
-            Invoice.business_id == business_id,
-            Payment.paid_on == for_date,
-            Payment.payment_method.in_([PaymentMethod.card, PaymentMethod.online]),
-        )
-        .order_by(Payment.id)
-        .all()
-    )
+    # "day" (default) is the Reconciliation page's own single-date view,
+    # unchanged from before. "range" is for the Dashboard's KPI cards: pass
+    # date_from/date_to for a period-scoped total, or neither for a fully
+    # unbounded (all-time) total — see services/reconciliation.py.
+    if scope == "range":
+        response_date = date_from
+        query = build_reconciliation_query(db, business_id, date_from, date_to)
+    else:
+        response_date = for_date or date.today()
+        query = build_reconciliation_query(db, business_id, response_date, response_date)
+
+    payments = query.options(selectinload(Payment.invoice)).order_by(Payment.id).all()
 
     customer_names = {c.id: c.name for c in db.query(Customer).filter(Customer.business_id == business_id).all()}
 
@@ -49,11 +53,10 @@ def get_reconciliation(
         )
         for p in payments
     ]
-    total_collected = round(sum(e.amount for e in entries if e.cleared_status == ClearedStatus.received), 2)
-    total_pending = round(sum(e.amount for e in entries if e.cleared_status == ClearedStatus.pending), 2)
+    total_collected, total_pending = totals_from_payments(payments)
 
     return ReconciliationResponse(
-        date=for_date, entries=entries, total_collected=total_collected, total_pending=total_pending
+        date=response_date, entries=entries, total_collected=total_collected, total_pending=total_pending
     )
 
 

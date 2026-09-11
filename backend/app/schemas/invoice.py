@@ -158,7 +158,7 @@ class ReconciliationEntry(BaseModel):
 
 
 class ReconciliationResponse(BaseModel):
-    date: date
+    date: date | None
     entries: list[ReconciliationEntry]
     total_collected: float
     total_pending: float
