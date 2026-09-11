@@ -47,10 +47,7 @@ export function CustomerFields({
           <TextInput type="email" value={form.email ?? ""} onChange={set("email")} />
         </Field>
         <Field label="Phone" hint="(optional)" icon={Phone}>
-          <div className="flex gap-2">
-            <TextInput value={form.phone_code ?? ""} onChange={set("phone_code")} placeholder="+971" className="w-24" />
-            <TextInput value={form.phone ?? ""} onChange={set("phone")} className="flex-1" />
-          </div>
+          <TextInput value={form.phone ?? ""} onChange={set("phone")} placeholder="+971 50 123 4567" />
         </Field>
       </div>
 
