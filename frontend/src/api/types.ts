@@ -55,6 +55,7 @@ export interface Business {
 
 export interface FeatureFlag {
   id: number;
+  business_id: number | null;
   key: string;
   enabled: boolean;
   label: string;

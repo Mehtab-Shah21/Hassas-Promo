@@ -4,14 +4,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
-from app.core.deps import require_active_business_id, require_admin
+from app.core.deps import require_active_business_id, require_admin, require_module_enabled
 from app.models.customer import Customer
 from app.models.invoice import Invoice, Payment, PaymentMethod
 from app.schemas.invoice import PaymentResponse, ReconciliationEntry, ReconciliationResponse
 from app.services.audit import write_audit_log
 from app.services.reconciliation import build_reconciliation_query, totals_from_payments
 
-router = APIRouter(prefix="/api/reconciliation", tags=["reconciliation"])
+router = APIRouter(
+    prefix="/api/reconciliation",
+    tags=["reconciliation"],
+    dependencies=[Depends(require_module_enabled("reconciliation"))],
+)
 
 
 @router.get("", response_model=ReconciliationResponse)

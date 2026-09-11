@@ -6,7 +6,7 @@ const SETTINGS_NAV = [
   { to: "invoice-defaults", label: "Invoice Defaults" },
   { to: "quotation-defaults", label: "Quotation Defaults" },
   { to: "print", label: "Print & Paper" },
-  { to: "features", label: "Modules & Features" },
+  { to: "features", label: "Modules" },
   { to: "security", label: "Security" },
   { to: "backup", label: "Backup & Restore" },
 ];

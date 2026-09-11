@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
-from app.core.deps import get_current_user, require_active_business_id
+from app.core.deps import get_current_user, require_active_business_id, require_module_enabled
 from app.models.business import Business
 from app.models.coupon import Coupon
 from app.models.customer import Customer
@@ -31,7 +31,9 @@ from app.services.pdf import (
     resolve_page_border,
 )
 
-router = APIRouter(prefix="/api/quotations", tags=["quotations"])
+router = APIRouter(
+    prefix="/api/quotations", tags=["quotations"], dependencies=[Depends(require_module_enabled("quotations"))]
+)
 
 
 def _resolve_coupon(db: Session, business_id: int, code: str | None) -> Coupon | None:

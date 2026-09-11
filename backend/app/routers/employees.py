@@ -2,12 +2,17 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import require_active_business_id, require_admin
+from app.core.deps import require_active_business_id, require_admin, require_module_enabled
 from app.models.employee import Employee
 from app.schemas.employee import EmployeeCreate, EmployeeResponse, EmployeeUpdate
 from app.services.audit import write_audit_log
 
-router = APIRouter(prefix="/api/employees", tags=["employees"])
+# This is the Attendance module's staff roster (distinct from a company
+# customer's employees) — gated by the same "attendance" flag as
+# routers/attendance.py, since AttendancePage is its only consumer.
+router = APIRouter(
+    prefix="/api/employees", tags=["employees"], dependencies=[Depends(require_module_enabled("attendance"))]
+)
 
 
 @router.get("", response_model=list[EmployeeResponse])

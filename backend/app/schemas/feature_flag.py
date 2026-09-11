@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class FeatureFlagResponse(BaseModel):
     id: int
+    business_id: int | None
     key: str
     enabled: bool
     label: str

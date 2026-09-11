@@ -4,6 +4,7 @@ import { getDashboardSummary } from "../../api/dashboard";
 import type { DashboardSummary } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { useBusiness } from "../../context/BusinessContext";
+import { useFeatureFlags } from "../../context/FeatureFlagsContext";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -51,6 +52,7 @@ function AdminDashboard({
   businessName: string | undefined;
   navigate: ReturnType<typeof useNavigate>;
 }) {
+  const { isEnabled } = useFeatureFlags();
   const [period, setPeriod] = useState<"month" | "year" | "all">("month");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,22 +106,24 @@ function AdminDashboard({
             <KpiCard label="VAT collected" value={summary.vat_collected} accent="text-accent-green" />
           </div>
 
-          <div className="mb-6 grid grid-cols-2 gap-4">
-            <KpiCard
-              label="Total collected"
-              value={summary.reconciliation_collected}
-              sub="Card & online payments"
-              accent="text-accent-green"
-              onClick={() => navigate("/reconciliation")}
-            />
-            <KpiCard
-              label="Still pending clearance"
-              value={summary.reconciliation_pending}
-              sub="All-time, card & online"
-              accent="text-orange-50"
-              onClick={() => navigate("/reconciliation")}
-            />
-          </div>
+          {isEnabled("reconciliation") && (
+            <div className="mb-6 grid grid-cols-2 gap-4">
+              <KpiCard
+                label="Total collected"
+                value={summary.reconciliation_collected}
+                sub="Card & online payments"
+                accent="text-accent-green"
+                onClick={() => navigate("/reconciliation")}
+              />
+              <KpiCard
+                label="Still pending clearance"
+                value={summary.reconciliation_pending}
+                sub="All-time, card & online"
+                accent="text-orange-50"
+                onClick={() => navigate("/reconciliation")}
+              />
+            </div>
+          )}
 
           <div className="mb-6 rounded-lg border border-line bg-surface p-4">
             <h2 className="mb-2 text-sm font-semibold text-ink">Attendance today</h2>

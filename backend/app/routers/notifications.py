@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
-from app.core.deps import get_current_user, require_active_business_id
+from app.core.deps import get_current_user, require_active_business_id, require_module_enabled
 from app.models.customer import Customer
 from app.models.notification import Notification, NotificationReminder, ReminderUnit
 from app.models.service import Service
@@ -19,7 +19,9 @@ from app.schemas.notification import (
 )
 from app.services.audit import write_audit_log
 
-router = APIRouter(prefix="/api/notifications", tags=["notifications"])
+router = APIRouter(
+    prefix="/api/notifications", tags=["notifications"], dependencies=[Depends(require_module_enabled("notifications"))]
+)
 
 
 def _subtract(d: date, value: int, unit: ReminderUnit) -> date:

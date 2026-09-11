@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import require_active_business_id, require_admin
+from app.core.deps import require_active_business_id, require_admin, require_module_enabled
 from app.models.business import Business
 from app.services.pdf import (
     DEFAULT_TEMPLATE_CONFIG,
@@ -15,7 +15,19 @@ from app.services.pdf import (
     render_thermal_sample_html,
 )
 
-router = APIRouter(prefix="/api/design-studio", tags=["design-studio"])
+# Only gates this router's own preview/defaults endpoints. Design Studio's
+# actual *save* goes through PATCH /api/businesses/{id} (template_config /
+# thermal_template_config are just fields on Business), which is shared by
+# every other Settings page — gating that endpoint would also block Company
+# Profile, Regional, Invoice/Quotation Defaults, and Print Settings, so it's
+# deliberately left alone. Flagging this: the module can be hidden and its
+# preview blocked, but a direct API call could still PATCH template_config
+# on a business with Design Studio disabled.
+router = APIRouter(
+    prefix="/api/design-studio",
+    tags=["design-studio"],
+    dependencies=[Depends(require_module_enabled("design_studio"))],
+)
 
 
 def _validate_doc_kind(doc_type: str) -> str:

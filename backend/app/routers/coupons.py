@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import get_current_user, require_active_business_id, require_admin
+from app.core.deps import get_current_user, require_active_business_id, require_admin, require_module_enabled
 from app.models.coupon import Coupon
 from app.schemas.coupon import CouponCreate, CouponResponse, CouponUpdate
 from app.services.audit import write_audit_log
 
-router = APIRouter(prefix="/api/coupons", tags=["coupons"])
+router = APIRouter(prefix="/api/coupons", tags=["coupons"], dependencies=[Depends(require_module_enabled("coupons"))])
 
 
 @router.get("", response_model=list[CouponResponse])

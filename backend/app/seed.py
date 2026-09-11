@@ -10,12 +10,22 @@ from app.models.business import Business
 from app.models.feature_flag import FeatureFlag
 from app.models.user import User, UserRole
 
-DEFAULT_FLAGS = [
+# Per-business module flags — each existing business gets its own row per
+# key, so Main and IIM can be toggled independently. See "Modules" in
+# Settings and core/deps.py's require_module_enabled().
+DEFAULT_MODULE_FLAGS = [
+    ("quotations", "Quotations"),
     ("coupons", "Coupons"),
     ("notifications", "Notifications"),
     ("attendance", "Attendance"),
-    ("iim", "IIM Business"),
+    ("reconciliation", "Reconciliation"),
+    ("reports", "Reports"),
     ("design_studio", "Design Studio"),
+]
+# Global, install-wide flags (business_id is NULL) — not a module within a
+# business, so not part of the per-business set above.
+DEFAULT_GLOBAL_FLAGS = [
+    ("iim", "IIM Business"),
 ]
 
 
@@ -28,9 +38,15 @@ def seed() -> None:
             db.add(Business(name="IIM", invoice_prefix="IIM-INV-", quotation_prefix="IIM-QTN-"))
         db.commit()
 
-        for key, label in DEFAULT_FLAGS:
-            if not db.query(FeatureFlag).filter(FeatureFlag.key == key).first():
-                db.add(FeatureFlag(key=key, enabled=True, label=label))
+        for key, label in DEFAULT_GLOBAL_FLAGS:
+            if not db.query(FeatureFlag).filter(FeatureFlag.key == key, FeatureFlag.business_id.is_(None)).first():
+                db.add(FeatureFlag(business_id=None, key=key, enabled=True, label=label))
+        for business in db.query(Business).all():
+            for key, label in DEFAULT_MODULE_FLAGS:
+                if not db.query(FeatureFlag).filter(
+                    FeatureFlag.key == key, FeatureFlag.business_id == business.id
+                ).first():
+                    db.add(FeatureFlag(business_id=business.id, key=key, enabled=True, label=label))
         db.commit()
 
         admin_email = "admin@example.com"

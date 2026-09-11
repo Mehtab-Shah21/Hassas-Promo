@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import require_active_business_id, require_admin
+from app.core.deps import require_active_business_id, require_admin, require_module_enabled
 from app.models.attendance import Attendance
 from app.models.customer import Customer
 from app.models.employee import Employee
@@ -13,7 +13,7 @@ from app.models.invoice import Invoice, InvoiceItem, InvoiceStatus
 from app.models.quotation import Quotation
 from app.services.csv_export import rows_to_csv_response
 
-router = APIRouter(prefix="/api/reports", tags=["reports"])
+router = APIRouter(prefix="/api/reports", tags=["reports"], dependencies=[Depends(require_module_enabled("reports"))])
 
 
 def _month_bounds() -> tuple[date, date]:

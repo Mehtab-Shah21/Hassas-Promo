@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.security import decode_access_token
 from app.models.business import Business
+from app.models.feature_flag import FeatureFlag
 from app.models.user import User, UserRole
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
@@ -87,3 +88,31 @@ def require_active_business_id(
                 detail="The IIM business is restricted to admins",
             )
     return business_id
+
+
+def require_module_enabled(key: str):
+    """Router-level gate for an optional module: attach via
+    `APIRouter(..., dependencies=[Depends(require_module_enabled("coupons"))])`
+    so every endpoint on that router 403s once the module is toggled off for
+    the active business — the flag can no longer be bypassed by calling the
+    API directly, only the sidebar/UI was checking it before. No row for
+    this (business_id, key) defaults to enabled, matching the frontend's own
+    `isEnabled` default.
+    """
+
+    def dependency(
+        business_id: int = Depends(require_active_business_id),
+        db: Session = Depends(get_db),
+    ) -> None:
+        flag = (
+            db.query(FeatureFlag)
+            .filter(FeatureFlag.business_id == business_id, FeatureFlag.key == key)
+            .first()
+        )
+        if flag is not None and not flag.enabled:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"The {flag.label} module is disabled for this business",
+            )
+
+    return dependency

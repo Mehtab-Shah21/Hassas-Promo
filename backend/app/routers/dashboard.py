@@ -9,6 +9,7 @@ from app.core.deps import require_active_business_id, require_admin
 from app.models.attendance import Attendance, AttendanceStatus
 from app.models.customer import Customer
 from app.models.employee import Employee
+from app.models.feature_flag import FeatureFlag
 from app.models.invoice import Invoice, InvoiceStatus
 from app.schemas.dashboard import DashboardSummary, RecentInvoice, TopCustomer
 from app.services.reconciliation import build_reconciliation_query, totals_from_payments
@@ -23,6 +24,11 @@ def _period_bounds(period: str) -> tuple[date | None, date | None]:
     if period == "year":
         return today.replace(month=1, day=1), today
     return None, None  # "all"
+
+
+def _module_enabled(db: Session, business_id: int, key: str) -> bool:
+    flag = db.query(FeatureFlag).filter(FeatureFlag.business_id == business_id, FeatureFlag.key == key).first()
+    return flag is None or flag.enabled
 
 
 @router.get("/summary", response_model=DashboardSummary)
@@ -86,23 +92,29 @@ def dashboard_summary(
         for cid, data in top_sorted
     ]
 
-    today = date.today()
-    employees = db.query(Employee).filter(Employee.business_id == business_id, Employee.is_active.is_(True)).all()
-    today_records = {
-        a.employee_id: a.status
-        for a in db.query(Attendance).filter(Attendance.business_id == business_id, Attendance.date == today).all()
-    }
-    attendance_present_today = sum(1 for e in employees if today_records.get(e.id) == AttendanceStatus.present)
-    attendance_absent_today = sum(1 for e in employees if today_records.get(e.id) == AttendanceStatus.absent)
+    attendance_present_today: int | None = None
+    attendance_absent_today: int | None = None
+    if _module_enabled(db, business_id, "attendance"):
+        today = date.today()
+        employees = db.query(Employee).filter(Employee.business_id == business_id, Employee.is_active.is_(True)).all()
+        today_records = {
+            a.employee_id: a.status
+            for a in db.query(Attendance).filter(Attendance.business_id == business_id, Attendance.date == today).all()
+        }
+        attendance_present_today = sum(1 for e in employees if today_records.get(e.id) == AttendanceStatus.present)
+        attendance_absent_today = sum(1 for e in employees if today_records.get(e.id) == AttendanceStatus.absent)
 
     # Same query/calculation the Reconciliation page uses (see
     # services/reconciliation.py): collected follows this dashboard's own
     # period toggle, pending is deliberately unbounded (all-time) so old
     # uncleared payments keep showing regardless of the selected period.
-    period_payments = build_reconciliation_query(db, business_id, date_from, date_to).all()
-    reconciliation_collected, _ = totals_from_payments(period_payments)
-    all_time_payments = build_reconciliation_query(db, business_id).all()
-    _, reconciliation_pending = totals_from_payments(all_time_payments)
+    reconciliation_collected = 0.0
+    reconciliation_pending = 0.0
+    if _module_enabled(db, business_id, "reconciliation"):
+        period_payments = build_reconciliation_query(db, business_id, date_from, date_to).all()
+        reconciliation_collected, _ = totals_from_payments(period_payments)
+        all_time_payments = build_reconciliation_query(db, business_id).all()
+        _, reconciliation_pending = totals_from_payments(all_time_payments)
 
     return DashboardSummary(
         period=period,

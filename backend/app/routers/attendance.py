@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import require_active_business_id, require_admin
+from app.core.deps import require_active_business_id, require_admin, require_module_enabled
 from app.models.attendance import Attendance, AttendanceStatus
 from app.models.employee import Employee
 from app.schemas.attendance import (
@@ -17,7 +17,9 @@ from app.schemas.attendance import (
 )
 from app.services.audit import write_audit_log
 
-router = APIRouter(prefix="/api/attendance", tags=["attendance"])
+router = APIRouter(
+    prefix="/api/attendance", tags=["attendance"], dependencies=[Depends(require_module_enabled("attendance"))]
+)
 
 
 def _active_employees(db: Session, business_id: int) -> list[Employee]:

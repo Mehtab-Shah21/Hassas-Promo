@@ -6,6 +6,7 @@ import type { Customer, PaymentMethod } from "../../api/types";
 import { TextArea, TextInput, Toggle } from "../../components/form/Field";
 import SearchCombobox from "../../components/SearchCombobox";
 import { useBusiness } from "../../context/BusinessContext";
+import { useFeatureFlags } from "../../context/FeatureFlagsContext";
 import CustomerFormModal from "../customers/CustomerFormModal";
 import LineItemRow, { emptyLine, num, type LineItemState } from "./LineItemRow";
 
@@ -15,6 +16,7 @@ function today() {
 
 export default function InvoiceCreatePage() {
   const { activeBusiness } = useBusiness();
+  const { isEnabled } = useFeatureFlags();
   const navigate = useNavigate();
   const defaultVat = activeBusiness?.default_vat_rate ?? 0;
 
@@ -243,14 +245,16 @@ export default function InvoiceCreatePage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h2 className="mb-3 text-sm font-semibold text-ink">Coupon</h2>
-            <TextInput
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-              placeholder="Coupon code (optional)"
-            />
-          </div>
+          {isEnabled("coupons") && (
+            <div className="rounded-lg border border-line bg-surface p-4">
+              <h2 className="mb-3 text-sm font-semibold text-ink">Coupon</h2>
+              <TextInput
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="Coupon code (optional)"
+              />
+            </div>
+          )}
 
           <div className="rounded-lg border border-line bg-surface p-4 text-sm">
             <h2 className="mb-3 font-semibold text-ink">Totals (preview)</h2>

@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import AdminOnlyRoute from "./components/AdminOnlyRoute";
+import FeatureGate from "./components/FeatureGate";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { BusinessProvider } from "./context/BusinessContext";
 import { FeatureFlagsProvider } from "./context/FeatureFlagsContext";
@@ -58,16 +59,53 @@ function App() {
         <Route path="invoices" element={<InvoicesListPage />} />
         <Route path="invoices/new" element={<InvoiceCreatePage />} />
         <Route path="invoices/:id" element={<InvoiceDetailPage />} />
-        <Route path="quotations" element={<QuotationsListPage />} />
-        <Route path="quotations/new" element={<QuotationCreatePage />} />
-        <Route path="quotations/:id" element={<QuotationDetailPage />} />
-        <Route path="coupons" element={<CouponsPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
+        <Route
+          path="quotations"
+          element={
+            <FeatureGate flag="quotations" label="Quotations">
+              <QuotationsListPage />
+            </FeatureGate>
+          }
+        />
+        <Route
+          path="quotations/new"
+          element={
+            <FeatureGate flag="quotations" label="Quotations">
+              <QuotationCreatePage />
+            </FeatureGate>
+          }
+        />
+        <Route
+          path="quotations/:id"
+          element={
+            <FeatureGate flag="quotations" label="Quotations">
+              <QuotationDetailPage />
+            </FeatureGate>
+          }
+        />
+        <Route
+          path="coupons"
+          element={
+            <FeatureGate flag="coupons" label="Coupons">
+              <CouponsPage />
+            </FeatureGate>
+          }
+        />
+        <Route
+          path="notifications"
+          element={
+            <FeatureGate flag="notifications" label="Notifications">
+              <NotificationsPage />
+            </FeatureGate>
+          }
+        />
         <Route
           path="attendance"
           element={
             <AdminOnlyRoute>
-              <AttendancePage />
+              <FeatureGate flag="attendance" label="Attendance">
+                <AttendancePage />
+              </FeatureGate>
             </AdminOnlyRoute>
           }
         />
@@ -75,7 +113,9 @@ function App() {
           path="reconciliation"
           element={
             <AdminOnlyRoute>
-              <ReconciliationPage />
+              <FeatureGate flag="reconciliation" label="Reconciliation">
+                <ReconciliationPage />
+              </FeatureGate>
             </AdminOnlyRoute>
           }
         />
@@ -83,7 +123,9 @@ function App() {
           path="reports"
           element={
             <AdminOnlyRoute>
-              <ReportsPage />
+              <FeatureGate flag="reports" label="Reports">
+                <ReportsPage />
+              </FeatureGate>
             </AdminOnlyRoute>
           }
         />
@@ -99,7 +141,9 @@ function App() {
           path="design-studio"
           element={
             <AdminOnlyRoute>
-              <DesignStudioPage />
+              <FeatureGate flag="design_studio" label="Design Studio">
+                <DesignStudioPage />
+              </FeatureGate>
             </AdminOnlyRoute>
           }
         />

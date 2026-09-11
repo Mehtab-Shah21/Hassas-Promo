@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { apiClient } from "../api/client";
 import type { FeatureFlag } from "../api/types";
 import { useAuth } from "./AuthContext";
+import { useBusiness } from "./BusinessContext";
 
 interface FeatureFlagsContextValue {
   isEnabled: (key: string) => boolean;
@@ -13,6 +14,7 @@ const FeatureFlagsContext = createContext<FeatureFlagsContextValue | undefined>(
 
 export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { activeBusiness } = useBusiness();
   const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
@@ -22,14 +24,17 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    if (!user) {
+    // Module flags are per-business, so switching Main/IIM must refetch —
+    // the active business's id is sent via the X-Business-Id header the
+    // apiClient interceptor already attaches.
+    if (!user || !activeBusiness) {
       setLoading(false);
       return;
     }
     setLoading(true);
     load().finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, activeBusiness?.id]);
 
   const value = useMemo(
     () => ({
