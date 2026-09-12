@@ -33,3 +33,13 @@ class DashboardSummary(BaseModel):
     # shouldn't disappear just because they're not from "this period").
     reconciliation_collected: float
     reconciliation_pending: float
+    # active_users is a global headcount (user accounts aren't
+    # business-scoped), not period-scoped — a live snapshot.
+    active_users: int
+    # total_expenses reuses services/expenses.py's total_expenses(), scoped
+    # to this business + the selected period, same as total_sales.
+    total_expenses: float
+    # net_revenue = total_sales - total_expenses, computed backend-side in
+    # Decimal (see routers/dashboard.py) so the subtraction is exact money
+    # math, not float/string arithmetic done client-side.
+    net_revenue: float

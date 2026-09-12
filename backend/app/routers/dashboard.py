@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
@@ -11,7 +12,9 @@ from app.models.customer import Customer
 from app.models.employee import Employee
 from app.models.feature_flag import FeatureFlag
 from app.models.invoice import Invoice, InvoiceStatus
+from app.models.user import User
 from app.schemas.dashboard import DashboardSummary, RecentInvoice, TopCustomer
+from app.services.expenses import total_expenses as sum_expenses
 from app.services.reconciliation import build_reconciliation_query, totals_from_payments
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -116,6 +119,18 @@ def dashboard_summary(
         all_time_payments = build_reconciliation_query(db, business_id).all()
         _, reconciliation_pending = totals_from_payments(all_time_payments)
 
+    active_users = db.query(User).filter(User.is_active.is_(True)).count()
+
+    # Reuses Step 2's single-source-of-truth expense sum (Decimal, SQL-side
+    # SUM over a Numeric column) rather than re-deriving it. total_sales
+    # above is existing invoice logic that computes in float — converting
+    # it via str() (not a direct float->Decimal cast, which would drag in
+    # binary floating-point noise) lets the actual subtraction happen in
+    # exact Decimal space, so net_revenue is never string-concatenation or
+    # float-vs-Decimal arithmetic.
+    expenses_total = sum_expenses(db, business_id, date_from, date_to)
+    net_revenue = Decimal(str(total_sales)) - expenses_total
+
     return DashboardSummary(
         period=period,
         total_sales=total_sales,
@@ -128,4 +143,7 @@ def dashboard_summary(
         attendance_absent_today=attendance_absent_today,
         reconciliation_collected=reconciliation_collected,
         reconciliation_pending=reconciliation_pending,
+        active_users=active_users,
+        total_expenses=float(expenses_total),
+        net_revenue=float(net_revenue),
     )

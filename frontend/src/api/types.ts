@@ -363,6 +363,11 @@ export interface DashboardSummary {
   attendance_absent_today: number | null;
   reconciliation_collected: number;
   reconciliation_pending: number;
+  active_users: number;
+  total_expenses: number;
+  // net_revenue = total_sales - total_expenses, computed backend-side in
+  // Decimal (see routers/dashboard.py) — never recompute this client-side.
+  net_revenue: number;
 }
 
 export type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "converted";

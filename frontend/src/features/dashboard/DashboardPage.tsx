@@ -107,6 +107,27 @@ function AdminDashboard({
             <KpiCard label="VAT collected" value={summary.vat_collected} accent="text-accent-green" />
           </div>
 
+          <div className="mb-4 grid grid-cols-3 gap-4">
+            <KpiCard
+              label="Active users"
+              value={summary.active_users}
+              decimals={0}
+              onClick={() => navigate("/users")}
+            />
+            <KpiCard
+              label="Total expenses"
+              value={summary.total_expenses}
+              accent="text-orange-50"
+              onClick={() => navigate("/expenses")}
+            />
+            <KpiCard
+              label="Net revenue"
+              value={summary.net_revenue}
+              sub="Sales − expenses, this period"
+              accent={summary.net_revenue < 0 ? "text-danger" : "text-accent-green"}
+            />
+          </div>
+
           {isEnabled("reconciliation") && (
             <div className="mb-6 grid grid-cols-2 gap-4">
               <KpiCard
@@ -189,17 +210,19 @@ function KpiCard({
   sub,
   accent,
   onClick,
+  decimals = 2,
 }: {
   label: string;
   value: number;
   sub?: string;
   accent?: string;
   onClick?: () => void;
+  decimals?: number;
 }) {
   const content = (
     <>
       <p className="text-xs font-medium uppercase text-muted">{label}</p>
-      <p className={`text-2xl font-semibold ${accent ?? "text-ink"}`}>{value.toFixed(2)}</p>
+      <p className={`text-2xl font-semibold ${accent ?? "text-ink"}`}>{value.toFixed(decimals)}</p>
       {sub && <p className="text-xs text-muted">{sub}</p>}
     </>
   );
