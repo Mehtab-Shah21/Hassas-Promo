@@ -27,9 +27,9 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
+    user = db.query(User).filter(User.username == payload.username).first()
     if not user or not user.is_active or not verify_password(payload.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
     token = create_access_token({"sub": str(user.id)})
     write_audit_log(
         db,
@@ -38,7 +38,7 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
         action="login",
         entity_type="user",
         entity_id=user.id,
-        description=f"{user.email} signed in (password)",
+        description=f"{user.username} signed in (password)",
         source_ip=get_client_ip(request),
     )
     db.commit()
@@ -47,9 +47,9 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
 
 @router.post("/login-pin", response_model=TokenResponse)
 def login_pin(payload: PinLoginRequest, request: Request, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
+    user = db.query(User).filter(User.username == payload.username).first()
     if not user or not user.is_active or not user.pin_hash or not verify_pin(payload.pin, user.pin_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or PIN")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or PIN")
     token = create_access_token({"sub": str(user.id)})
     write_audit_log(
         db,
@@ -58,7 +58,7 @@ def login_pin(payload: PinLoginRequest, request: Request, db: Session = Depends(
         action="login",
         entity_type="user",
         entity_id=user.id,
-        description=f"{user.email} signed in (PIN)",
+        description=f"{user.username} signed in (PIN)",
         source_ip=get_client_ip(request),
     )
     db.commit()

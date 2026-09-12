@@ -49,22 +49,23 @@ def seed() -> None:
                     db.add(FeatureFlag(business_id=business.id, key=key, enabled=True, label=label))
         db.commit()
 
-        admin_email = "admin@example.com"
-        if not db.query(User).filter(User.email == admin_email).first():
+        admin_username = "admin"
+        if not db.query(User).filter(User.username == admin_username).first():
             db.add(
                 User(
+                    username=admin_username,
                     first_name="Admin",
                     last_name="User",
                     display_name="Admin",
-                    email=admin_email,
+                    email="admin@example.com",
                     password_hash=hash_password("admin123"),
-                    role=UserRole.admin,
+                    role=UserRole.superadmin,
                     avatar_color="#4F46E5",
                 )
             )
         db.commit()
         print("Seed complete.")
-        print(f"  Admin login: {admin_email} / admin123")
+        print(f"  Admin login: {admin_username} / admin123")
     finally:
         db.close()
 

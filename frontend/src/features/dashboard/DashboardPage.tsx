@@ -5,13 +5,14 @@ import type { DashboardSummary } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { useBusiness } from "../../context/BusinessContext";
 import { useFeatureFlags } from "../../context/FeatureFlagsContext";
+import { isAdminOrAbove } from "../../utils/roles";
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { activeBusiness } = useBusiness();
   const navigate = useNavigate();
 
-  if (user?.role !== "admin") {
+  if (!isAdminOrAbove(user?.role)) {
     return <EmployeeDashboard />;
   }
 
@@ -23,7 +24,7 @@ function EmployeeDashboard() {
   const navigate = useNavigate();
   return (
     <div>
-      <h1 className="text-xl font-semibold text-ink">Welcome, {user?.display_name ?? user?.email}</h1>
+      <h1 className="text-xl font-semibold text-ink">Welcome, {user?.display_name ?? user?.username}</h1>
       <p className="mt-1 text-sm text-muted">Financial summaries are visible to admins only.</p>
       <div className="mt-6 flex gap-3">
         <button

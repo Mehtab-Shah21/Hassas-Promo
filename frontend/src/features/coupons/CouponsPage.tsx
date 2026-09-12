@@ -3,12 +3,13 @@ import { deactivateCoupon, listCoupons } from "../../api/coupons";
 import type { Coupon } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { useBusiness } from "../../context/BusinessContext";
+import { isAdminOrAbove } from "../../utils/roles";
 import CouponFormModal from "./CouponFormModal";
 
 export default function CouponsPage() {
   const { user } = useAuth();
   const { activeBusiness } = useBusiness();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = isAdminOrAbove(user?.role);
 
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);

@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
+  UserCog,
   Briefcase,
   FileText,
   FileClock,
@@ -24,6 +25,7 @@ import { useAuth } from "../context/AuthContext";
 import { useBusiness } from "../context/BusinessContext";
 import { useFeatureFlags } from "../context/FeatureFlagsContext";
 import { useNotifications } from "../context/NotificationsContext";
+import { isAdminOrAbove } from "../utils/roles";
 
 interface NavItem {
   to: string;
@@ -46,6 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/reports", label: "Reports", icon: BarChart3, adminOnly: true, flag: "reports" },
   { to: "/audit-log", label: "Audit Log", icon: ScrollText, adminOnly: true },
   { to: "/design-studio", label: "Design Studio", icon: Palette, adminOnly: true, flag: "design_studio" },
+  { to: "/users", label: "Users", icon: UserCog, adminOnly: true },
   { to: "/settings", label: "Settings", icon: SettingsIcon, adminOnly: true },
 ];
 
@@ -163,10 +166,10 @@ export default function AppShell() {
   }, [collapsed]);
 
   const visibleBusinesses = businesses.filter(
-    (b) => b.name === "Main" || (user?.role === "admin" && isEnabled("iim")),
+    (b) => b.name === "Main" || (isAdminOrAbove(user?.role) && isEnabled("iim")),
   );
   const visibleItems = NAV_ITEMS.filter(
-    (item) => (!item.adminOnly || user?.role === "admin") && (!item.flag || isEnabled(item.flag)),
+    (item) => (!item.adminOnly || isAdminOrAbove(user?.role)) && (!item.flag || isEnabled(item.flag)),
   );
 
   return (
@@ -249,7 +252,7 @@ export default function AppShell() {
           <div className="flex items-center gap-3">
             {isEnabled("notifications") && <NotificationBell />}
             <ThemeToggle />
-            <span className="text-sm text-muted">{user?.display_name ?? user?.email}</span>
+            <span className="text-sm text-muted">{user?.display_name ?? user?.username}</span>
             <span className="rounded-full bg-beige px-2 py-0.5 text-xs font-medium capitalize text-beige-ink">
               {user?.role}
             </span>

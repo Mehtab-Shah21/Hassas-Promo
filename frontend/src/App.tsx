@@ -32,6 +32,7 @@ import RegionalPage from "./features/settings/pages/RegionalPage";
 import ServicesPage from "./features/services/ServicesPage";
 import SecurityPage from "./features/settings/pages/SecurityPage";
 import SettingsShell from "./features/settings/SettingsShell";
+import UsersPage from "./features/users/UsersPage";
 import AppShell from "./layouts/AppShell";
 
 function App() {
@@ -144,6 +145,14 @@ function App() {
               <FeatureGate flag="design_studio" label="Design Studio">
                 <DesignStudioPage />
               </FeatureGate>
+            </AdminOnlyRoute>
+          }
+        />
+        <Route
+          path="users"
+          element={
+            <AdminOnlyRoute>
+              <UsersPage />
             </AdminOnlyRoute>
           }
         />

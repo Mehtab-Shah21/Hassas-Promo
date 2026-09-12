@@ -46,11 +46,26 @@ def require_role(*roles: UserRole):
     return dependency
 
 
+ADMIN_ROLES = (UserRole.admin, UserRole.superadmin)
+
+
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role != UserRole.admin:
+    """Admin-or-above — superadmin is a superset of admin everywhere in the
+    app except the Users module itself, which enforces the finer
+    admin-vs-superadmin split inline (see routers/users.py)."""
+    if current_user.role not in ADMIN_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required",
+        )
+    return current_user
+
+
+def require_superadmin(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role != UserRole.superadmin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Superadmin privileges required",
         )
     return current_user
 
@@ -74,7 +89,7 @@ def require_active_business_id(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="X-Business-Id header is required",
         )
-    if current_user.role != UserRole.admin:
+    if current_user.role not in ADMIN_ROLES:
         # IIM is admin-only in full, per CLAUDE.md's permissions matrix —
         # every business-scoped router depends on this function, so this is
         # the one place that check needs to live rather than repeated in

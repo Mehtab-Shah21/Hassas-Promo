@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -16,10 +16,10 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(username, password);
       navigate("/", { replace: true });
     } catch {
-      setError("Invalid email or password");
+      setError("Invalid username or password");
     } finally {
       setSubmitting(false);
     }
@@ -32,12 +32,13 @@ export default function LoginPage() {
         <p className="mb-6 text-sm text-muted">Sign in to continue</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-muted">Email</label>
+            <label className="mb-1 block text-sm font-medium text-muted">Username</label>
             <input
-              type="email"
+              type="text"
+              autoComplete="username"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
               autoFocus
             />

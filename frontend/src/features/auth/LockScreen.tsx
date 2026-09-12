@@ -14,9 +14,9 @@ export default function LockScreen() {
     try {
       if (!user) return;
       if (usePassword) {
-        await login(user.email, password);
+        await login(user.username, password);
       } else {
-        await loginWithPin(user.email, pin);
+        await loginWithPin(user.username, pin);
       }
       unlock();
     } catch {
@@ -28,7 +28,7 @@ export default function LockScreen() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
       <div className="w-full max-w-sm rounded-xl bg-surface p-8 shadow-overlay">
         <h1 className="mb-1 text-lg font-semibold text-ink">Session locked</h1>
-        <p className="mb-6 text-sm text-muted">Signed in as {user?.display_name ?? user?.email}</p>
+        <p className="mb-6 text-sm text-muted">Signed in as {user?.display_name ?? user?.username}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           {usePassword ? (
             <input

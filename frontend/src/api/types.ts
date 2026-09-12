@@ -1,14 +1,31 @@
-export type UserRole = "admin" | "employee";
+export type UserRole = "superadmin" | "admin" | "employee";
 
 export interface CurrentUser {
   id: number;
+  username: string;
   first_name: string;
   last_name: string | null;
   display_name: string | null;
-  email: string;
+  email: string | null;
   role: UserRole;
+  employee_id: number | null;
   avatar_color: string | null;
   auto_lock_minutes: number;
+}
+
+export interface AppUser {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string | null;
+  display_name: string | null;
+  email: string | null;
+  role: UserRole;
+  employee_id: number | null;
+  avatar_color: string | null;
+  phone_code: string | null;
+  phone: string | null;
+  is_active: boolean;
 }
 
 export interface Business {
@@ -241,6 +258,7 @@ export interface Employee {
   role: string | null;
   phone_code: string | null;
   phone: string | null;
+  base_salary: number | null;
   is_active: boolean;
 }
 

@@ -105,7 +105,8 @@ If a request seems to pull toward any of the above, stop and confirm.
 
 | Module | Summary |
 |---|---|
-| **Auth & Users** | Password/PIN login, admin + employee roles, session auto-lock. |
+| **Auth & Users** | Username/PIN login (email is an optional record field, not the login identifier), superadmin/admin/employee roles, session auto-lock. |
+| **Users** | Superadmin/admin create, edit, and deactivate login accounts. An account may optionally link to an Employee record (see Attendance). |
 | **Businesses & Settings** | Main + IIM profiles, branding, invoice defaults, regional (currency/date), feature flags, backup/restore. |
 | **Customers** | Individual or company; company customers have employees. Per business. |
 | **Services** | Custom services (the replacement for EVRST "items"). |
@@ -113,7 +114,7 @@ If a request seems to pull toward any of the above, stop and confirm.
 | **Quotations** | Same engine as invoices; convert quotation → invoice in one click. |
 | **Coupons** | Discount codes (percent or fixed) picked while invoicing. |
 | **Notifications** | Manual per-customer reminders with custom types + date/relative triggers. In-app badges. |
-| **Attendance** | Basic present/absent/leave per employee. Admin-only. |
+| **Attendance** | Basic present/absent/leave per employee. Admin-only. Tracks against the shared Employee record (see §6) — not a login account. |
 | **Dashboard** | KPI cards + recent invoices + attendance summary. Per business. |
 | **Reports** | Finite service-based report set with CSV/PDF export. |
 | **Audit Log** | Log meaningful actions with user, entity, timestamp, source. |
@@ -136,9 +137,17 @@ show_govt_fee_on_invoice (bool), default_vat_rate,
 template_config (JSON — Design Studio), is_active`
 
 **users**
-`first_name, last_name, display_name, email (unique), password_hash,
-pin_hash (nullable), role (admin|employee), avatar_color, phone_code, phone,
-is_active`
+`username (unique, login identifier), first_name, last_name, display_name,
+email (optional, unique if set — record only, never used for login),
+password_hash, pin_hash (nullable), role (superadmin|admin|employee),
+employee_id (FK employees, nullable, unique — optional link to the shared
+staff record below), avatar_color, phone_code, phone, is_active`
+
+**employees** (scoped by `business_id`) — the one staff record shared by
+Attendance, Users (via `users.employee_id`), and the Expense module
+`business_id (FK), name, role, phone_code, phone, base_salary (nullable —
+used by Expenses), is_active` — no login of its own; a `users` row may
+optionally point at one.
 
 **customers** (scoped by `business_id`)
 `business_id (FK), type (individual|company), name, email, phone_code, phone,
@@ -183,36 +192,48 @@ acknowledged_at (nullable), created_by (FK user)`
 **notification_reminders** — `notification_id (FK), offset_value, offset_unit
 (day|week|month)` — "X before target_date". Multiple rows = multiple reminders.
 
-**attendance** (scoped) — `business_id, user_id (FK employee), date,
-status (present|absent|leave), note` — unique (user_id, date).
+**attendance** (scoped) — `business_id, employee_id (FK employees), date,
+status (present|absent|leave), note` — unique (employee_id, date).
 
 **audit_log** — `business_id (nullable), user_id (FK), action, entity_type,
 entity_id, description, source_ip`
 
-**feature_flags** (global, per-install) — `key (unique), enabled, label`
+**feature_flags** — `business_id (FK, nullable), key, enabled, label` —
+unique (business_id, key). Per-business for module toggles (Main/IIM
+differ independently); `business_id` NULL is reserved for install-wide
+flags (currently just whether the IIM business exists at all).
 
 ---
 
 ## 7. Permissions matrix
 
-| Area | Admin | Employee |
-|---|---|---|
-| Customers | full | full |
-| Invoices | full | full |
-| Quotations | full | create/view |
-| Notifications | full | full |
-| Services / categories | full | **read-only** (to pick when invoicing) |
-| Coupons | full | **read-only** (to apply when invoicing) |
-| Dashboard financials | full | **denied** |
-| Reports | full | **denied** |
-| Audit log | full | **denied** |
-| Settings / businesses / branding | full | **denied** |
-| Design Studio | full | **denied** |
-| Attendance | full | **denied** |
-| Backup / restore | full | **denied** |
-| IIM business (all of it) | full | **denied** (employees work on Main only) |
+Superadmin is a strict superset of Admin everywhere in this table — anywhere
+Admin has "full", Superadmin does too. The one place they genuinely differ is
+the Users module itself:
 
-Enforce every "denied" and "read-only" at the API layer.
+| Area | Superadmin | Admin | Employee |
+|---|---|---|---|
+| Customers | full | full | full |
+| Invoices | full | full | full |
+| Quotations | full | full | create/view |
+| Notifications | full | full | full |
+| Services / categories | full | full | **read-only** (to pick when invoicing) |
+| Coupons | full | full | **read-only** (to apply when invoicing) |
+| Dashboard financials | full | full | **denied** |
+| Reports | full | full | **denied** |
+| Audit log | full | full | **denied** |
+| Settings / businesses / branding | full | full | **denied** |
+| Design Studio | full | full | **denied** |
+| Attendance | full | full | **denied** |
+| Backup / restore | full | full | **denied** |
+| IIM business (all of it) | full | full | **denied** (employees work on Main only) |
+| **Users — manage employee-role accounts** | full | full | **denied** |
+| **Users — manage admin/superadmin-role accounts** | full | **denied** | **denied** |
+| **Users — grant admin/superadmin role** | full | **denied** | **denied** |
+
+An account can never deactivate or change the role of its own row (self-lockout
+guard), regardless of role. Enforce every "denied" and "read-only" at the API
+layer — not just hidden in the UI.
 
 ---
 

@@ -6,7 +6,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
-from app.core.deps import get_current_user, require_active_business_id
+from app.core.deps import ADMIN_ROLES, get_current_user, require_active_business_id
 from app.models.business import Business
 from app.models.coupon import Coupon
 from app.models.customer import Customer
@@ -122,7 +122,7 @@ def create_invoice(
         # employee-read-only, even though the invoice line itself is fully
         # editable by employees.
         if service is None and item.save_as_service:
-            if current_user.role != "admin":
+            if current_user.role not in ADMIN_ROLES:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Only an admin can save an ad-hoc line as a reusable service",

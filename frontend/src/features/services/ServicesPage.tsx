@@ -3,13 +3,14 @@ import { listServiceCategories, listServices } from "../../api/services";
 import type { Service, ServiceCategory } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { useBusiness } from "../../context/BusinessContext";
+import { isAdminOrAbove } from "../../utils/roles";
 import CategoriesModal from "./CategoriesModal";
 import ServiceFormModal from "./ServiceFormModal";
 
 export default function ServicesPage() {
   const { user } = useAuth();
   const { activeBusiness } = useBusiness();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = isAdminOrAbove(user?.role);
 
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [services, setServices] = useState<Service[]>([]);

@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { listServices } from "../../api/services";
 import SearchCombobox from "../../components/SearchCombobox";
 import { useAuth } from "../../context/AuthContext";
+import { isAdminOrAbove } from "../../utils/roles";
 import type { Service } from "../../api/types";
 
 // qty/unit_price/govt_fee/discount are "" until the user types a value, so an
@@ -104,7 +105,7 @@ export default function LineItemRow({
             {line.service_id === null && (
               <div className="mt-1 flex items-center gap-2">
                 <span className="text-xs text-muted">Ad-hoc line</span>
-                {user?.role === "admin" && (
+                {isAdminOrAbove(user?.role) && (
                   <label className="flex items-center gap-1 text-xs text-muted">
                     <input
                       type="checkbox"

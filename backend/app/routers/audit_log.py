@@ -52,7 +52,7 @@ def list_audit_log(
     total = q.count()
     entries = q.order_by(AuditLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
 
-    user_names = {u.id: (u.display_name or u.email) for u in db.query(User).all()}
+    user_names = {u.id: (u.display_name or u.username) for u in db.query(User).all()}
     items = [
         AuditLogResponse(
             id=e.id,
@@ -83,7 +83,7 @@ def export_audit_log(
 ):
     q = _build_query(db, search, entity_type, action, date_from, date_to)
     entries = q.order_by(AuditLog.created_at.desc()).limit(5000).all()
-    user_names = {u.id: (u.display_name or u.email) for u in db.query(User).all()}
+    user_names = {u.id: (u.display_name or u.username) for u in db.query(User).all()}
     rows = [
         {
             "created_at": e.created_at.isoformat(),

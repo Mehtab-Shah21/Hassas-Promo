@@ -6,8 +6,8 @@ interface AuthContextValue {
   user: CurrentUser | null;
   loading: boolean;
   locked: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithPin: (email: string, pin: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  loginWithPin: (username: string, pin: string) => Promise<void>;
   logout: () => void;
   unlock: () => void;
   refreshUser: () => Promise<void>;
@@ -43,8 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchMe]);
 
   const login = useCallback(
-    async (email: string, password: string) => {
-      const res = await apiClient.post<{ access_token: string }>("/api/auth/login", { email, password });
+    async (username: string, password: string) => {
+      const res = await apiClient.post<{ access_token: string }>("/api/auth/login", { username, password });
       localStorage.setItem("access_token", res.data.access_token);
       await fetchMe();
       setLocked(false);
@@ -53,8 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const loginWithPin = useCallback(
-    async (email: string, pin: string) => {
-      const res = await apiClient.post<{ access_token: string }>("/api/auth/login-pin", { email, pin });
+    async (username: string, pin: string) => {
+      const res = await apiClient.post<{ access_token: string }>("/api/auth/login-pin", { username, pin });
       localStorage.setItem("access_token", res.data.access_token);
       await fetchMe();
       setLocked(false);

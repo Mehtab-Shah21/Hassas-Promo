@@ -269,6 +269,7 @@ function EmployeeFormModal({
     role: employee?.role ?? "",
     phone_code: employee?.phone_code ?? "",
     phone: employee?.phone ?? "",
+    base_salary: employee?.base_salary != null ? String(employee.base_salary) : "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -281,6 +282,7 @@ function EmployeeFormModal({
         role: form.role || null,
         phone_code: form.phone_code || null,
         phone: form.phone || null,
+        base_salary: form.base_salary === "" ? null : Number(form.base_salary),
       };
       if (employee) {
         await updateEmployee(employee.id, payload);
@@ -312,6 +314,16 @@ function EmployeeFormModal({
             </Field>
           </div>
         </div>
+        <Field label="Base salary" hint="(optional — used by the Expense module)">
+          <TextInput
+            type="number"
+            step="any"
+            min="0"
+            placeholder="e.g. 3500"
+            value={form.base_salary}
+            onChange={(e) => setForm((f) => ({ ...f, base_salary: e.target.value }))}
+          />
+        </Field>
         <div className="flex justify-end gap-3 pt-2">
           <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted hover:bg-wash-2">
             Cancel
