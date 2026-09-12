@@ -271,6 +271,39 @@ export interface DayAttendanceEntry {
   note: string | null;
 }
 
+export type ExpenseType = "salary" | "overhead" | "company_expense";
+
+// amount/total_amount/total come back from the backend as JSON strings —
+// Pydantic serializes Decimal that way by default so precision survives the
+// wire (a JSON number would round-trip through a float). Parse with
+// Number(...) only where you need to compute; for display the string is
+// already formatted to 2 decimals.
+export interface Expense {
+  id: number;
+  business_id: number;
+  type: ExpenseType;
+  amount: string;
+  description: string | null;
+  date: string;
+  employee_id: number | null;
+  employee_name: string | null;
+  attachment_path: string | null;
+  created_by: number;
+}
+
+export interface PaginatedExpenses {
+  items: Expense[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_amount: string;
+}
+
+export interface ExpenseSummary {
+  total: string;
+  by_type: Record<ExpenseType, string>;
+}
+
 export interface EmployeeTotals {
   employee_id: number;
   employee_name: string;

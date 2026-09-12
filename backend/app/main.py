@@ -16,6 +16,7 @@ from app.routers import (
     dashboard,
     design_studio,
     employees,
+    expenses,
     feature_flags,
     invoices,
     notifications,
@@ -64,6 +65,7 @@ app.include_router(attendance.router)
 app.include_router(reports.router)
 app.include_router(audit_log.router)
 app.include_router(design_studio.router)
+app.include_router(expenses.router)
 app.include_router(backup.router)
 
 

@@ -13,6 +13,7 @@ import CustomerDetailPage from "./features/customers/CustomerDetailPage";
 import CustomersListPage from "./features/customers/CustomersListPage";
 import DashboardPage from "./features/dashboard/DashboardPage";
 import DesignStudioPage from "./features/design-studio/DesignStudioPage";
+import ExpensesPage from "./features/expenses/ExpensesPage";
 import InvoiceCreatePage from "./features/invoices/InvoiceCreatePage";
 import InvoiceDetailPage from "./features/invoices/InvoiceDetailPage";
 import InvoicesListPage from "./features/invoices/InvoicesListPage";
@@ -127,6 +128,14 @@ function App() {
               <FeatureGate flag="reports" label="Reports">
                 <ReportsPage />
               </FeatureGate>
+            </AdminOnlyRoute>
+          }
+        />
+        <Route
+          path="expenses"
+          element={
+            <AdminOnlyRoute>
+              <ExpensesPage />
             </AdminOnlyRoute>
           }
         />
