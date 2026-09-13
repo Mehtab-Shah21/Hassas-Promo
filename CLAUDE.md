@@ -71,6 +71,15 @@ If a request seems to pull toward any of the above, stop and confirm.
    - ⚠️ **Naming discipline:** `business_id` = which of the owner's businesses
      (Main / IIM). A *customer* that happens to be a company is a different concept
      — see rule 3. Do not conflate them.
+   - **Strict per-company user isolation.** Every non-superadmin user
+     (admin or employee) is assigned to exactly ONE company via
+     `users.business_id` and can never see, query, or act on the other
+     company's data — not just hidden in the UI, enforced centrally in
+     `core/deps.py`'s `require_active_business_id`: a non-superadmin's
+     effective business is always their own `business_id`, and a request
+     naming a different company via `X-Business-Id` is rejected (403), not
+     silently redirected. Only **superadmin** is unscoped and spans both
+     companies (keeps the business switcher). See §7.
 
 3. **Company customers have employees (self-reference on `customers`).** A customer
    has `type` = `individual` | `company`. A company customer can have employees
@@ -141,7 +150,10 @@ template_config (JSON — Design Studio), is_active`
 email (optional, unique if set — record only, never used for login),
 password_hash, pin_hash (nullable), role (superadmin|admin|employee),
 employee_id (FK employees, nullable, unique — optional link to the shared
-staff record below), avatar_color, phone_code, phone, is_active`
+staff record below), business_id (FK businesses, nullable — the ONE
+company this account is confined to; NULL only for superadmin, who spans
+both — see §4 rule 2's isolation note and §7), avatar_color, phone_code,
+phone, is_active`
 
 **employees** (scoped by `business_id`) — the one staff record shared by
 Attendance, Users (via `users.employee_id`), and the Expense module
@@ -209,7 +221,16 @@ flags (currently just whether the IIM business exists at all).
 
 Superadmin is a strict superset of Admin everywhere in this table — anywhere
 Admin has "full", Superadmin does too. The one place they genuinely differ is
-the Users module itself:
+the Users module itself.
+
+**Company scope is a separate axis from this table.** Every row of "full"
+access for Admin/Employee is implicitly "full access to THEIR OWN company
+only" — an admin or employee is confined to the one company on
+`users.business_id` and cannot reach the other company's data through any
+module, including ones marked "full" here. Superadmin's "full" spans both
+companies. IIM specifically is no longer a special-cased "admin-only"
+business by name — it's just whichever company a given admin/employee's
+`business_id` may or may not point at.
 
 | Area | Superadmin | Admin | Employee |
 |---|---|---|---|
@@ -225,9 +246,9 @@ the Users module itself:
 | Settings / businesses / branding | full | full | **denied** |
 | Design Studio | full | full | **denied** |
 | Attendance | full | full | **denied** |
-| Backup / restore | full | full | **denied** |
-| IIM business (all of it) | full | full | **denied** (employees work on Main only) |
-| **Users — manage employee-role accounts** | full | full | **denied** |
+| Backup / restore | **full** | **denied** | **denied** (whole-DB operation spans both companies — superadmin only) |
+| The OTHER company (whichever one isn't `users.business_id`) | full (spans both) | **denied** | **denied** |
+| **Users — manage employee-role accounts** | full (either company) | full (**own company only**) | **denied** |
 | **Users — manage admin/superadmin-role accounts** | full | **denied** | **denied** |
 | **Users — grant admin/superadmin role** | full | **denied** | **denied** |
 
@@ -270,7 +291,10 @@ Every report: period filter + **CSV** and **Print/PDF** export. All admin-only.
 
 These were reasonable defaults; flag them, don't silently rely on them:
 
-1. Employees work on the **Main** business only; **IIM is admin-only**.
+1. ~~Employees work on the Main business only; IIM is admin-only~~ — **superseded**:
+   every admin/employee is now assigned to exactly one company via
+   `users.business_id` (either Main or IIM), confirmed and confined to it. Only
+   superadmin is unscoped. See §4 rule 2 and §7.
 2. Main and IIM keep **separate** customer lists (no sharing).
 3. VAT is a **single simple percentage** (default rate on the business, overridable
    per line) — no multi-rate jurisdiction logic.

@@ -8,11 +8,15 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.db import get_db
-from app.core.deps import require_admin
+from app.core.deps import require_superadmin
 from app.models.backup_settings import BackupSettings
 from app.schemas.backup import BackupFileInfo, BackupSettingsResponse, BackupSettingsUpdate, RestoreRequest
 from app.services.audit import write_audit_log
 
+# Superadmin-only (not just require_admin): a backup snapshots and restore
+# overwrites the ENTIRE SQLite file, both companies at once, so a
+# company-scoped admin must not be able to read the other company's data
+# out of a backup file or blow away its live data with a restore.
 router = APIRouter(prefix="/api/backup", tags=["backup"])
 
 
@@ -42,13 +46,13 @@ def _get_or_create_settings(db: Session) -> BackupSettings:
 
 
 @router.get("/settings", response_model=BackupSettingsResponse)
-def get_settings(db: Session = Depends(get_db), current_user=Depends(require_admin)):
+def get_settings(db: Session = Depends(get_db), current_user=Depends(require_superadmin)):
     return _get_or_create_settings(db)
 
 
 @router.patch("/settings", response_model=BackupSettingsResponse)
 def update_settings(
-    payload: BackupSettingsUpdate, db: Session = Depends(get_db), current_user=Depends(require_admin)
+    payload: BackupSettingsUpdate, db: Session = Depends(get_db), current_user=Depends(require_superadmin)
 ):
     if payload.backup_folder is None:
         row = _get_or_create_settings(db)
@@ -71,7 +75,7 @@ def update_settings(
 
 
 @router.post("/run", response_model=BackupFileInfo, status_code=status.HTTP_201_CREATED)
-def run_backup(db: Session = Depends(get_db), current_user=Depends(require_admin)):
+def run_backup(db: Session = Depends(get_db), current_user=Depends(require_superadmin)):
     row = _get_or_create_settings(db)
     if not row.backup_folder:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Set a backup folder first")
@@ -97,7 +101,7 @@ def run_backup(db: Session = Depends(get_db), current_user=Depends(require_admin
 
 
 @router.get("/list", response_model=list[BackupFileInfo])
-def list_backups(db: Session = Depends(get_db), current_user=Depends(require_admin)):
+def list_backups(db: Session = Depends(get_db), current_user=Depends(require_superadmin)):
     row = _get_or_create_settings(db)
     if not row.backup_folder:
         return []
@@ -112,7 +116,7 @@ def list_backups(db: Session = Depends(get_db), current_user=Depends(require_adm
 
 
 @router.post("/restore")
-def restore_backup(payload: RestoreRequest, db: Session = Depends(get_db), current_user=Depends(require_admin)):
+def restore_backup(payload: RestoreRequest, db: Session = Depends(get_db), current_user=Depends(require_superadmin)):
     if not payload.confirm:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

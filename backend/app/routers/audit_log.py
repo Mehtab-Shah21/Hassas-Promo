@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.deps import require_admin
 from app.models.audit_log import AuditLog
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.audit_log import AuditLogResponse, PaginatedAuditLog
 from app.services.csv_export import rows_to_csv_response
 
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/api/audit-log", tags=["audit-log"])
 
 def _build_query(
     db: Session,
+    current_user: User,
     search: str | None,
     entity_type: str | None,
     action: str | None,
@@ -22,6 +23,13 @@ def _build_query(
     date_to: date | None,
 ):
     q = db.query(AuditLog)
+    if current_user.role != UserRole.superadmin:
+        # A company admin must never see the other company's audit trail
+        # (invoice numbers, customer names, etc. leak through descriptions)
+        # — global entries (business_id NULL: superadmin-only actions like
+        # cross-company user management or backups) are likewise not
+        # theirs to see.
+        q = q.filter(AuditLog.business_id == current_user.business_id)
     if entity_type:
         q = q.filter(AuditLog.entity_type == entity_type)
     if action:
@@ -48,7 +56,7 @@ def list_audit_log(
     db: Session = Depends(get_db),
     current_user=Depends(require_admin),
 ):
-    q = _build_query(db, search, entity_type, action, date_from, date_to)
+    q = _build_query(db, current_user, search, entity_type, action, date_from, date_to)
     total = q.count()
     entries = q.order_by(AuditLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
 
@@ -81,7 +89,7 @@ def export_audit_log(
     db: Session = Depends(get_db),
     current_user=Depends(require_admin),
 ):
-    q = _build_query(db, search, entity_type, action, date_from, date_to)
+    q = _build_query(db, current_user, search, entity_type, action, date_from, date_to)
     entries = q.order_by(AuditLog.created_at.desc()).limit(5000).all()
     user_names = {u.id: (u.display_name or u.username) for u in db.query(User).all()}
     rows = [

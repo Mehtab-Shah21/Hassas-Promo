@@ -203,6 +203,11 @@ def customer_statement(
     current_user=Depends(require_admin),
 ) -> Any:
     customer = db.get(Customer, customer_id)
+    if customer is not None and customer.business_id != business_id:
+        # Prevents a cross-company customer_id from leaking that
+        # customer's name into the response even though the invoices
+        # query below is already correctly business-scoped.
+        customer = None
     invoices = (
         db.query(Invoice)
         .filter(Invoice.business_id == business_id, Invoice.customer_id == customer_id, Invoice.status != InvoiceStatus.void)

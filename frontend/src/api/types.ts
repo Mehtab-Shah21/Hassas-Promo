@@ -9,6 +9,10 @@ export interface CurrentUser {
   email: string | null;
   role: UserRole;
   employee_id: number | null;
+  // Which company this account is locked to. Always null for superadmin
+  // (spans both); always set for admin/employee — see BusinessContext,
+  // which forces the active business to this for non-superadmins.
+  business_id: number | null;
   avatar_color: string | null;
   auto_lock_minutes: number;
 }
@@ -22,6 +26,7 @@ export interface AppUser {
   email: string | null;
   role: UserRole;
   employee_id: number | null;
+  business_id: number | null;
   avatar_color: string | null;
   phone_code: string | null;
   phone: string | null;

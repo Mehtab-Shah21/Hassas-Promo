@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { deactivateUser, listUsers } from "../../api/users";
 import type { AppUser } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
+import { useBusiness } from "../../context/BusinessContext";
 import UserFormModal from "./UserFormModal";
 
 const ROLE_STYLES: Record<string, string> = {
@@ -14,7 +15,9 @@ const ELEVATED = new Set(["admin", "superadmin"]);
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
+  const { businesses } = useBusiness();
   const isSuperadmin = currentUser?.role === "superadmin";
+  const businessName = (id: number | null) => businesses.find((b) => b.id === id)?.name ?? "—";
 
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +77,7 @@ export default function UsersPage() {
               <th className="px-4 py-2">Username</th>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Role</th>
+              {isSuperadmin && <th className="px-4 py-2">Company</th>}
               <th className="px-4 py-2">Linked employee</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2"></th>
@@ -82,13 +86,13 @@ export default function UsersPage() {
           <tbody className="divide-y divide-line">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                <td colSpan={isSuperadmin ? 7 : 6} className="px-4 py-8 text-center text-muted">
                   Loading...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                <td colSpan={isSuperadmin ? 7 : 6} className="px-4 py-8 text-center text-muted">
                   No users yet.
                 </td>
               </tr>
@@ -105,6 +109,9 @@ export default function UsersPage() {
                       {u.role}
                     </span>
                   </td>
+                  {isSuperadmin && (
+                    <td className="px-4 py-2 text-muted">{u.role === "superadmin" ? "All" : businessName(u.business_id)}</td>
+                  )}
                   <td className="px-4 py-2 text-muted">{u.employee_id ? `#${u.employee_id}` : "—"}</td>
                   <td className="px-4 py-2">
                     <span

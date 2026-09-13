@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.db import get_db
 from app.core.deps import get_current_user, require_admin
 from app.models.business import Business
+from app.models.user import UserRole
 from app.schemas.business import BusinessResponse, BusinessUpdate
 from app.services.audit import write_audit_log
 
@@ -18,13 +19,26 @@ ALLOWED_LOGO_TYPES = {"image/png", "image/jpeg", "image/svg+xml", "image/webp"}
 MAX_LOGO_BYTES = 3 * 1024 * 1024
 
 
+def _assert_in_scope(current_user, business_id: int) -> None:
+    """A non-superadmin may only ever see/touch their OWN company here —
+    otherwise this list/get endpoint would hand a company admin the other
+    company's name, branding, bank details, etc. by ID. 404 (not 403) so
+    they can't distinguish "doesn't exist" from "exists, not yours"."""
+    if current_user.role != UserRole.superadmin and current_user.business_id != business_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Business not found")
+
+
 @router.get("", response_model=list[BusinessResponse])
 def list_businesses(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    return db.query(Business).filter(Business.is_active.is_(True)).order_by(Business.id).all()
+    q = db.query(Business).filter(Business.is_active.is_(True))
+    if current_user.role != UserRole.superadmin:
+        q = q.filter(Business.id == current_user.business_id)
+    return q.order_by(Business.id).all()
 
 
 @router.get("/{business_id}", response_model=BusinessResponse)
 def get_business(business_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    _assert_in_scope(current_user, business_id)
     business = db.get(Business, business_id)
     if not business:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Business not found")
@@ -38,6 +52,7 @@ def update_business(
     db: Session = Depends(get_db),
     current_user=Depends(require_admin),
 ):
+    _assert_in_scope(current_user, business_id)
     business = db.get(Business, business_id)
     if not business:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Business not found")
@@ -59,6 +74,7 @@ def upload_logo(
     db: Session = Depends(get_db),
     current_user=Depends(require_admin),
 ):
+    _assert_in_scope(current_user, business_id)
     business = db.get(Business, business_id)
     if not business:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Business not found")

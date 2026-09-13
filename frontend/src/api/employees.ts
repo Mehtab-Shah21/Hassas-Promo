@@ -1,8 +1,11 @@
 import { apiClient } from "./client";
 import type { Employee } from "./types";
 
-export async function listEmployees(activeOnly = true): Promise<Employee[]> {
-  const res = await apiClient.get<Employee[]>("/api/employees", { params: { active_only: activeOnly } });
+export async function listEmployees(activeOnly = true, businessId?: number): Promise<Employee[]> {
+  const res = await apiClient.get<Employee[]>("/api/employees", {
+    params: { active_only: activeOnly },
+    headers: businessId ? { "X-Business-Id": String(businessId) } : undefined,
+  });
   return res.data;
 }
 

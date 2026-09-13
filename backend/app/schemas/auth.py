@@ -27,6 +27,7 @@ class CurrentUser(BaseModel):
     email: str | None
     role: UserRole
     employee_id: int | None
+    business_id: int | None
     avatar_color: str | None
     auto_lock_minutes: int
 

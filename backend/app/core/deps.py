@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.security import decode_access_token
-from app.models.business import Business
 from app.models.feature_flag import FeatureFlag
 from app.models.user import User, UserRole
 
@@ -82,27 +81,43 @@ def get_client_ip(request: Request) -> str | None:
 def require_active_business_id(
     business_id: int | None = Depends(get_active_business_id),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ) -> int:
-    if business_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="X-Business-Id header is required",
-        )
-    if current_user.role not in ADMIN_ROLES:
-        # IIM is admin-only in full, per CLAUDE.md's permissions matrix —
-        # every business-scoped router depends on this function, so this is
-        # the one place that check needs to live rather than repeated in
-        # each router. Identified by name, matching the same convention
-        # seed.py and the frontend's business switcher already use — there
-        # is no dedicated is_iim/kind column on Business.
-        business = db.get(Business, business_id)
-        if business is not None and business.name == "IIM":
+    """The single central place a request's effective business is resolved.
+
+    Every business-scoped router depends on this function (rather than
+    trusting the X-Business-Id header directly), so this is the one place
+    per-company isolation needs to be enforced.
+
+    - Superadmin spans every company: the header is required and honored
+      as-is (they own the business switcher).
+    - Everyone else (admin, employee) belongs to exactly ONE company,
+      fixed server-side on their own user row. Their effective business_id
+      is ALWAYS current_user.business_id — never client-supplied. If they
+      send a header naming a different company, that's a deliberate
+      cross-company access attempt and is rejected with 403, not silently
+      served or silently corrected.
+    """
+    if current_user.role == UserRole.superadmin:
+        if business_id is None:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="The IIM business is restricted to admins",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="X-Business-Id header is required",
             )
-    return business_id
+        return business_id
+
+    if current_user.business_id is None:
+        # Should not happen once every non-superadmin has been migrated to
+        # a company — fail closed rather than guess.
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is not assigned to a company. Contact an administrator.",
+        )
+    if business_id is not None and business_id != current_user.business_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to that company",
+        )
+    return current_user.business_id
 
 
 def require_module_enabled(key: str):

@@ -12,6 +12,12 @@ class UserCreate(BaseModel):
     password: str
     role: UserRole = UserRole.employee
     employee_id: int | None = None
+    # Which company this account belongs to. Required for admin/employee
+    # accounts, ignored (forced to None) for superadmin — see
+    # routers/users.py's create_user, which resolves and validates this
+    # rather than trusting the caller blindly: a plain admin can never set
+    # this to anything but their own company.
+    business_id: int | None = None
     avatar_color: str | None = None
     phone_code: str | None = None
     phone: str | None = None
@@ -26,6 +32,7 @@ class UserUpdate(BaseModel):
     password: str | None = None
     role: UserRole | None = None
     employee_id: int | None = None
+    business_id: int | None = None
     avatar_color: str | None = None
     phone_code: str | None = None
     phone: str | None = None
@@ -41,6 +48,7 @@ class UserResponse(BaseModel):
     email: str | None
     role: UserRole
     employee_id: int | None
+    business_id: int | None
     avatar_color: str | None
     phone_code: str | None
     phone: str | None

@@ -1,8 +1,9 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { KeyRound, Link2, Mail, Phone, ShieldCheck, User as UserIcon } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Building2, KeyRound, Link2, Mail, Phone, ShieldCheck, User as UserIcon } from "lucide-react";
 import { createUser, updateUser, type UserPayload } from "../../api/users";
 import { listEmployees } from "../../api/employees";
 import { useAuth } from "../../context/AuthContext";
+import { useBusiness } from "../../context/BusinessContext";
 import { Field, ModalFooter, Select, TextInput } from "../../components/form/Field";
 import Modal from "../../components/Modal";
 import type { AppUser, Employee, UserRole } from "../../api/types";
@@ -23,6 +24,7 @@ export default function UserFormModal({
   onSaved: (user: AppUser) => void;
 }) {
   const { user: currentUser } = useAuth();
+  const { businesses, activeBusiness } = useBusiness();
   const isEdit = !!targetUser;
   // A plain admin can only ever create/leave accounts at "employee" — only
   // a superadmin can grant admin/superadmin access (enforced again
@@ -38,6 +40,10 @@ export default function UserFormModal({
       email: "",
       role: "employee",
       employee_id: null,
+      // Only superadmin ever sees/edits this — a plain admin's created
+      // users are always forced into their own company server-side
+      // regardless of what's sent, so it's irrelevant for them.
+      business_id: canGrantElevated ? activeBusiness?.id ?? null : null,
       phone_code: "",
       phone: "",
     },
@@ -47,9 +53,24 @@ export default function UserFormModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // The company whose employee roster should be offered for linking: for
+  // superadmin, whichever company is picked in the form below (defaulting
+  // to their currently active one); for a plain admin, always their own.
+  const targetBusinessId = canGrantElevated ? form.business_id : currentUser?.business_id;
+
+  const isFirstEmployeeLoad = useRef(true);
   useEffect(() => {
-    listEmployees(false).then(setEmployees);
-  }, []);
+    listEmployees(false, targetBusinessId ?? undefined).then(setEmployees);
+    // Switching company invalidates any employee already picked from the
+    // previous company's roster — but not on the initial mount, which
+    // would otherwise wipe out an existing edit target's linked employee.
+    if (isFirstEmployeeLoad.current) {
+      isFirstEmployeeLoad.current = false;
+    } else {
+      setForm((f) => (f.employee_id ? { ...f, employee_id: null } : f));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetBusinessId]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -87,7 +108,18 @@ export default function UserFormModal({
             <Field label="Role" icon={ShieldCheck}>
               <Select
                 value={form.role ?? "employee"}
-                onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as UserRole }))}
+                onChange={(e) => {
+                  const role = e.target.value as UserRole;
+                  setForm((f) => ({
+                    ...f,
+                    role,
+                    // Superadmin spans every company — clear any company
+                    // pick when promoting to it; restore a sensible
+                    // default (the currently active business) when moving
+                    // back down to admin/employee.
+                    business_id: role === "superadmin" ? null : f.business_id ?? activeBusiness?.id ?? null,
+                  }));
+                }}
                 disabled={!canGrantElevated}
               >
                 {assignableRoles.map((r) => (
@@ -98,6 +130,25 @@ export default function UserFormModal({
               </Select>
             </Field>
           </div>
+
+          {canGrantElevated && form.role !== "superadmin" && (
+            <Field label="Company" hint="Which company this account belongs to" icon={Building2}>
+              <Select
+                value={form.business_id ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, business_id: e.target.value ? Number(e.target.value) : null }))}
+                required
+              >
+                <option value="" disabled>
+                  Select a company…
+                </option>
+                {businesses.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <Field label="First name">

@@ -41,9 +41,14 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  const businessId = localStorage.getItem("active_business_id");
-  if (businessId) {
-    config.headers["X-Business-Id"] = businessId;
+  // Respect an explicit per-request override (e.g. superadmin picking a
+  // target company in a form that isn't the currently active business)
+  // rather than always clobbering it with the globally active business.
+  if (!config.headers["X-Business-Id"]) {
+    const businessId = localStorage.getItem("active_business_id");
+    if (businessId) {
+      config.headers["X-Business-Id"] = businessId;
+    }
   }
   return config;
 });

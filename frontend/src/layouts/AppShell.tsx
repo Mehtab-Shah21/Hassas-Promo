@@ -26,7 +26,7 @@ import { useAuth } from "../context/AuthContext";
 import { useBusiness } from "../context/BusinessContext";
 import { useFeatureFlags } from "../context/FeatureFlagsContext";
 import { useNotifications } from "../context/NotificationsContext";
-import { isAdminOrAbove } from "../utils/roles";
+import { isAdminOrAbove, isSuperadmin } from "../utils/roles";
 
 interface NavItem {
   to: string;
@@ -167,9 +167,14 @@ export default function AppShell() {
     }
   }, [collapsed]);
 
-  const visibleBusinesses = businesses.filter(
-    (b) => b.name === "Main" || (isAdminOrAbove(user?.role) && isEnabled("iim")),
-  );
+  // Superadmin spans every company and owns the switcher; a non-superadmin
+  // has exactly one company in `businesses` already (the server itself
+  // only ever returns their own — see routers/businesses.py), so there is
+  // nothing to filter for them. The "iim" flag only matters for superadmin:
+  // a reseller install that doesn't use IIM can hide it from the switcher.
+  const visibleBusinesses = isSuperadmin(user?.role)
+    ? businesses.filter((b) => b.name !== "IIM" || isEnabled("iim"))
+    : businesses;
   const visibleItems = NAV_ITEMS.filter(
     (item) => (!item.adminOnly || isAdminOrAbove(user?.role)) && (!item.flag || isEnabled(item.flag)),
   );
@@ -239,17 +244,23 @@ export default function AppShell() {
         <header className="no-print flex h-14 shrink-0 items-center justify-between border-b border-line bg-bg px-6">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-muted">Business:</span>
-            <select
-              value={activeBusiness?.id ?? ""}
-              onChange={(e) => setActiveBusinessId(Number(e.target.value))}
-              className="rounded-md border border-line bg-surface px-2 py-1 text-sm font-medium text-ink focus:border-accent focus:outline-none"
-            >
-              {visibleBusinesses.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
+            {isSuperadmin(user?.role) ? (
+              <select
+                value={activeBusiness?.id ?? ""}
+                onChange={(e) => setActiveBusinessId(Number(e.target.value))}
+                className="rounded-md border border-line bg-surface px-2 py-1 text-sm font-medium text-ink focus:border-accent focus:outline-none"
+              >
+                {visibleBusinesses.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              // No switcher for a non-superadmin — they belong to exactly
+              // one company and must not even know another one exists.
+              <span className="text-sm font-medium text-ink">{activeBusiness?.name ?? "—"}</span>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {isEnabled("notifications") && <NotificationBell />}

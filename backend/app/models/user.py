@@ -34,6 +34,15 @@ class User(TimestampMixin, Base):
     employee_id: Mapped[int | None] = mapped_column(
         ForeignKey("employees.id"), nullable=True, unique=True, index=True
     )
+    # Company assignment for strict per-company isolation. NULL only for
+    # superadmin, who spans every company; every admin/employee account
+    # MUST have exactly one (enforced in schemas/routers, not a DB
+    # constraint — see core/deps.py's require_active_business_id, the
+    # single central place a non-superadmin's business_id is resolved and
+    # enforced for every business-scoped request).
+    business_id: Mapped[int | None] = mapped_column(
+        ForeignKey("businesses.id"), nullable=True, index=True
+    )
     avatar_color: Mapped[str | None] = mapped_column(String(20))
     phone_code: Mapped[str | None] = mapped_column(String(10))
     phone: Mapped[str | None] = mapped_column(String(50))
