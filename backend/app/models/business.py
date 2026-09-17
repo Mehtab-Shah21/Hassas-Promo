@@ -53,6 +53,11 @@ class Business(TimestampMixin, Base):
     default_quotation_terms: Mapped[str | None] = mapped_column(String(2000))
 
     template_config: Mapped[dict | None] = mapped_column(JSON)
+    # An exact, fixed-layout client template (e.g. "hassas", "iim") that
+    # completely bypasses template_config's configurable colors/fonts/layout
+    # presets — set via Design Studio. NULL uses the normal configurable
+    # system. See services/pdf.py's render_document_html.
+    custom_invoice_template: Mapped[str | None] = mapped_column(String(50))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Thermal receipt printing. thermal_paper_width is a hardware/printer

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>{{ doc_type }} {{ number }}</title>
+<style>
+  {# Exact replica of the client-supplied IIM invoice/quotation design — see
+     services/pdf.py's _render_custom_document_html and the long comment in
+     hassas_document.html.jinja2 for the shared xhtml2pdf constraints this
+     works around (no fixed td height, table-not-div for colored blocks,
+     column widths must sum to exactly 100%, no numeric vertical-align on
+     inline images). Colors (#FFC000 gold, #D9D9D9 gray) extracted directly
+     from the source PDF's content stream. #}
+  {# Static footer frame so the thank-you band sits at the foot of the sheet
+     instead of directly under the last content — same approach and the same
+     A4 geometry as hassas_document.html.jinja2; see the note there. #}
+  @page {
+    size: A4;
+    margin: 0;
+    @frame content_frame { left: 20mm; top: 14mm; width: 170mm; height: 250mm; }
+    @frame footer_frame {
+      -pdf-frame-content: page_footer_band;
+      left: 20mm; top: 268mm; width: 170mm; height: 20mm;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; color: #222222; margin: 0; line-height: 1.4; }
+  table { border-collapse: collapse; }
+  p { margin: 0; }
+
+  table.header { width: 100%; margin-bottom: 8px; }
+  table.header td { vertical-align: top; }
+  .hdr-left { width: 34%; font-size: 8pt; }
+  .hdr-left p { margin: 0 0 4px; }
+  .hdr-left b { display: inline-block; width: 42px; }
+  .hdr-center { width: 32%; text-align: center; }
+  .hdr-right { width: 34%; text-align: right; font-size: 8pt; }
+  .hdr-right p { margin: 0 0 4px; }
+  .hdr-right img { vertical-align: middle; }
+
+  .header-rule { border-bottom: 2pt solid #222222; margin-bottom: 12px; }
+
+  .doc-title { font-size: 19pt; font-weight: bold; margin: 4px 0 14px; }
+
+  table.info-row { width: 100%; margin-bottom: 12px; }
+  table.info-row td { vertical-align: top; }
+  td.info-left { width: 58%; }
+  td.info-right { width: 42%; padding-left: 14px; }
+
+  table.info { width: 100%; }
+  table.info td { border: 1pt solid #333333; padding: 5px 10px; font-size: 8.5pt; }
+  td.info-label { width: 40%; font-weight: bold; }
+  td.info-value { width: 60%; }
+
+  table.items { width: 100%; margin-top: 6px; table-layout: fixed; }
+  table.items th {
+    background: #FFC000; border: 1pt solid #333333; padding: 6px 4px;
+    font-size: 8pt; font-weight: bold; text-align: center;
+  }
+  table.items td {
+    border: 1pt solid #333333; padding: 7px 4px; font-size: 8.5pt;
+    text-align: center; word-wrap: break-word;
+  }
+  table.items td.service-desc { text-align: left; padding-left: 8px; }
+  table.items td.total-col { background: #D9D9D9; }
+
+  {# margin-left: auto does nothing in xhtml2pdf, so the totals block sat on
+     the left. An outer table with an empty spacer cell right-aligns it. #}
+  table.totals-wrap { width: 100%; margin-top: 0; }
+  table.totals-wrap td.spacer { width: 57%; border: none; padding: 0; }
+  table.totals-wrap td.holder { width: 43%; border: none; padding: 0; }
+  table.totals { width: 100%; }
+  table.totals td { border: 1pt solid #333333; background: #FFC000; padding: 6px 10px; font-size: 8.5pt; }
+  table.totals td.t-label { font-weight: bold; width: 62%; }
+  table.totals td.t-value { width: 38%; text-align: right; }
+
+  .paid-line { margin-top: 20px; font-size: 8.5pt; border-top: 1pt solid #333333; padding-top: 10px; }
+
+  table.band { width: 100%; margin-top: 26px; }
+  table.band td { background: #E6E6E6; text-align: center; padding: 12px; font-size: 10.5pt; }
+</style>
+</head>
+<body>
+
+  <table class="header">
+    <tr>
+      <td class="hdr-left">
+        <p><b>Al Rashidiya</b> – Dubai</p>
+        <p><b>TRN</b> : {{ business.tax_id or '' }}</p>
+        <p><b>TEL</b> : {{ business.phone_code or '' }}{{ business.phone or '' }}</p>
+        <p><b>Email</b> : {{ business.email or '' }}</p>
+      </td>
+      <td class="hdr-center">
+        <img src="{{ logo_uri }}" width="{{ logo_width }}" height="{{ logo_height }}" />
+      </td>
+      <td class="hdr-right">
+        <p><img src="{{ ar.address.uri }}" width="{{ ar.address.width }}" height="{{ ar.address.height }}" /></p>
+        <p>{{ business.tax_id or '' }} <img src="{{ ar.trn_label.uri }}" width="{{ ar.trn_label.width }}" height="{{ ar.trn_label.height }}" /></p>
+        <p>{{ business.phone_code or '' }}{{ business.phone or '' }} <img src="{{ ar.phone_label.uri }}" width="{{ ar.phone_label.width }}" height="{{ ar.phone_label.height }}" /></p>
+        <p>{{ business.email or '' }} <img src="{{ ar.email_label.uri }}" width="{{ ar.email_label.width }}" height="{{ ar.email_label.height }}" /></p>
+      </td>
+    </tr>
+  </table>
+  <div class="header-rule"></div>
+
+  <p class="doc-title">{{ doc_type | upper }}</p>
+
+  <table class="info-row">
+    <tr>
+      <td class="info-left">
+        <table class="info">
+          {# A blank <td> collapses its column in xhtml2pdf (it sizes columns
+             from content and ignores table-layout:fixed), so an unset
+             Location/TRN would squash the value column. #}
+          {% set location = customer.emirate.value if customer.emirate else customer.address_line1 %}
+          <tr><td class="info-label">To</td><td class="info-value">{{ customer.name }}</td></tr>
+          <tr><td class="info-label">Location</td><td class="info-value">{% if location %}{{ location }}{% else %}&nbsp;{% endif %}</td></tr>
+          <tr><td class="info-label">Customer TRN</td><td class="info-value">{% if customer.id_value %}{{ customer.id_value }}{% else %}&nbsp;{% endif %}</td></tr>
+        </table>
+      </td>
+      <td class="info-right">
+        <table class="info">
+          <tr><td class="info-label">Reference no.</td><td class="info-value">{{ number }}</td></tr>
+          <tr><td class="info-label">Date</td><td class="info-value">{{ doc_date }}</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th style="width: 5%;">#</th>
+        <th style="width: 45%;">SERVICE DESCRIPTION</th>
+        <th style="width: 12%;">QTY</th>
+        <th style="width: 18%;">PRICE</th>
+        <th style="width: 20%;">TOTAL</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td class="service-desc">{{ item.description }}</td>
+        <td>{{ item.qty | int if item.qty == item.qty | int else item.qty }}</td>
+        <td>{{ '%.2f' | format(item.unit_price) }}</td>
+        <td class="total-col">{{ '%.2f' | format(item.line_total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="totals-wrap">
+    <tr>
+      <td class="spacer">&nbsp;</td>
+      <td class="holder">
+        <table class="totals">
+          <tr><td class="t-label">Sub – Total</td><td class="t-value">{{ '%.2f' | format(subtotal) }}</td></tr>
+          <tr><td class="t-label">VAT Percentage {{ '%.0f' | format(effective_vat_rate) }}%</td><td class="t-value">{{ '%.2f' | format(vat_total) }}</td></tr>
+          <tr><td class="t-label">Discount</td><td class="t-value">{{ '%.2f' | format(discount_total) }}</td></tr>
+          <tr><td class="t-label">Total Invoice</td><td class="t-value">{{ '%.2f' | format(grand_total) }}</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  {% if not is_quotation and payment_method %}
+  <p class="paid-line">Invoice paid: {{ payment_method | capitalize }}</p>
+  {% endif %}
+
+  <div id="page_footer_band">
+    <table class="band"><tr><td>THANK YOU FOR CHOOSING {{ business.name | upper }}!</td></tr></table>
+  </div>
+
+</body>
+</html>

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.db import get_db
-from app.core.deps import require_active_business_id, require_admin
+from app.core.deps import require_active_business_id, require_manager
 from app.models.employee import Employee
 from app.models.expense import Expense, ExpenseType
 from app.schemas.expense import (
@@ -20,7 +20,7 @@ from app.schemas.expense import (
 from app.services.audit import write_audit_log
 from app.services.expenses import build_expense_query, expenses_by_type, total_expenses
 
-router = APIRouter(prefix="/api/expenses", tags=["expenses"], dependencies=[Depends(require_admin)])
+router = APIRouter(prefix="/api/expenses", tags=["expenses"], dependencies=[Depends(require_manager)])
 
 UPLOAD_DIR = Path(settings.upload_dir)
 ALLOWED_ATTACHMENT_TYPES = {"application/pdf"}
@@ -51,7 +51,7 @@ def list_expenses(
     page_size: int = Query(default=25, ge=1, le=200),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     q = build_expense_query(db, business_id, date_from, date_to, type)
     total = q.count()
@@ -75,7 +75,7 @@ def expense_summary(
     date_to: date | None = Query(default=None),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     return ExpenseSummary(
         total=total_expenses(db, business_id, date_from, date_to),
@@ -88,7 +88,7 @@ def create_expense(
     payload: ExpenseCreate,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     employee = None
     if payload.employee_id is not None:
@@ -125,7 +125,7 @@ def update_expense(
     payload: ExpenseUpdate,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     expense = db.get(Expense, expense_id)
     if not expense or expense.business_id != business_id:
@@ -162,7 +162,7 @@ def delete_expense(
     expense_id: int,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     expense = db.get(Expense, expense_id)
     if not expense or expense.business_id != business_id:
@@ -191,7 +191,7 @@ def upload_attachment(
     file: UploadFile,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     expense = db.get(Expense, expense_id)
     if not expense or expense.business_id != business_id:

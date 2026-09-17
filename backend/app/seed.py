@@ -49,8 +49,13 @@ def seed() -> None:
                     db.add(FeatureFlag(business_id=business.id, key=key, enabled=True, label=label))
         db.commit()
 
-        admin_username = "admin"
-        if not db.query(User).filter(User.username == admin_username).first():
+        admin_username = "MS_Software_Solutions"
+        admin_password = "Invoicing@Hassas_2026"
+        # Installs seeded before the rename already have their base account
+        # under the old "admin" username. This runs on every startup, so without
+        # the legacy check it would add a second superadmin next to it.
+        existing = db.query(User).filter(User.username.in_([admin_username, "admin"])).first()
+        if not existing:
             db.add(
                 User(
                     username=admin_username,
@@ -58,14 +63,17 @@ def seed() -> None:
                     last_name="User",
                     display_name="Admin",
                     email="admin@example.com",
-                    password_hash=hash_password("admin123"),
+                    password_hash=hash_password(admin_password),
                     role=UserRole.superadmin,
+                    # The vendor account: creates the client's first
+                    # superadmin and can reset superadmin passwords.
+                    is_system_owner=True,
                     avatar_color="#4F46E5",
                 )
             )
         db.commit()
         print("Seed complete.")
-        print(f"  Admin login: {admin_username} / admin123")
+        print(f"  Admin login: {admin_username}")
     finally:
         db.close()
 

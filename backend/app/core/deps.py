@@ -6,6 +6,7 @@ from app.core.db import get_db
 from app.core.security import decode_access_token
 from app.models.feature_flag import FeatureFlag
 from app.models.user import User, UserRole
+from app.services.backup import sessions_valid_after
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
@@ -24,6 +25,13 @@ def get_current_user(
     payload = decode_access_token(token)
     if payload is None:
         raise credentials_exception
+    # After a database restore the same user id can belong to someone else, so
+    # every token issued before the restore stops working.
+    valid_after = sessions_valid_after()
+    if valid_after is not None:
+        issued_at = payload.get("iat")
+        if issued_at is None or int(issued_at) < valid_after:
+            raise credentials_exception
     user_id = payload.get("sub")
     if user_id is None:
         raise credentials_exception
@@ -46,6 +54,12 @@ def require_role(*roles: UserRole):
 
 
 ADMIN_ROLES = (UserRole.admin, UserRole.superadmin)
+# manager sits between employee and admin: full day-to-day operational access
+# (customers, services, coupons, invoicing, expenses, attendance,
+# reconciliation, reports, dashboard) but NOT account administration (Users),
+# system configuration (Settings, Feature flags, Design Studio) or
+# backup/restore -- those stay ADMIN_ROLES / superadmin-only.
+MANAGER_ROLES = (UserRole.manager, UserRole.admin, UserRole.superadmin)
 
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
@@ -56,6 +70,17 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required",
+        )
+    return current_user
+
+
+def require_manager(current_user: User = Depends(get_current_user)) -> User:
+    """Manager-or-above — the operational tier. See MANAGER_ROLES for exactly
+    what that does and does not include."""
+    if current_user.role not in MANAGER_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Manager privileges required",
         )
     return current_user
 

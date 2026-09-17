@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query
@@ -6,16 +6,73 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import require_active_business_id, require_admin
+from app.core.deps import require_active_business_id, require_manager
 from app.models.attendance import Attendance, AttendanceStatus
 from app.models.customer import Customer
 from app.models.employee import Employee
 from app.models.feature_flag import FeatureFlag
 from app.models.invoice import Invoice, InvoiceStatus
 from app.models.user import User
-from app.schemas.dashboard import DashboardSummary, RecentInvoice, TopCustomer
+from app.schemas.dashboard import (
+    AttendanceTrendPoint,
+    DashboardSummary,
+    RecentInvoice,
+    SalesTrendPoint,
+    TopCustomer,
+)
 from app.services.expenses import total_expenses as sum_expenses
 from app.services.reconciliation import build_reconciliation_query, totals_from_payments
+
+
+def _last_n_months(n: int) -> list[tuple[date, date, str]]:
+    """(month_start, month_end, short_label) for the last n months, oldest first."""
+    today = date.today()
+    months: list[tuple[date, date, str]] = []
+    year, month = today.year, today.month
+    for _ in range(n):
+        start = date(year, month, 1)
+        end = date(year, month + 1, 1) - timedelta(days=1) if month < 12 else date(year, 12, 31)
+        months.append((start, min(end, today), start.strftime("%b")))
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+    months.reverse()
+    return months
+
+
+def _sales_trend(db: Session, business_id: int) -> list[SalesTrendPoint]:
+    points: list[SalesTrendPoint] = []
+    for start, end, label in _last_n_months(6):
+        sales = (
+            db.query(func.coalesce(func.sum(Invoice.grand_total), 0))
+            .filter(
+                Invoice.business_id == business_id,
+                Invoice.status != InvoiceStatus.void,
+                Invoice.invoice_date >= start,
+                Invoice.invoice_date <= end,
+            )
+            .scalar()
+            or 0
+        )
+        expenses = sum_expenses(db, business_id, start, end)
+        points.append(SalesTrendPoint(label=label, total_sales=round(float(sales), 2), total_expenses=round(float(expenses), 2)))
+    return points
+
+
+def _attendance_trend(db: Session, business_id: int) -> list[AttendanceTrendPoint]:
+    # Mirrors dashboard_summary's own present/absent counting below (explicit
+    # per-day Attendance rows, not an inferred "everyone else is absent")
+    # so the chart never disagrees with the "Attendance today" figure.
+    today = date.today()
+    days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    points: list[AttendanceTrendPoint] = []
+    for day in days:
+        records = db.query(Attendance).filter(Attendance.business_id == business_id, Attendance.date == day).all()
+        present = sum(1 for r in records if r.status == AttendanceStatus.present)
+        absent = sum(1 for r in records if r.status == AttendanceStatus.absent)
+        points.append(AttendanceTrendPoint(label=day.strftime("%a"), present=present, absent=absent))
+    return points
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -39,7 +96,7 @@ def dashboard_summary(
     period: str = Query(default="month", pattern="^(month|year|all)$"),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     date_from, date_to = _period_bounds(period)
 
@@ -131,6 +188,9 @@ def dashboard_summary(
     expenses_total = sum_expenses(db, business_id, date_from, date_to)
     net_revenue = Decimal(str(total_sales)) - expenses_total
 
+    sales_trend = _sales_trend(db, business_id)
+    attendance_trend = _attendance_trend(db, business_id) if _module_enabled(db, business_id, "attendance") else []
+
     return DashboardSummary(
         period=period,
         total_sales=total_sales,
@@ -146,4 +206,6 @@ def dashboard_summary(
         active_users=active_users,
         total_expenses=float(expenses_total),
         net_revenue=float(net_revenue),
+        sales_trend=sales_trend,
+        attendance_trend=attendance_trend,
     )

@@ -23,37 +23,44 @@ import type { Customer, Invoice, InvoiceStatus, PaymentMethod } from "../../api/
 import Modal from "../../components/Modal";
 import PrintPreviewModal from "../../components/PrintPreviewModal";
 import { Field, ModalFooter, Select, TextInput } from "../../components/form/Field";
+import { useAuth } from "../../context/AuthContext";
 import { useBusiness } from "../../context/BusinessContext";
 import { currencyLabel } from "../../utils/currency";
-
-const STATUS_OPTIONS: InvoiceStatus[] = ["draft", "sent", "paid", "partial", "void"];
+import { getErrorMessage } from "../../utils/errors";
+import { isManagerOrAbove } from "../../utils/roles";
 
 const HEADING_FONT = { fontFamily: "'Space Grotesk', var(--font-sans)" };
 
 const STATUS_PILL_STYLES: Record<InvoiceStatus, string> = {
-  paid: "bg-accent-green/10 text-accent-green",
-  partial: "bg-orange-50/10 text-orange-50",
-  sent: "bg-info/10 text-info",
+  paid: "bg-accent-green/20 text-accent-green",
+  partial: "bg-orange-50/20 text-orange-50",
+  sent: "bg-info/20 text-info",
   draft: "bg-wash-2 text-muted",
-  overdue: "bg-danger/10 text-danger",
+  overdue: "bg-danger/20 text-danger",
   void: "bg-wash-2 text-muted line-through",
 };
 
 const CLEARED_PILL_STYLES: Record<string, string> = {
-  received: "bg-accent-green/10 text-accent-green",
-  pending: "bg-orange-50/10 text-orange-50",
+  received: "bg-accent-green/20 text-accent-green",
+  pending: "bg-orange-50/20 text-orange-50",
 };
 
 export default function InvoiceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { activeBusiness } = useBusiness();
+  const showFeeBreakdown = activeBusiness?.custom_invoice_template === "hassas";
   const invoiceId = Number(id);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPayment, setShowPayment] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const { user } = useAuth();
+  // Voiding cancels a sale, so it's manager-or-above — enforced by the server too.
+  const canVoid = isManagerOrAbove(user?.role);
+  const [voiding, setVoiding] = useState(false);
+  const [voidError, setVoidError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -71,10 +78,24 @@ export default function InvoiceDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoiceId]);
 
-  async function handleStatusChange(status: InvoiceStatus) {
+  // Invoices have two statuses: Paid (set on creation) and Void. Voiding is
+  // the only change allowed, and it can't be undone — a mistake is fixed by
+  // voiding and issuing a corrected invoice, so nothing is ever deleted.
+  async function handleVoid() {
     if (!invoice) return;
-    const updated = await updateInvoiceStatus(invoice.id, status);
-    setInvoice(updated);
+    const ok = confirm(
+      `Void invoice ${invoice.number}?\n\nIt stays on record but is removed from sales, VAT and fee totals. This can't be undone — create a new invoice if you need a corrected one.`,
+    );
+    if (!ok) return;
+    setVoiding(true);
+    setVoidError(null);
+    try {
+      setInvoice(await updateInvoiceStatus(invoice.id, "void"));
+    } catch (err: unknown) {
+      setVoidError(getErrorMessage(err, "Could not void this invoice."));
+    } finally {
+      setVoiding(false);
+    }
   }
 
   if (loading || !invoice) return <p className="text-sm text-muted">Loading...</p>;
@@ -90,17 +111,17 @@ export default function InvoiceDetailPage() {
           ← Back to invoices
         </button>
         <div className="flex items-center gap-3">
-          <select
-            value={invoice.status}
-            onChange={(e) => handleStatusChange(e.target.value as InvoiceStatus)}
-            className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm capitalize focus:border-accent focus:outline-none"
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          {voidError && <span className="text-sm text-danger">{voidError}</span>}
+          {canVoid && invoice.status !== "void" && (
+            <button
+              type="button"
+              onClick={handleVoid}
+              disabled={voiding}
+              className="rounded-md border border-danger/50 px-3 py-1.5 text-sm font-medium text-danger hover:bg-danger/10 disabled:opacity-50"
+            >
+              {voiding ? "Voiding..." : "Void invoice"}
+            </button>
+          )}
           {balanceDue > 0 && invoice.status !== "void" && (
             <button
               onClick={() => setShowPayment(true)}
@@ -185,7 +206,8 @@ export default function InvoiceDetailPage() {
 
           {/* Items */}
           <h3 className="mt-8 text-[11px] font-semibold uppercase tracking-wide text-muted">Items</h3>
-          <table className="mt-3 w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="mt-3 w-full text-sm" style={showFeeBreakdown ? { minWidth: 900 } : undefined}>
             <thead>
               <tr className="border-b-2 border-ink text-left text-[11px] font-semibold uppercase tracking-wide text-muted">
                 <th className="pb-2.5">Description</th>
@@ -193,6 +215,14 @@ export default function InvoiceDetailPage() {
                 <th className="pb-2.5 text-right">Price</th>
                 <th className="pb-2.5 text-right">Discount</th>
                 <th className="pb-2.5 text-right">Govt. fee</th>
+                {showFeeBreakdown && (
+                  <>
+                    <th className="pb-2.5 text-right">Bank fee</th>
+                    <th className="pb-2.5 text-right">E-Drh fee</th>
+                    <th className="pb-2.5 text-right">Trans No.</th>
+                    <th className="pb-2.5 text-right">Inv No.</th>
+                  </>
+                )}
                 <th className="pb-2.5 text-right">VAT %</th>
                 <th className="pb-2.5 text-right">Total</th>
               </tr>
@@ -205,12 +235,21 @@ export default function InvoiceDetailPage() {
                   <td className="py-3.5 text-right text-muted">{item.unit_price.toFixed(2)}</td>
                   <td className="py-3.5 text-right text-muted">{item.discount.toFixed(2)}</td>
                   <td className="py-3.5 text-right text-muted">{item.govt_fee.toFixed(2)}</td>
+                  {showFeeBreakdown && (
+                    <>
+                      <td className="py-3.5 text-right text-muted">{item.bank_fee.toFixed(2)}</td>
+                      <td className="py-3.5 text-right text-muted">{item.edrh_fee.toFixed(2)}</td>
+                      <td className="py-3.5 text-right text-muted">{item.trans_no || "—"}</td>
+                      <td className="py-3.5 text-right text-muted">{item.inv_no || "—"}</td>
+                    </>
+                  )}
                   <td className="py-3.5 text-right text-muted">{item.vat_rate.toFixed(2)}%</td>
                   <td className="py-3.5 text-right font-semibold text-ink">{item.line_total.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
 
           {/* Totals */}
           <div className="mt-5 flex justify-end">
@@ -219,6 +258,12 @@ export default function InvoiceDetailPage() {
               <Row label="Discount" value={-invoice.discount_total} />
               <Row label="VAT" value={invoice.vat_total} />
               <Row label="Govt. fees" value={invoice.govt_fee_total} />
+              {showFeeBreakdown && (
+                <>
+                  <Row label="Bank fees" value={invoice.bank_fee_total} />
+                  <Row label="E-Drh fees" value={invoice.edrh_fee_total} />
+                </>
+              )}
               <div className="my-3 flex items-center justify-between rounded-lg bg-accent px-4 py-3 text-ink">
                 <span className="text-sm opacity-85">Grand total</span>
                 <span className="text-xl font-bold" style={HEADING_FONT}>

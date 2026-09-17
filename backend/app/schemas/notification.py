@@ -1,12 +1,17 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.notification import ReminderUnit
 
+# note length mirrors app/models/notification.py's column. visibility_modules/
+# reminders get sane caps -- there are only a handful of real modules and
+# nobody sets more than a couple of reminders on one notification, so an
+# unbounded list here would only ever be an attempt to force needless work.
+
 
 class ReminderCreate(BaseModel):
-    offset_value: int
+    offset_value: int = Field(ge=1, le=3650)
     offset_unit: ReminderUnit
 
 
@@ -21,21 +26,21 @@ class ReminderResponse(BaseModel):
 class NotificationCreate(BaseModel):
     customer_id: int
     service_id: int | None = None
-    note: str | None = None
+    note: str | None = Field(default=None, max_length=1000)
     target_date: date
-    visibility_modules: list[str] = []
-    reminders: list[ReminderCreate] = []
+    visibility_modules: list[str] = Field(default=[], max_length=20)
+    reminders: list[ReminderCreate] = Field(default=[], max_length=20)
 
 
 class NotificationUpdate(BaseModel):
     service_id: int | None = None
-    note: str | None = None
+    note: str | None = Field(default=None, max_length=1000)
     target_date: date | None = None
-    visibility_modules: list[str] | None = None
+    visibility_modules: list[str] | None = Field(default=None, max_length=20)
 
 
 class SnoozeRequest(BaseModel):
-    days: int = 3
+    days: int = Field(default=3, ge=1, le=3650)
 
 
 class NotificationResponse(BaseModel):

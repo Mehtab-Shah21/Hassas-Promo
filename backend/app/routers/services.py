@@ -3,7 +3,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import get_current_user, require_active_business_id, require_admin
+from app.core.deps import get_current_user, require_active_business_id, require_manager
 from app.models.service import Service, ServiceCategory
 from app.schemas.service import (
     PaginatedServices,
@@ -41,7 +41,7 @@ def create_category(
     payload: ServiceCategoryCreate,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     category = ServiceCategory(business_id=business_id, **payload.model_dump())
     db.add(category)
@@ -56,7 +56,7 @@ def update_category(
     payload: ServiceCategoryUpdate,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     category = db.get(ServiceCategory, category_id)
     if not category or category.business_id != business_id:
@@ -73,7 +73,7 @@ def deactivate_category(
     category_id: int,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     category = db.get(ServiceCategory, category_id)
     if not category or category.business_id != business_id:
@@ -128,7 +128,7 @@ def create_service(
     payload: ServiceCreate,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     service = Service(business_id=business_id, **payload.model_dump())
     db.add(service)
@@ -148,7 +148,7 @@ def update_service(
     payload: ServiceUpdate,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     service = db.get(Service, service_id)
     if not service or service.business_id != business_id:
@@ -169,7 +169,7 @@ def deactivate_service(
     service_id: int,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     service = db.get(Service, service_id)
     if not service or service.business_id != business_id:

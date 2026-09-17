@@ -1,18 +1,30 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  CalendarCheck,
+  CreditCard,
+  FileText,
+  LineChart,
+  Receipt,
+  TrendingUp,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { getDashboardSummary } from "../../api/dashboard";
 import type { DashboardSummary } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { useBusiness } from "../../context/BusinessContext";
 import { useFeatureFlags } from "../../context/FeatureFlagsContext";
-import { isAdminOrAbove } from "../../utils/roles";
+import { isManagerOrAbove } from "../../utils/roles";
+import { AttendanceTrendChart, RevenueTrendChart } from "./charts";
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { activeBusiness } = useBusiness();
   const navigate = useNavigate();
 
-  if (!isAdminOrAbove(user?.role)) {
+  if (!isManagerOrAbove(user?.role)) {
     return <EmployeeDashboard />;
   }
 
@@ -101,13 +113,15 @@ function AdminDashboard({
         <p className="text-sm text-muted">Loading...</p>
       ) : (
         <>
-          <div className="mb-4 grid grid-cols-3 gap-4">
+          <SectionHeading icon={TrendingUp} title="Sales & revenue" />
+          <div className="mb-6 grid grid-cols-3 gap-4">
             <KpiCard label="Total sales" value={summary.total_sales} sub={`${summary.invoice_count} invoices`} />
             <KpiCard label="Government fees paid to date" value={summary.govt_fees_paid_to_date} accent="text-orange-50" />
             <KpiCard label="VAT collected" value={summary.vat_collected} accent="text-accent-green" />
           </div>
 
-          <div className="mb-4 grid grid-cols-3 gap-4">
+          <SectionHeading icon={Wallet} title="Team & costs" />
+          <div className="mb-6 grid grid-cols-3 gap-4">
             <KpiCard
               label="Active users"
               value={summary.active_users}
@@ -129,38 +143,56 @@ function AdminDashboard({
           </div>
 
           {isEnabled("reconciliation") && (
-            <div className="mb-6 grid grid-cols-2 gap-4">
-              <KpiCard
-                label="Total collected"
-                value={summary.reconciliation_collected}
-                sub="Card & online payments"
-                accent="text-accent-green"
-                onClick={() => navigate("/reconciliation")}
-              />
-              <KpiCard
-                label="Still pending clearance"
-                value={summary.reconciliation_pending}
-                sub="All-time, card & online"
-                accent="text-orange-50"
-                onClick={() => navigate("/reconciliation")}
-              />
-            </div>
+            <>
+              <SectionHeading icon={CreditCard} title="Collections" />
+              <div className="mb-6 grid grid-cols-2 gap-4">
+                <KpiCard
+                  label="Total collected"
+                  value={summary.reconciliation_collected}
+                  sub="Card & online payments"
+                  accent="text-accent-green"
+                  onClick={() => navigate("/reconciliation")}
+                />
+                <KpiCard
+                  label="Still pending clearance"
+                  value={summary.reconciliation_pending}
+                  sub="All-time, card & online"
+                  accent="text-orange-50"
+                  onClick={() => navigate("/reconciliation")}
+                />
+              </div>
+            </>
           )}
 
+          <SectionHeading icon={LineChart} title="Revenue trend" sub="Last 6 months" />
           <div className="mb-6 rounded-lg border border-line bg-surface p-4">
-            <h2 className="mb-2 text-sm font-semibold text-ink">Attendance today</h2>
-            {summary.attendance_present_today === null ? (
-              <p className="text-sm text-muted">Attendance module is off or not yet used today.</p>
-            ) : (
-              <p className="text-sm text-muted">
-                {summary.attendance_present_today} present · {summary.attendance_absent_today} absent
-              </p>
-            )}
+            <RevenueTrendChart data={summary.sales_trend} />
           </div>
 
+          <SectionHeading icon={CalendarCheck} title="Attendance" />
+          <div className="mb-6 grid grid-cols-2 gap-6">
+            <div className="rounded-lg border border-line bg-surface p-4">
+              <h3 className="mb-2 text-sm font-semibold text-ink">Today</h3>
+              {summary.attendance_present_today === null ? (
+                <p className="text-sm text-muted">Attendance module is off or not yet used today.</p>
+              ) : (
+                <p className="text-sm text-muted">
+                  {summary.attendance_present_today} present · {summary.attendance_absent_today} absent
+                </p>
+              )}
+            </div>
+            <div className="rounded-lg border border-line bg-surface p-4">
+              <h3 className="mb-2 text-sm font-semibold text-ink">Last 7 days</h3>
+              <AttendanceTrendChart data={summary.attendance_trend} />
+            </div>
+          </div>
+
+          <SectionHeading icon={Receipt} title="Recent activity" />
           <div className="grid grid-cols-2 gap-6">
             <div className="rounded-lg border border-line bg-surface p-4">
-              <h2 className="mb-3 text-sm font-semibold text-ink">Recent invoices</h2>
+              <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink">
+                <FileText size={14} className="opacity-70" /> Recent invoices
+              </h3>
               {summary.recent_invoices.length === 0 ? (
                 <p className="text-sm text-muted">No invoices yet.</p>
               ) : (
@@ -180,7 +212,9 @@ function AdminDashboard({
             </div>
 
             <div className="rounded-lg border border-line bg-surface p-4">
-              <h2 className="mb-3 text-sm font-semibold text-ink">Top customers</h2>
+              <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink">
+                <Users size={14} className="opacity-70" /> Top customers
+              </h3>
               {summary.top_customers.length === 0 ? (
                 <p className="text-sm text-muted">No data yet.</p>
               ) : (
@@ -200,6 +234,18 @@ function AdminDashboard({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function SectionHeading({ icon: Icon, title, sub }: { icon: LucideIcon; title: string; sub?: string }) {
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent/20 text-accent">
+        <Icon size={13} />
+      </span>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink">{title}</h2>
+      {sub && <span className="text-xs text-muted">{sub}</span>}
     </div>
   );
 }

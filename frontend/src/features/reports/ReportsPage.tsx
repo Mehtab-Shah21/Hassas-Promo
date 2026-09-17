@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AttendanceSummaryTab from "./tabs/AttendanceSummaryTab";
 import CustomerStatementTab from "./tabs/CustomerStatementTab";
+import ExpensesReportTab from "./tabs/ExpensesReportTab";
 import GovtFeesReportTab from "./tabs/GovtFeesReportTab";
 import OutstandingReportTab from "./tabs/OutstandingReportTab";
 import QuotationsReportTab from "./tabs/QuotationsReportTab";
@@ -12,6 +13,7 @@ const TABS = [
   { key: "sales", label: "Sales", component: SalesReportTab },
   { key: "govt-fees", label: "Government Fees", component: GovtFeesReportTab },
   { key: "vat", label: "VAT Collected", component: VatReportTab },
+  { key: "expenses", label: "Expenses", component: ExpensesReportTab },
   { key: "outstanding", label: "Outstanding / Aging", component: OutstandingReportTab },
   { key: "statement", label: "Customer Statement", component: CustomerStatementTab },
   { key: "service-performance", label: "Service Performance", component: ServicePerformanceTab },

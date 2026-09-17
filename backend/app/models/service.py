@@ -23,6 +23,13 @@ class Service(TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(String(1000))
     price: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     govt_fee: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    # Bank Fee / E-Drh (E-Dirham channel) Fee — additional government-adjacent
+    # pass-through charges, tracked the same way govt_fee already is (a
+    # per-unit amount added on top of price, non-VAT-taxable). Introduced for
+    # HASSAS's exact invoice/quotation template, whose line-item table breaks
+    # these out as their own columns — see services/invoice_calc.py.
+    bank_fee: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    edrh_fee: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     category_id: Mapped[int | None] = mapped_column(ForeignKey("service_categories.id"), nullable=True)
     taxable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

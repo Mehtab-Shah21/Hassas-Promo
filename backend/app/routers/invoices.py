@@ -6,9 +6,9 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
-from app.core.deps import ADMIN_ROLES, get_current_user, require_active_business_id
+from app.core.deps import MANAGER_ROLES, get_current_user, require_active_business_id, require_manager
 from app.models.business import Business
-from app.models.coupon import Coupon
+from app.models.coupon import Coupon, CouponKind
 from app.models.customer import Customer
 from app.models.invoice import ClearedStatus, Invoice, InvoiceItem, InvoiceStatus, Payment, PaymentMethod
 from app.models.service import Service
@@ -23,10 +23,12 @@ from app.schemas.invoice import (
     PaymentResponse,
 )
 from app.services.audit import write_audit_log
-from app.services.invoice_calc import calc_invoice_totals, calc_line
-from app.services.numbering import reserve_invoice_number
+from app.services.invoice_calc import calc_invoice_totals, calc_line, discount_amount
+from app.services.numbering import auto_reference_numbers, reserve_invoice_number
+from app.services.exact_pdf import has_exact_template, render_exact_invoice_pdf
 from app.services.pdf import (
     PdfEngineUnavailable,
+    _py_date_format,
     render_invoice_html,
     render_invoice_thermal_html,
     render_pdf,
@@ -44,12 +46,20 @@ def _is_effectively_overdue(inv: Invoice) -> bool:
     )
 
 
-def _resolve_coupon(db: Session, business_id: int, code: str | None) -> Coupon | None:
+def _resolve_coupon(
+    db: Session, business_id: int, code: str | None, kind: CouponKind = CouponKind.discount
+) -> Coupon | None:
     if not code:
         return None
     coupon = db.query(Coupon).filter(Coupon.business_id == business_id, Coupon.code == code).first()
     if not coupon or not coupon.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coupon is not valid")
+    # A banner code must never slip in as a discount, or the other way round.
+    if coupon.kind != kind:
+        detail = "That is a printed-banner coupon, not a discount" if kind == CouponKind.discount else "That is a discount coupon, not a printed banner"
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+    if kind == CouponKind.banner and not coupon.banner_path:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This coupon has no banner image uploaded yet")
     today = date.today()
     if coupon.valid_from and coupon.valid_from > today:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coupon is not active yet")
@@ -96,6 +106,7 @@ def create_invoice(
             )
 
     coupon = _resolve_coupon(db, business_id, payload.coupon_code)
+    banner_coupon = _resolve_coupon(db, business_id, payload.banner_coupon_code, kind=CouponKind.banner)
 
     line_calcs = []
     line_discounts = []
@@ -111,36 +122,40 @@ def create_invoice(
         description = item.description or (service.name if service else None)
         unit_price = item.unit_price if item.unit_price is not None else (float(service.price) if service else None)
         govt_fee = item.govt_fee if item.govt_fee is not None else (float(service.govt_fee) if service else 0)
+        bank_fee = item.bank_fee if item.bank_fee is not None else (float(service.bank_fee) if service else 0)
+        edrh_fee = item.edrh_fee if item.edrh_fee is not None else (float(service.edrh_fee) if service else 0)
         taxable = service.taxable if service else True
         vat_rate = item.vat_rate if item.vat_rate is not None else (float(business.default_vat_rate) if taxable else 0)
 
         if description is None or unit_price is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Line item is missing description/price")
 
-        # Ad-hoc "save to services for later use" — restricted to admins since
-        # CLAUDE.md's permission matrix marks Services as admin-managed /
-        # employee-read-only, even though the invoice line itself is fully
-        # editable by employees.
+        # Ad-hoc "save to services for later use" — restricted to manager-or-
+        # above since Services is manager-managed / employee-read-only, even
+        # though the invoice line itself is fully editable by employees.
         if service is None and item.save_as_service:
-            if current_user.role not in ADMIN_ROLES:
+            if current_user.role not in MANAGER_ROLES:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Only an admin can save an ad-hoc line as a reusable service",
+                    detail="Only a manager or above can save an ad-hoc line as a reusable service",
                 )
             service = Service(
                 business_id=business_id,
                 name=description,
                 price=unit_price,
                 govt_fee=govt_fee,
+                bank_fee=bank_fee,
+                edrh_fee=edrh_fee,
                 category_id=item.category_id,
                 taxable=taxable,
             )
             db.add(service)
             db.flush()
 
-        calc = calc_line(item.qty, unit_price, item.discount, vat_rate, govt_fee)
+        discount = discount_amount(item.qty, unit_price, item.discount_pct)
+        calc = calc_line(item.qty, unit_price, discount, vat_rate, govt_fee, bank_fee, edrh_fee)
         line_calcs.append(calc)
-        line_discounts.append(item.discount)
+        line_discounts.append(discount)
         item_rows.append(
             InvoiceItem(
                 service_id=service.id if service else None,
@@ -148,7 +163,12 @@ def create_invoice(
                 qty=item.qty,
                 unit_price=unit_price,
                 govt_fee=govt_fee,
-                discount=item.discount,
+                bank_fee=bank_fee,
+                edrh_fee=edrh_fee,
+                trans_no=item.trans_no,
+                inv_no=item.inv_no,
+                discount_pct=item.discount_pct,
+                discount=discount,
                 vat_rate=vat_rate,
                 line_total=calc.line_total,
             )
@@ -163,6 +183,15 @@ def create_invoice(
     is_cash = payload.payment_method == PaymentMethod.cash
     number = reserve_invoice_number(db, business)
 
+    if payload.auto_reference_numbers:
+        # The receipt number only exists from this point, so auto references
+        # can't be filled client-side. Only blanks are filled — a reference
+        # someone typed on a line is kept.
+        for index, row in enumerate(item_rows, start=1):
+            trans_no, inv_no = auto_reference_numbers(number, index)
+            row.trans_no = row.trans_no or trans_no
+            row.inv_no = row.inv_no or inv_no
+
     invoice = Invoice(
         business_id=business_id,
         number=number,
@@ -175,8 +204,12 @@ def create_invoice(
         subtotal=totals.subtotal,
         discount_total=totals.discount_total,
         coupon_id=coupon.id if coupon else None,
+        banner_coupon_id=banner_coupon.id if banner_coupon else None,
+        banner_path=banner_coupon.banner_path if banner_coupon else None,
         vat_total=totals.vat_total,
         govt_fee_total=totals.govt_fee_total,
+        bank_fee_total=totals.bank_fee_total,
+        edrh_fee_total=totals.edrh_fee_total,
         grand_total=totals.grand_total,
         amount_paid=totals.grand_total,
         notes=payload.notes,
@@ -186,6 +219,7 @@ def create_invoice(
         items=item_rows,
     )
     _record_coupon_use(coupon)
+    _record_coupon_use(banner_coupon)
 
     db.add(invoice)
     db.flush()
@@ -310,15 +344,27 @@ def update_status(
     payload: InvoiceStatusUpdate,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(require_manager),
 ):
+    """Void an invoice — the only status change the app allows.
+
+    Every invoice is created Paid (paid at the counter), so the one thing left
+    to do with it is cancel a mistake. Voiding is one-way: a voided invoice is
+    never brought back, a corrected one is issued instead, so the record of
+    what was cancelled stays intact. Manager-or-above only, so a sale can't be
+    quietly cancelled by an employee.
+    """
     invoice = db.get(Invoice, invoice_id)
     if not invoice or invoice.business_id != business_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found")
-    invoice.status = payload.status
+    if payload.status != InvoiceStatus.void:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An invoice can only be voided")
+    if invoice.status == InvoiceStatus.void:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This invoice is already void")
+    invoice.status = InvoiceStatus.void
     write_audit_log(
         db, user_id=current_user.id, business_id=business_id, action="update",
-        entity_type="invoice", entity_id=invoice.id, description=f"Set invoice {invoice.number} status to {payload.status.value}",
+        entity_type="invoice", entity_id=invoice.id, description=f"Voided invoice {invoice.number}",
     )
     db.commit()
     db.refresh(invoice)
@@ -363,7 +409,7 @@ def record_payment(
     return payment
 
 
-def _render_html_for_invoice(db: Session, invoice_id: int, business_id: int, for_pdf: bool = False) -> str:
+def _load_invoice(db: Session, invoice_id: int, business_id: int) -> Invoice:
     invoice = (
         db.query(Invoice)
         .options(selectinload(Invoice.items))
@@ -372,6 +418,19 @@ def _render_html_for_invoice(db: Session, invoice_id: int, business_id: int, for
     )
     if not invoice or invoice.business_id != business_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found")
+    return invoice
+
+
+def _exact_invoice_pdf(db: Session, invoice: Invoice, business: Business) -> bytes:
+    customer = db.get(Customer, invoice.customer_id)
+    return render_exact_invoice_pdf(
+        invoice, business, customer,
+        date_text=invoice.invoice_date.strftime(_py_date_format(business.date_format)),
+    )
+
+
+def _render_html_for_invoice(db: Session, invoice_id: int, business_id: int, for_pdf: bool = False) -> str:
+    invoice = _load_invoice(db, invoice_id, business_id)
 
     business = db.get(Business, business_id)
     customer = db.get(Customer, invoice.customer_id)
@@ -396,7 +455,17 @@ def preview_invoice(
     current_user=Depends(get_current_user),
 ):
     """Same template as the PDF, rendered as plain HTML — works even if WeasyPrint's
-    native libs aren't installed, so on-screen preview never depends on them."""
+    native libs aren't installed, so on-screen preview never depends on them.
+
+    A business on an exact client template gets the real PDF instead: that
+    layout is drawn onto the client's own page, so an HTML approximation of it
+    would show something that never matches what prints.
+    """
+    business = db.get(Business, business_id)
+    if has_exact_template(business):
+        invoice = _load_invoice(db, invoice_id, business_id)
+        return Response(content=_exact_invoice_pdf(db, invoice, business),
+                        media_type="application/pdf")
     return HTMLResponse(_render_html_for_invoice(db, invoice_id, business_id))
 
 
@@ -407,8 +476,12 @@ def download_invoice_pdf(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    html = _render_html_for_invoice(db, invoice_id, business_id, for_pdf=True)
     business = db.get(Business, business_id)
+    if has_exact_template(business):
+        invoice = _load_invoice(db, invoice_id, business_id)
+        return Response(content=_exact_invoice_pdf(db, invoice, business),
+                        media_type="application/pdf")
+    html = _render_html_for_invoice(db, invoice_id, business_id, for_pdf=True)
     try:
         pdf_bytes = render_pdf(html, page_border=resolve_page_border(business, "invoice"))
     except PdfEngineUnavailable as exc:

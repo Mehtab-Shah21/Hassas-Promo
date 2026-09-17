@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { createCustomer, updateCustomer, type CustomerPayload } from "../../api/customers";
-import { ModalFooter } from "../../components/form/Field";
+import { ModalFooter, RadioGroup } from "../../components/form/Field";
 import Modal from "../../components/Modal";
 import type { Customer } from "../../api/types";
 import { CustomerFields } from "./CustomerFields";
@@ -62,23 +62,15 @@ export default function CustomerFormModal({ customer, forcedParentId, onClose, o
     <Modal title={isEdit ? "Edit customer" : forcedParentId ? "Add employee" : "Add customer"} onClose={onClose} wide>
       <form onSubmit={handleSubmit}>
         {!forcedParentId && (
-          <div className="mb-5 flex gap-4">
-            <label className="flex items-center gap-2 text-sm text-ink">
-              <input
-                type="radio"
-                checked={form.type === "individual"}
-                onChange={() => setForm((f) => ({ ...f, type: "individual" }))}
-              />
-              Individual
-            </label>
-            <label className="flex items-center gap-2 text-sm text-ink">
-              <input
-                type="radio"
-                checked={form.type === "company"}
-                onChange={() => setForm((f) => ({ ...f, type: "company" }))}
-              />
-              Company
-            </label>
+          <div className="mb-5">
+            <RadioGroup
+              value={form.type ?? "individual"}
+              onChange={(type) => setForm((f) => ({ ...f, type }))}
+              options={[
+                { value: "individual" as const, label: "Individual" },
+                { value: "company" as const, label: "Company" },
+              ]}
+            />
           </div>
         )}
 

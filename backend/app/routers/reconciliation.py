@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.db import get_db
-from app.core.deps import require_active_business_id, require_admin, require_module_enabled
+from app.core.deps import require_active_business_id, require_manager, require_module_enabled
 from app.models.customer import Customer
 from app.models.invoice import Invoice, Payment, PaymentMethod
 from app.schemas.invoice import PaymentResponse, ReconciliationEntry, ReconciliationResponse
@@ -26,7 +26,7 @@ def get_reconciliation(
     scope: str = Query(default="day", pattern="^(day|range)$"),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     # "day" (default) is the Reconciliation page's own single-date view,
     # unchanged from before. "range" is for the Dashboard's KPI cards: pass
@@ -69,7 +69,7 @@ def mark_payment_received(
     payment_id: int,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     payment = db.get(Payment, payment_id)
     if not payment or payment.invoice.business_id != business_id:

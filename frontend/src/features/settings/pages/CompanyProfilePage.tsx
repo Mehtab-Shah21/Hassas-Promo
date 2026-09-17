@@ -104,10 +104,13 @@ export default function CompanyProfilePage() {
           <TextInput value={form.cr_no ?? ""} onChange={set("cr_no")} />
         </Field>
         <Field label="Phone code">
-          <TextInput value={form.phone_code ?? ""} onChange={set("phone_code")} placeholder="+971" />
+          <TextInput value={form.phone_code ?? ""} onChange={set("phone_code")} placeholder="+971" maxLength={10} />
         </Field>
-        <Field label="Phone">
-          <TextInput value={form.phone ?? ""} onChange={set("phone")} />
+        <Field
+          label="Phone"
+          hint={activeBusiness.custom_invoice_template === "hassas" ? "(printed as the Establishment Number)" : undefined}
+        >
+          <TextInput value={form.phone ?? ""} onChange={set("phone")} maxLength={50} />
         </Field>
         <Field label="Email">
           <TextInput type="email" value={form.email ?? ""} onChange={set("email")} />

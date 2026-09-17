@@ -10,6 +10,12 @@ from app.models.mixins import TimestampMixin
 class UserRole(str, enum.Enum):
     superadmin = "superadmin"
     admin = "admin"
+    # Runs day-to-day operations (customers, services, coupons, invoicing,
+    # expenses, attendance, reconciliation, reports) without the account- and
+    # system-configuration powers reserved for admin -- see core/deps.py's
+    # MANAGER_ROLES / require_manager and the per-router comments that use it.
+    # Rank: employee < manager < admin < superadmin.
+    manager = "manager"
     employee = "employee"
 
 
@@ -48,3 +54,8 @@ class User(TimestampMixin, Base):
     phone: Mapped[str | None] = mapped_column(String(50))
     auto_lock_minutes: Mapped[int] = mapped_column(default=15, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # The software vendor's account, one tier above the client's superadmins:
+    # the only account that can create or reset a superadmin, and invisible to
+    # everyone else. Still role=superadmin, so the rest of the app treats it as
+    # one. See routers/users.py for the permission matrix.
+    is_system_owner: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

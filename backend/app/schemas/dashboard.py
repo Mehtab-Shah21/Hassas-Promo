@@ -17,6 +17,18 @@ class TopCustomer(BaseModel):
     invoice_count: int
 
 
+class SalesTrendPoint(BaseModel):
+    label: str
+    total_sales: float
+    total_expenses: float
+
+
+class AttendanceTrendPoint(BaseModel):
+    label: str
+    present: int
+    absent: int
+
+
 class DashboardSummary(BaseModel):
     period: str
     total_sales: float
@@ -43,3 +55,9 @@ class DashboardSummary(BaseModel):
     # Decimal (see routers/dashboard.py) so the subtraction is exact money
     # math, not float/string arithmetic done client-side.
     net_revenue: float
+    # Fixed windows for the dashboard's charts — independent of the KPI
+    # cards' period toggle above, since a trend chart is only useful when
+    # it always shows the same lookback regardless of what period is
+    # selected for the totals.
+    sales_trend: list[SalesTrendPoint]
+    attendance_trend: list[AttendanceTrendPoint]

@@ -8,6 +8,7 @@ import { resolveAssetUrl } from "../../api/client";
 import { Field, ModalFooter, Select, TextArea, TextInput } from "../../components/form/Field";
 import Modal from "../../components/Modal";
 import type { Employee, Expense, ExpenseType } from "../../api/types";
+import { getErrorMessage } from "../../utils/errors";
 
 const TYPE_OPTIONS: { value: ExpenseType; label: string }[] = [
   { value: "salary", label: "Salary" },
@@ -84,8 +85,7 @@ export default function ExpenseFormModal({
       }
       onSaved();
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(typeof detail === "string" ? detail : "Could not save expense.");
+      setError(getErrorMessage(err, "Could not save expense."));
     } finally {
       setSaving(false);
     }

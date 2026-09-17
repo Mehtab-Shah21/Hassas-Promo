@@ -11,6 +11,8 @@ export interface QuotationCreatePayload {
   terms?: string | null;
   show_bank_details?: boolean;
   coupon_code?: string | null;
+  /** HASSAS: fill blank Trans No./Inv No. from the quotation number on save. */
+  auto_reference_numbers?: boolean;
   items: InvoiceItemPayload[];
 }
 

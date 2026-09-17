@@ -39,7 +39,7 @@ export function CustomerFields({
   return (
     <div className="space-y-5">
       <Field label="Name" icon={User}>
-        <TextInput value={form.name ?? ""} onChange={set("name")} required />
+        <TextInput value={form.name ?? ""} onChange={set("name")} required maxLength={255} />
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
@@ -47,13 +47,13 @@ export function CustomerFields({
           <TextInput type="email" value={form.email ?? ""} onChange={set("email")} />
         </Field>
         <Field label="Phone" hint="(optional)" icon={Phone}>
-          <TextInput value={form.phone ?? ""} onChange={set("phone")} placeholder="+971 50 123 4567" />
+          <TextInput value={form.phone ?? ""} onChange={set("phone")} placeholder="+971 50 123 4567" maxLength={50} />
         </Field>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <Field label={idLabel} hint="(optional)" icon={IdCard}>
-          <TextInput value={form.id_value ?? ""} onChange={set("id_value")} />
+          <TextInput value={form.id_value ?? ""} onChange={set("id_value")} maxLength={100} />
         </Field>
         <Field label="Emirates" icon={Landmark}>
           <Select

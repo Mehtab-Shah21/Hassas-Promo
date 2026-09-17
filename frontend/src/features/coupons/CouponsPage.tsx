@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { deactivateCoupon, listCoupons } from "../../api/coupons";
+import { resolveAssetUrl } from "../../api/client";
 import type { Coupon } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { useBusiness } from "../../context/BusinessContext";
-import { isAdminOrAbove } from "../../utils/roles";
+import { isManagerOrAbove } from "../../utils/roles";
 import CouponFormModal from "./CouponFormModal";
 
 export default function CouponsPage() {
   const { user } = useAuth();
   const { activeBusiness } = useBusiness();
-  const isAdmin = isAdminOrAbove(user?.role);
+  const isAdmin = isManagerOrAbove(user?.role);
 
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +71,7 @@ export default function CouponsPage() {
           <thead className="bg-wash-1 text-left text-xs font-semibold uppercase text-ink">
             <tr>
               <th className="px-4 py-2">Code</th>
-              <th className="px-4 py-2">Discount</th>
+              <th className="px-4 py-2">Type</th>
               <th className="px-4 py-2">Valid to</th>
               <th className="px-4 py-2">Uses</th>
               <th className="px-4 py-2">Status</th>
@@ -95,7 +96,22 @@ export default function CouponsPage() {
                 <tr key={c.id} className="hover:bg-wash-1">
                   <td className="px-4 py-2 font-medium text-ink">{c.code}</td>
                   <td className="px-4 py-2 text-muted">
-                    {c.discount_type === "percent" ? `${c.value}%` : c.value.toFixed(2)}
+                    {c.kind === "banner" ? (
+                      <div className="flex items-center gap-2">
+                        {c.banner_path ? (
+                          <img
+                            src={resolveAssetUrl(c.banner_path) ?? ""}
+                            alt=""
+                            className="h-8 w-24 rounded border border-line bg-white object-contain"
+                          />
+                        ) : (
+                          <span className="text-xs text-danger">No image</span>
+                        )}
+                        <span>Printed banner</span>
+                      </div>
+                    ) : (
+                      <>Discount · {c.discount_type === "percent" ? `${c.value}%` : c.value.toFixed(2)}</>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-muted">{c.valid_to ?? "—"}</td>
                   <td className="px-4 py-2 text-muted">
@@ -105,7 +121,7 @@ export default function CouponsPage() {
                   <td className="px-4 py-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        isCurrentlyValid(c) ? "bg-accent-green/10 text-accent-green" : "bg-wash-2 text-ink"
+                        isCurrentlyValid(c) ? "bg-accent-green/20 text-accent-green" : "bg-wash-2 text-ink"
                       }`}
                     >
                       {isCurrentlyValid(c) ? "Active" : "Inactive"}

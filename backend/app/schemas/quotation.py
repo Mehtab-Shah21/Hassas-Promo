@@ -1,21 +1,26 @@
 from datetime import date
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.models.quotation import QuotationStatus
 from app.schemas.invoice import InvoiceItemCreate, InvoiceItemResponse
+
+# Mirrors app/schemas/invoice.py's InvoiceCreate bounds -- see that file's
+# module comment for why.
 
 
 class QuotationCreate(BaseModel):
     customer_id: int
     employee_customer_id: int | None = None
     quotation_date: date
-    validity_days: int | None = None
-    notes: str | None = None
-    terms: str | None = None
+    validity_days: int | None = Field(default=None, ge=1, le=3650)
+    notes: str | None = Field(default=None, max_length=2000)
+    terms: str | None = Field(default=None, max_length=2000)
     show_bank_details: bool = False
-    coupon_code: str | None = None
-    items: list[InvoiceItemCreate]
+    coupon_code: str | None = Field(default=None, max_length=50)
+    # Same as InvoiceCreate.auto_reference_numbers, keyed off the quotation number.
+    auto_reference_numbers: bool = False
+    items: list[InvoiceItemCreate] = Field(max_length=500)
 
     @model_validator(mode="after")
     def check_items(self):
@@ -43,6 +48,8 @@ class QuotationResponse(BaseModel):
     coupon_id: int | None
     vat_total: float
     govt_fee_total: float
+    bank_fee_total: float
+    edrh_fee_total: float
     grand_total: float
     notes: str | None
     terms: str | None

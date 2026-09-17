@@ -44,8 +44,15 @@ class Invoice(TimestampMixin, Base):
     subtotal: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     discount_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     coupon_id: Mapped[int | None] = mapped_column(ForeignKey("coupons.id"), nullable=True)
+    # The printed-banner coupon chosen for this invoice, plus a snapshot of the
+    # image it printed. Reprints use the snapshot, so replacing a coupon's
+    # artwork later never changes an invoice that already went to a customer.
+    banner_coupon_id: Mapped[int | None] = mapped_column(ForeignKey("coupons.id"), nullable=True)
+    banner_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     vat_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     govt_fee_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    bank_fee_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    edrh_fee_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     grand_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     amount_paid: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
 
@@ -72,6 +79,19 @@ class InvoiceItem(TimestampMixin, Base):
     qty: Mapped[float] = mapped_column(Numeric(10, 2), default=1, nullable=False)
     unit_price: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     govt_fee: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    bank_fee: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    edrh_fee: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    # Free-text reference numbers for HASSAS's per-transaction line items —
+    # not computed, not looked up from a service; typed fresh per invoice
+    # line (see routers/invoices.py).
+    trans_no: Mapped[str | None] = mapped_column(String(100))
+    inv_no: Mapped[str | None] = mapped_column(String(100))
+    # Line discounts are entered as a percentage of the line's gross
+    # (qty * unit_price). discount_pct is what the user typed; discount is the
+    # resulting amount, kept because every total, report and PDF template
+    # already works off the amount. Rows created before the percentage entry
+    # was introduced have discount_pct 0 and a real discount amount.
+    discount_pct: Mapped[float] = mapped_column(Numeric(5, 2), default=0, nullable=False)
     discount: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     vat_rate: Mapped[float] = mapped_column(Numeric(5, 2), default=0, nullable=False)
     line_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)

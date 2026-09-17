@@ -1,4 +1,4 @@
-export type UserRole = "superadmin" | "admin" | "employee";
+export type UserRole = "superadmin" | "admin" | "manager" | "employee";
 
 export interface CurrentUser {
   id: number;
@@ -15,6 +15,8 @@ export interface CurrentUser {
   business_id: number | null;
   avatar_color: string | null;
   auto_lock_minutes: number;
+  // The software vendor's account — see AppUser.is_system_owner.
+  is_system_owner: boolean;
 }
 
 export interface AppUser {
@@ -31,6 +33,10 @@ export interface AppUser {
   phone_code: string | null;
   phone: string | null;
   is_active: boolean;
+  // The software vendor's account, a tier above superadmin: the only one that
+  // can create or reset a superadmin. Only ever returned to that account
+  // itself — the server hides it from everyone else.
+  is_system_owner: boolean;
 }
 
 export interface Business {
@@ -70,6 +76,7 @@ export interface Business {
   default_quotation_notes: string | null;
   default_quotation_terms: string | null;
   template_config: Record<string, unknown> | null;
+  custom_invoice_template: string | null;
   thermal_paper_width: string;
   thermal_template_config: Record<string, unknown> | null;
   is_active: boolean;
@@ -139,6 +146,8 @@ export interface Service {
   description: string | null;
   price: number;
   govt_fee: number;
+  bank_fee: number;
+  edrh_fee: number;
   category_id: number | null;
   taxable: boolean;
   is_active: boolean;
@@ -153,10 +162,16 @@ export interface PaginatedServices {
 
 export type DiscountType = "percent" | "fixed";
 
+// "discount" takes money off the invoice; "banner" prints an uploaded image on
+// it (e.g. a partner offer) and discounts nothing.
+export type CouponKind = "discount" | "banner";
+
 export interface Coupon {
   id: number;
   business_id: number;
   code: string;
+  kind: CouponKind;
+  banner_path: string | null;
   discount_type: DiscountType;
   value: number;
   is_active: boolean;
@@ -177,6 +192,12 @@ export interface InvoiceItem {
   qty: number;
   unit_price: number;
   govt_fee: number;
+  bank_fee: number;
+  edrh_fee: number;
+  trans_no: string | null;
+  inv_no: string | null;
+  /** What was typed on the form; `discount` is the resulting amount. */
+  discount_pct: number;
   discount: number;
   vat_rate: number;
   line_total: number;
@@ -209,6 +230,8 @@ export interface Invoice {
   coupon_id: number | null;
   vat_total: number;
   govt_fee_total: number;
+  bank_fee_total: number;
+  edrh_fee_total: number;
   grand_total: number;
   amount_paid: number;
   notes: string | null;
@@ -373,6 +396,20 @@ export interface DashboardSummary {
   // net_revenue = total_sales - total_expenses, computed backend-side in
   // Decimal (see routers/dashboard.py) — never recompute this client-side.
   net_revenue: number;
+  sales_trend: SalesTrendPoint[];
+  attendance_trend: AttendanceTrendPoint[];
+}
+
+export interface SalesTrendPoint {
+  label: string;
+  total_sales: number;
+  total_expenses: number;
+}
+
+export interface AttendanceTrendPoint {
+  label: string;
+  present: number;
+  absent: number;
 }
 
 export type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "converted";
@@ -392,6 +429,8 @@ export interface Quotation {
   coupon_id: number | null;
   vat_total: number;
   govt_fee_total: number;
+  bank_fee_total: number;
+  edrh_fee_total: number;
   grand_total: number;
   notes: string | null;
   terms: string | null;

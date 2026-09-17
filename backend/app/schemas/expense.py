@@ -1,7 +1,7 @@
 import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from app.models.expense import ExpenseType
 
@@ -11,12 +11,17 @@ from app.models.expense import ExpenseType
 # annotation, so the annotation itself ends up as `None | None` and raises
 # TypeError at class-definition time. Qualifying as `datetime.date` sidesteps
 # it since the name being looked up (`datetime`) is never shadowed.
+#
+# amount must be positive: a zero/negative expense has no legitimate meaning
+# and — since Expense feeds the Dashboard's net-revenue figure (total sales
+# minus expenses) — a negative one would silently inflate reported profit,
+# exactly the kind of entry a dishonest employee would want to slip in.
 
 
 class ExpenseCreate(BaseModel):
     type: ExpenseType
-    amount: Decimal
-    description: str | None = None
+    amount: Decimal = Field(gt=0, le=Decimal("100000000"))
+    description: str | None = Field(default=None, max_length=1000)
     date: datetime.date
     employee_id: int | None = None
 
@@ -29,8 +34,8 @@ class ExpenseCreate(BaseModel):
 
 class ExpenseUpdate(BaseModel):
     type: ExpenseType | None = None
-    amount: Decimal | None = None
-    description: str | None = None
+    amount: Decimal | None = Field(default=None, gt=0, le=Decimal("100000000"))
+    description: str | None = Field(default=None, max_length=1000)
     date: datetime.date | None = None
     employee_id: int | None = None
 

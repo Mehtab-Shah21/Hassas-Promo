@@ -61,7 +61,7 @@ export default function InvoiceDefaultsPage() {
         <Field label="Default VAT rate (%)">
           <TextInput
             type="number"
-            step="0.01"
+            step="1"
             min="0"
             max="100"
             value={form.default_vat_rate}

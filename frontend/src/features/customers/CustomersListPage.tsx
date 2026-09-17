@@ -111,10 +111,10 @@ export default function CustomersListPage() {
                   <td className="px-4 py-2 font-medium text-ink">{c.name}</td>
                   <td className="px-4 py-2 capitalize text-muted">{c.type}</td>
                   <td className="px-4 py-2 text-muted">
-                    {c.phone_code} {c.phone}
+                    {c.phone ? `${c.phone_code ?? ""} ${c.phone}` : "—"}
                   </td>
-                  <td className="px-4 py-2 text-muted">{c.email}</td>
-                  <td className="px-4 py-2 text-muted">{c.id_value}</td>
+                  <td className="px-4 py-2 text-muted">{c.email || "—"}</td>
+                  <td className="px-4 py-2 text-muted">{c.id_value || "—"}</td>
                 </tr>
               ))
             )}

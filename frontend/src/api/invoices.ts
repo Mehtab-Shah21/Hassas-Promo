@@ -7,7 +7,12 @@ export interface InvoiceItemPayload {
   qty: number;
   unit_price?: number | null;
   govt_fee?: number | null;
-  discount?: number;
+  bank_fee?: number | null;
+  edrh_fee?: number | null;
+  trans_no?: string | null;
+  inv_no?: string | null;
+  /** Percentage of the line's gross — the server converts it to an amount. */
+  discount_pct?: number;
   vat_rate?: number | null;
   save_as_service?: boolean;
   category_id?: number | null;
@@ -23,6 +28,10 @@ export interface InvoiceCreatePayload {
   terms?: string | null;
   show_bank_details?: boolean;
   coupon_code?: string | null;
+  /** Printed-banner coupon: prints its image on the invoice, no discount. */
+  banner_coupon_code?: string | null;
+  /** HASSAS: fill blank Trans No./Inv No. from the receipt number on save. */
+  auto_reference_numbers?: boolean;
   items: InvoiceItemPayload[];
 }
 

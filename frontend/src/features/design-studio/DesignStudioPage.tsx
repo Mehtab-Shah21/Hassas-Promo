@@ -48,7 +48,7 @@ const LAYOUT_PRESETS: { value: TemplateConfig["layout_preset"]; title: string; d
 
 export default function DesignStudioPage() {
   const { activeBusiness } = useBusiness();
-  const [topTab, setTopTab] = useState<"a4" | "thermal" | "barcode">("a4");
+  const [topTab, setTopTab] = useState<"a4" | "thermal">("a4");
 
   return (
     <div>
@@ -61,21 +61,17 @@ export default function DesignStudioPage() {
           <TabButton active={topTab === "thermal"} onClick={() => setTopTab("thermal")}>
             Thermal Receipt
           </TabButton>
-          <TabButton active={topTab === "barcode"} onClick={() => setTopTab("barcode")}>
-            Barcode Labels
-          </TabButton>
         </div>
       </div>
 
       {topTab === "a4" && <A4DocumentsTab />}
       {topTab === "thermal" && <ThermalTab />}
-      {topTab === "barcode" && <PlaceholderPanel title="Barcode Labels" note="Not built yet — this is a placeholder tab, not a working design." />}
     </div>
   );
 }
 
 function A4DocumentsTab() {
-  const [docType, setDocType] = useState<DocKind | "delivery_note">("invoice");
+  const [docType, setDocType] = useState<DocKind>("invoice");
 
   return (
     <div>
@@ -86,25 +82,9 @@ function A4DocumentsTab() {
         <TabButton active={docType === "quotation"} onClick={() => setDocType("quotation")}>
           Quotation
         </TabButton>
-        <TabButton active={docType === "delivery_note"} onClick={() => setDocType("delivery_note")}>
-          Delivery Note
-        </TabButton>
       </div>
 
-      {docType === "delivery_note" ? (
-        <PlaceholderPanel title="Delivery Note" note="Not a document type this app generates — this is a labeled placeholder, not a faked design." />
-      ) : (
-        <A4ConfigEditor docType={docType} />
-      )}
-    </div>
-  );
-}
-
-function PlaceholderPanel({ title, note }: { title: string; note: string }) {
-  return (
-    <div className="rounded-lg border border-dashed border-line bg-surface p-10 text-center">
-      <p className="text-sm font-semibold text-ink">{title}</p>
-      <p className="mt-1 text-sm text-muted">{note}</p>
+      <A4ConfigEditor docType={docType} />
     </div>
   );
 }
@@ -348,7 +328,7 @@ function A4ConfigEditor({ docType }: { docType: DocKind }) {
         <div className="col-span-2 rounded-lg border border-line bg-bg p-4">
           <p className="mb-2 text-xs font-medium uppercase text-muted">Live preview — {docType} (sample data)</p>
           <div className="overflow-hidden rounded-md border border-line bg-surface shadow-raised" style={{ aspectRatio: "1 / 1.3" }}>
-            <iframe title="Document preview" srcDoc={previewHtml} className="h-full w-full" style={{ border: "none" }} />
+            <iframe title="Document preview" srcDoc={previewHtml} className="h-full w-full" style={{ border: "none" }} sandbox="allow-same-origin" />
           </div>
         </div>
       </div>
@@ -515,7 +495,7 @@ function ThermalTab() {
               className="overflow-hidden rounded-md border border-line bg-surface shadow-raised"
               style={{ width: THERMAL_PREVIEW_PX_WIDTH[previewWidth], height: 560 }}
             >
-              <iframe title="Thermal receipt preview" srcDoc={previewHtml} className="h-full w-full" style={{ border: "none" }} />
+              <iframe title="Thermal receipt preview" srcDoc={previewHtml} className="h-full w-full" style={{ border: "none" }} sandbox="allow-same-origin" />
             </div>
           </div>
         </div>

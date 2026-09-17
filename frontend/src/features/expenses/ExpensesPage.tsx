@@ -4,6 +4,7 @@ import { resolveAssetUrl } from "../../api/client";
 import { useBusiness } from "../../context/BusinessContext";
 import { currencyLabel } from "../../utils/currency";
 import type { Expense, ExpenseType } from "../../api/types";
+import Modal from "../../components/Modal";
 import ExpenseFormModal from "./ExpenseFormModal";
 
 const PAGE_SIZE = 20;
@@ -15,9 +16,9 @@ const TYPE_LABELS: Record<ExpenseType, string> = {
 };
 
 const TYPE_STYLES: Record<ExpenseType, string> = {
-  salary: "bg-link/10 text-link",
-  overhead: "bg-orange-50/10 text-orange-50",
-  company_expense: "bg-accent-green/10 text-accent-green",
+  salary: "bg-link/20 text-link",
+  overhead: "bg-orange-50/20 text-orange-50",
+  company_expense: "bg-accent-green/20 text-accent-green",
 };
 
 export default function ExpensesPage() {
@@ -34,6 +35,7 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
+  const [viewing, setViewing] = useState<Expense | null>(null);
 
   async function load() {
     setLoading(true);
@@ -63,10 +65,13 @@ export default function ExpensesPage() {
     setPage(1);
   }, [type, dateFrom, dateTo, activeBusiness?.id]);
 
-  async function handleDelete(expense: Expense) {
-    if (!confirm(`Delete this ${TYPE_LABELS[expense.type].toLowerCase()} expense of ${currency} ${expense.amount}?`)) return;
+  // Resolves true only if the expense was actually deleted, so the details
+  // dialog can stay open when the user cancels the confirmation.
+  async function handleDelete(expense: Expense): Promise<boolean> {
+    if (!confirm(`Delete this ${TYPE_LABELS[expense.type].toLowerCase()} expense of ${currency} ${expense.amount}?`)) return false;
     await deleteExpense(expense.id);
     load();
+    return true;
   }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -159,19 +164,28 @@ export default function ExpensesPage() {
               </tr>
             ) : (
               items.map((exp) => (
-                <tr key={exp.id} className="hover:bg-wash-1">
+                <tr
+                  key={exp.id}
+                  onClick={() => setViewing(exp)}
+                  className="cursor-pointer hover:bg-wash-1"
+                  title="View full details"
+                >
                   <td className="whitespace-nowrap px-4 py-2 text-muted">{exp.date}</td>
                   <td className="px-4 py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_STYLES[exp.type]}`}>
                       {TYPE_LABELS[exp.type]}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-muted">{exp.description ?? "—"}</td>
+                  {/* Kept to one line so long descriptions don't blow up row
+                      height; the full text is in the details dialog. */}
+                  <td className="max-w-xs truncate px-4 py-2 text-muted">{exp.description ?? "—"}</td>
                   <td className="px-4 py-2 text-muted">{exp.employee_name ?? "—"}</td>
                   <td className="whitespace-nowrap px-4 py-2 text-right font-medium text-ink">
                     {currency} {exp.amount}
                   </td>
-                  <td className="px-4 py-2">
+                  {/* The row opens the dialog; these cells have their own
+                      actions, so their clicks must not bubble up to it. */}
+                  <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
                     {exp.attachment_path && (
                       <a
                         href={resolveAssetUrl(exp.attachment_path) ?? "#"}
@@ -183,7 +197,7 @@ export default function ExpensesPage() {
                       </a>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-4 py-2 text-right" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => setEditing(exp)} className="mr-3 text-link hover:underline">
                       Edit
                     </button>
@@ -230,6 +244,66 @@ export default function ExpensesPage() {
             load();
           }}
         />
+      )}
+      {viewing && (
+        <Modal title="Expense details" onClose={() => setViewing(null)}>
+          <dl className="grid grid-cols-3 gap-x-4 gap-y-3 text-sm">
+            <dt className="text-muted">Date</dt>
+            <dd className="col-span-2 text-ink">{viewing.date}</dd>
+            <dt className="text-muted">Type</dt>
+            <dd className="col-span-2">
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_STYLES[viewing.type]}`}>
+                {TYPE_LABELS[viewing.type]}
+              </span>
+            </dd>
+            <dt className="text-muted">Amount</dt>
+            <dd className="col-span-2 font-semibold text-ink">
+              {currency} {viewing.amount}
+            </dd>
+            <dt className="text-muted">Employee</dt>
+            <dd className="col-span-2 text-ink">{viewing.employee_name ?? "—"}</dd>
+            <dt className="text-muted">Attachment</dt>
+            <dd className="col-span-2">
+              {viewing.attachment_path ? (
+                <a
+                  href={resolveAssetUrl(viewing.attachment_path) ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-link hover:underline"
+                >
+                  Open PDF
+                </a>
+              ) : (
+                <span className="text-muted">None</span>
+              )}
+            </dd>
+          </dl>
+          <div className="mt-5">
+            <p className="mb-1.5 text-sm text-muted">Description</p>
+            <p className="max-h-72 overflow-y-auto whitespace-pre-wrap break-words rounded-lg border border-line bg-bg p-3 text-sm text-ink">
+              {viewing.description || "No description."}
+            </p>
+          </div>
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={async () => {
+                if (await handleDelete(viewing)) setViewing(null);
+              }}
+              className="rounded-md px-4 py-2 text-sm font-medium text-danger hover:bg-wash-1"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => {
+                setEditing(viewing);
+                setViewing(null);
+              }}
+              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink transition-opacity hover:opacity-90"
+            >
+              Edit
+            </button>
+          </div>
+        </Modal>
       )}
       {editing && (
         <ExpenseFormModal

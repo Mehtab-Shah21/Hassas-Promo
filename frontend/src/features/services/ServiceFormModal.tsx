@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { DollarSign, FileText, FolderTree, Landmark, Type } from "lucide-react";
+import { Banknote, CreditCard, DollarSign, FileText, FolderTree, Landmark, Type } from "lucide-react";
 import { createService, updateService, type ServicePayload } from "../../api/services";
 import { Field, ModalFooter, Select, TextArea, TextInput, Toggle } from "../../components/form/Field";
 import Modal from "../../components/Modal";
@@ -93,6 +93,31 @@ export default function ServiceFormModal({ service, categories, onClose, onSaved
                 prefix={currency}
                 value={form.govt_fee ?? ""}
                 onChange={(e) => setForm((f) => ({ ...f, govt_fee: e.target.value === "" ? undefined : Number(e.target.value) }))}
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Bank fee" hint="(optional)" icon={Banknote}>
+              <TextInput
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0"
+                prefix={currency}
+                value={form.bank_fee ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, bank_fee: e.target.value === "" ? undefined : Number(e.target.value) }))}
+              />
+            </Field>
+            <Field label="E-Drh fee" hint="(optional)" icon={CreditCard}>
+              <TextInput
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0"
+                prefix={currency}
+                value={form.edrh_fee ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, edrh_fee: e.target.value === "" ? undefined : Number(e.target.value) }))}
               />
             </Field>
           </div>

@@ -1,15 +1,17 @@
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.attendance import AttendanceStatus
+
+# note length mirrors app/models/attendance.py's column.
 
 
 class AttendanceMark(BaseModel):
     employee_id: int
     date: date
     status: AttendanceStatus
-    note: str | None = None
+    note: str | None = Field(default=None, max_length=500)
 
 
 class AttendanceResponse(BaseModel):

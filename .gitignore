@@ -7,6 +7,15 @@ venv/
 *.db
 *.sqlite3
 
+# Per-install JWT signing secret (auto-generated, see app/core/config.py) --
+# must NEVER be committed: anyone with it can forge a login token for any
+# user, including a superadmin, on any install that happens to reuse it.
+backend/secret.key
+
+# Full-data backups (database + every uploaded file, zipped) -- as sensitive
+# as the live database itself and never something source control should hold.
+backend/backups/
+
 # Uploaded files (logos etc.) - not source, but keep the folder via .gitkeep
 backend/uploads/*
 !backend/uploads/.gitkeep

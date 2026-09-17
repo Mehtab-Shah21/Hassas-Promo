@@ -5,13 +5,15 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import require_active_business_id, require_admin, require_module_enabled
+from app.core.deps import require_active_business_id, require_manager, require_module_enabled
 from app.models.attendance import Attendance
 from app.models.customer import Customer
 from app.models.employee import Employee
+from app.models.expense import Expense
 from app.models.invoice import Invoice, InvoiceItem, InvoiceStatus
 from app.models.quotation import Quotation
 from app.services.csv_export import rows_to_csv_response
+from app.services.expenses import build_expense_query, expenses_by_type, total_expenses
 
 router = APIRouter(prefix="/api/reports", tags=["reports"], dependencies=[Depends(require_module_enabled("reports"))])
 
@@ -42,7 +44,7 @@ def sales_report(
     export: str | None = None,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ) -> Any:
     d_from, d_to = _period(date_from, date_to)
     invoices = (
@@ -107,7 +109,7 @@ def govt_fees_report(
     export: str | None = None,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ) -> Any:
     d_from, d_to = _period(date_from, date_to)
     invoices = (
@@ -135,7 +137,7 @@ def vat_report(
     export: str | None = None,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ) -> Any:
     d_from, d_to = _period(date_from, date_to)
     invoices = (
@@ -161,7 +163,7 @@ def outstanding_report(
     export: str | None = None,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ) -> Any:
     invoices = (
         db.query(Invoice)
@@ -200,7 +202,7 @@ def customer_statement(
     export: str | None = None,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ) -> Any:
     customer = db.get(Customer, customer_id)
     if customer is not None and customer.business_id != business_id:
@@ -246,7 +248,7 @@ def service_performance_report(
     export: str | None = None,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ) -> Any:
     d_from, d_to = _period(date_from, date_to)
     items = (
@@ -278,7 +280,7 @@ def quotations_report(
     export: str | None = None,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ) -> Any:
     d_from, d_to = _period(date_from, date_to)
     quotations = (
@@ -318,7 +320,7 @@ def attendance_summary_report(
     export: str | None = None,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ) -> Any:
     d_from, d_to = _period(date_from, date_to)
     employees = (
@@ -348,3 +350,46 @@ def attendance_summary_report(
     if export == "csv":
         return rows_to_csv_response("attendance_summary.csv", ["employee", "present", "absent", "leave"], rows)
     return rows
+
+
+# --- 9. Expenses ---
+
+
+@router.get("/expenses")
+def expenses_report(
+    date_from: date | None = None,
+    date_to: date | None = None,
+    export: str | None = None,
+    business_id: int = Depends(require_active_business_id),
+    db: Session = Depends(get_db),
+    current_user=Depends(require_manager),
+) -> Any:
+    d_from, d_to = _period(date_from, date_to)
+    expenses = (
+        build_expense_query(db, business_id, d_from, d_to)
+        .order_by(Expense.date.desc(), Expense.id.desc())
+        .all()
+    )
+    employees = {e.id: e.name for e in db.query(Employee).filter(Employee.business_id == business_id).all()}
+    # Amounts go out as 2-dp strings, not floats: expense money is kept in
+    # Decimal end to end (see services/expenses.py), and the Expenses API
+    # already serialises it the same way.
+    rows = [
+        {
+            "date": e.date.isoformat(),
+            "type": e.type.value,
+            "description": e.description or "",
+            "employee": employees.get(e.employee_id, "") if e.employee_id else "",
+            "amount": f"{e.amount:.2f}",
+        }
+        for e in expenses
+    ]
+    if export == "csv":
+        return rows_to_csv_response("expenses.csv", ["date", "type", "description", "employee", "amount"], rows)
+    return {
+        "date_from": d_from.isoformat(),
+        "date_to": d_to.isoformat(),
+        "total": f"{total_expenses(db, business_id, d_from, d_to):.2f}",
+        "by_type": {k: f"{v:.2f}" for k, v in expenses_by_type(db, business_id, d_from, d_to).items()},
+        "rows": rows,
+    }

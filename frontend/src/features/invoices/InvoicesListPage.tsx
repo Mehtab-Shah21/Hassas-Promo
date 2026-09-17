@@ -8,10 +8,10 @@ const PAGE_SIZE = 20;
 
 const STATUS_COLORS: Record<InvoiceStatus, string> = {
   draft: "bg-wash-2 text-ink",
-  sent: "bg-info/10 text-info",
-  paid: "bg-accent-green/10 text-accent-green",
-  partial: "bg-orange-50/10 text-orange-50",
-  overdue: "bg-danger/10 text-danger",
+  sent: "bg-info/20 text-info",
+  paid: "bg-accent-green/20 text-accent-green",
+  partial: "bg-orange-50/20 text-orange-50",
+  overdue: "bg-danger/20 text-danger",
   void: "bg-wash-3 text-ink line-through",
 };
 
@@ -75,11 +75,11 @@ export default function InvoicesListPage() {
       </div>
 
       {kpis && (
-        <div className="mb-5 grid grid-cols-5 gap-3">
+        // Invoices are paid at the counter, so the only statuses in use are
+        // Paid and Void — no Pending/Overdue buckets to report on.
+        <div className="mb-5 grid grid-cols-3 gap-3">
           <KpiCard label="Total" count={kpis.total_count} amount={kpis.total_amount} />
-          <KpiCard label="Pending" count={kpis.pending_count} amount={kpis.pending_amount} accent="text-info" />
           <KpiCard label="Paid" count={kpis.paid_count} amount={kpis.paid_amount} accent="text-accent-green" />
-          <KpiCard label="Overdue" count={kpis.overdue_count} amount={kpis.overdue_amount} accent="text-danger" />
           <KpiCard label="Void" count={kpis.void_count} amount={kpis.void_amount} accent="text-muted" />
         </div>
       )}
@@ -97,10 +97,7 @@ export default function InvoicesListPage() {
           className="rounded-md border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
         >
           <option value="">All statuses</option>
-          <option value="draft">Draft</option>
-          <option value="sent">Sent</option>
           <option value="paid">Paid</option>
-          <option value="partial">Partial</option>
           <option value="void">Void</option>
         </select>
         <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="rounded-md border border-line px-3 py-2 text-sm" />

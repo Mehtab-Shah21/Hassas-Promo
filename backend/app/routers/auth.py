@@ -10,7 +10,7 @@ from app.core.security import (
     verify_password,
     verify_pin,
 )
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.auth import (
     ChangePasswordRequest,
     CurrentUser,
@@ -21,15 +21,24 @@ from app.schemas.auth import (
     TokenResponse,
 )
 from app.services.audit import write_audit_log
+from app.services.rate_limit import record_failure, record_success, seconds_until_unlocked
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
+    locked_for = seconds_until_unlocked(payload.username)
+    if locked_for:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many failed attempts. Try again in {locked_for // 60 + 1} minute(s).",
+        )
     user = db.query(User).filter(User.username == payload.username).first()
     if not user or not user.is_active or not verify_password(payload.password, user.password_hash):
+        record_failure(payload.username)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+    record_success(payload.username)
     token = create_access_token({"sub": str(user.id)})
     write_audit_log(
         db,
@@ -47,9 +56,20 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
 
 @router.post("/login-pin", response_model=TokenResponse)
 def login_pin(payload: PinLoginRequest, request: Request, db: Session = Depends(get_db)):
+    # Shares one lockout with password login, keyed by username -- a PIN is
+    # only 4-6 digits (at most a million combinations), so it needs the same
+    # throttle at least as much as the password path.
+    locked_for = seconds_until_unlocked(payload.username)
+    if locked_for:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many failed attempts. Try again in {locked_for // 60 + 1} minute(s).",
+        )
     user = db.query(User).filter(User.username == payload.username).first()
     if not user or not user.is_active or not user.pin_hash or not verify_pin(payload.pin, user.pin_hash):
+        record_failure(payload.username)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or PIN")
+    record_success(payload.username)
     token = create_access_token({"sub": str(user.id)})
     write_audit_log(
         db,
@@ -89,9 +109,21 @@ def change_password(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Employees can't set their own password; a superadmin (or their company
+    # admin) resets it for them from the Users page instead.
+    if current_user.role == UserRole.employee:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Employees can't change their own password. Ask a superadmin to reset it.",
+        )
     if not verify_password(payload.current_password, current_user.password_hash):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
     current_user.password_hash = hash_password(payload.new_password)
+    write_audit_log(
+        db, user_id=current_user.id, business_id=current_user.business_id, action="update",
+        entity_type="user", entity_id=current_user.id,
+        description=f"{current_user.username} changed their own password",
+    )
     db.commit()
     return {"ok": True}
 

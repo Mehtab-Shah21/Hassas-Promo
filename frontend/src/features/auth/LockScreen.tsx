@@ -36,6 +36,7 @@ export default function LockScreen() {
               placeholder="Password"
               required
               autoFocus
+              maxLength={128}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
@@ -47,6 +48,7 @@ export default function LockScreen() {
               placeholder="PIN"
               required
               autoFocus
+              maxLength={6}
               value={pin}
               onChange={(e) => setPin(e.target.value)}
               className="w-full rounded-md border border-line bg-bg px-3 py-2 text-sm tracking-widest text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"

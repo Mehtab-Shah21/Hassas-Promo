@@ -220,7 +220,7 @@ function EmployeesModal({ onClose, onChanged }: { onClose: () => void; onChanged
                 <td className="py-2 text-muted">{emp.role ?? "—"}</td>
                 <td className="py-2 text-muted">{emp.phone ? `${emp.phone_code ?? ""} ${emp.phone}` : "—"}</td>
                 <td className="py-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${emp.is_active ? "bg-accent-green/10 text-accent-green" : "bg-wash-2 text-muted"}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${emp.is_active ? "bg-accent-green/20 text-accent-green" : "bg-wash-2 text-muted"}`}>
                     {emp.is_active ? "Active" : "Inactive"}
                   </span>
                 </td>
@@ -306,11 +306,11 @@ function EmployeeFormModal({
         </Field>
         <div className="grid grid-cols-3 gap-3">
           <Field label="Code">
-            <TextInput value={form.phone_code} onChange={(e) => setForm((f) => ({ ...f, phone_code: e.target.value }))} placeholder="+971" />
+            <TextInput value={form.phone_code} onChange={(e) => setForm((f) => ({ ...f, phone_code: e.target.value }))} placeholder="+971" maxLength={10} />
           </Field>
           <div className="col-span-2">
             <Field label="Phone (optional)">
-              <TextInput value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+              <TextInput value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} maxLength={50} />
             </Field>
           </div>
         </div>

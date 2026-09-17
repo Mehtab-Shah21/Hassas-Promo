@@ -1,16 +1,30 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.user import UserRole
 
+# Every string field below caps input length before it ever reaches the DB —
+# SQLite's VARCHAR(n) declared on the model is NOT enforced by SQLite itself
+# (it has no real length limit), so without a matching cap here a client could
+# submit an arbitrarily large "username" or "pin" and have it stored/hashed
+# as-is. Lengths mirror the corresponding model column (see app/models/user.py)
+# or, for password/pin, a generous practical bound.
+#
+# Note on password length: passlib's bcrypt scheme only uses the first 72
+# BYTES of a password — anything beyond that is silently ignored by the
+# algorithm itself, not by this validation. Capping at 128 characters here
+# prevents someone from submitting a multi-kilobyte string that costs CPU to
+# hash for no security benefit; it does not change bcrypt's own 72-byte
+# behavior, which would require re-hashing every existing account to alter.
+
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(max_length=50)
+    password: str = Field(max_length=128)
 
 
 class PinLoginRequest(BaseModel):
-    username: str
-    pin: str
+    username: str = Field(max_length=50)
+    pin: str = Field(max_length=6)
 
 
 class TokenResponse(BaseModel):
@@ -30,18 +44,19 @@ class CurrentUser(BaseModel):
     business_id: int | None
     avatar_color: str | None
     auto_lock_minutes: int
+    is_system_owner: bool
 
     model_config = {"from_attributes": True}
 
 
 class SetPinRequest(BaseModel):
-    pin: str
+    pin: str = Field(min_length=4, max_length=6)
 
 
 class ChangePasswordRequest(BaseModel):
-    current_password: str
-    new_password: str
+    current_password: str = Field(max_length=128)
+    new_password: str = Field(min_length=6, max_length=128)
 
 
 class SetAutoLockRequest(BaseModel):
-    auto_lock_minutes: int
+    auto_lock_minutes: int = Field(ge=1, le=120)

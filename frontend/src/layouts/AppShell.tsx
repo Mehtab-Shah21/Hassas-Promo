@@ -26,13 +26,16 @@ import { useAuth } from "../context/AuthContext";
 import { useBusiness } from "../context/BusinessContext";
 import { useFeatureFlags } from "../context/FeatureFlagsContext";
 import { useNotifications } from "../context/NotificationsContext";
-import { isAdminOrAbove, isSuperadmin } from "../utils/roles";
+import { isAdminOrAbove, isManagerOrAbove, isSuperadmin } from "../utils/roles";
 
 interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
-  adminOnly?: boolean;
+  // Omitted: visible to everyone (employee and up). "manager": operational
+  // tier (attendance, reconciliation, reports, expenses, audit log).
+  // "admin": account/system administration (design studio, users, settings).
+  minRole?: "manager" | "admin";
   flag?: string;
 }
 
@@ -44,14 +47,14 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/quotations", label: "Quotations", icon: FileClock, flag: "quotations" },
   { to: "/coupons", label: "Coupons", icon: Ticket, flag: "coupons" },
   { to: "/notifications", label: "Notifications", icon: Bell, flag: "notifications" },
-  { to: "/attendance", label: "Attendance", icon: CalendarCheck, adminOnly: true, flag: "attendance" },
-  { to: "/reconciliation", label: "Reconciliation", icon: Landmark, adminOnly: true, flag: "reconciliation" },
-  { to: "/reports", label: "Reports", icon: BarChart3, adminOnly: true, flag: "reports" },
-  { to: "/expenses", label: "Expenses", icon: Receipt, adminOnly: true },
-  { to: "/audit-log", label: "Audit Log", icon: ScrollText, adminOnly: true },
-  { to: "/design-studio", label: "Design Studio", icon: Palette, adminOnly: true, flag: "design_studio" },
-  { to: "/users", label: "Users", icon: UserCog, adminOnly: true },
-  { to: "/settings", label: "Settings", icon: SettingsIcon, adminOnly: true },
+  { to: "/attendance", label: "Attendance", icon: CalendarCheck, minRole: "manager", flag: "attendance" },
+  { to: "/reconciliation", label: "Reconciliation", icon: Landmark, minRole: "manager", flag: "reconciliation" },
+  { to: "/reports", label: "Reports", icon: BarChart3, minRole: "manager", flag: "reports" },
+  { to: "/expenses", label: "Expenses", icon: Receipt, minRole: "manager" },
+  { to: "/audit-log", label: "Audit Log", icon: ScrollText, minRole: "manager" },
+  { to: "/design-studio", label: "Design Studio", icon: Palette, minRole: "admin", flag: "design_studio" },
+  { to: "/users", label: "Users", icon: UserCog, minRole: "admin" },
+  { to: "/settings", label: "Settings", icon: SettingsIcon, minRole: "admin" },
 ];
 
 const SIDEBAR_STORAGE_KEY = "sidebar_collapsed";
@@ -176,7 +179,12 @@ export default function AppShell() {
     ? businesses.filter((b) => b.name !== "IIM" || isEnabled("iim"))
     : businesses;
   const visibleItems = NAV_ITEMS.filter(
-    (item) => (!item.adminOnly || isAdminOrAbove(user?.role)) && (!item.flag || isEnabled(item.flag)),
+    (item) => {
+      const roleOk =
+        !item.minRole ||
+        (item.minRole === "admin" ? isAdminOrAbove(user?.role) : isManagerOrAbove(user?.role));
+      return roleOk && (!item.flag || isEnabled(item.flag));
+    },
   );
 
   return (

@@ -34,6 +34,8 @@ class Quotation(TimestampMixin, Base):
     coupon_id: Mapped[int | None] = mapped_column(ForeignKey("coupons.id"), nullable=True)
     vat_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     govt_fee_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    bank_fee_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    edrh_fee_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     grand_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
 
     notes: Mapped[str | None] = mapped_column(String(2000))
@@ -57,6 +59,13 @@ class QuotationItem(TimestampMixin, Base):
     qty: Mapped[float] = mapped_column(Numeric(10, 2), default=1, nullable=False)
     unit_price: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     govt_fee: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    bank_fee: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    edrh_fee: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    trans_no: Mapped[str | None] = mapped_column(String(100))
+    inv_no: Mapped[str | None] = mapped_column(String(100))
+    # Percentage of the line's gross, with the resulting amount in discount —
+    # see InvoiceItem for why both are stored.
+    discount_pct: Mapped[float] = mapped_column(Numeric(5, 2), default=0, nullable=False)
     discount: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
     vat_rate: Mapped[float] = mapped_column(Numeric(5, 2), default=0, nullable=False)
     line_total: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)

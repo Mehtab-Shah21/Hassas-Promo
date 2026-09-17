@@ -1,8 +1,30 @@
 import { apiClient } from "./client";
+import type { ExpenseType } from "./types";
 
 export interface DateRange {
   date_from?: string;
   date_to?: string;
+}
+
+// Amounts arrive as 2-dp strings (Decimal on the server), matching the
+// Expenses API — see the note on the Expense type.
+export interface ExpensesReportRow {
+  date: string;
+  type: ExpenseType;
+  description: string;
+  employee: string;
+  amount: string;
+}
+export interface ExpensesReport {
+  date_from: string;
+  date_to: string;
+  total: string;
+  by_type: Record<ExpenseType, string>;
+  rows: ExpensesReportRow[];
+}
+export async function getExpensesReport(range: DateRange): Promise<ExpensesReport> {
+  const res = await apiClient.get<ExpensesReport>("/api/reports/expenses", { params: range });
+  return res.data;
 }
 
 export async function downloadCsv(path: string, params: Record<string, unknown>, filename: string) {

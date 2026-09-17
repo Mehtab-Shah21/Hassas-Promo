@@ -32,27 +32,51 @@ export default function PrintPreviewModal({
   const [format, setFormat] = useState<Format>("a4");
   const [thermalWidth, setThermalWidth] = useState<ThermalWidth>(activeBusiness?.thermal_paper_width === "58mm" ? 58 : 80);
   const [html, setHtml] = useState("");
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<"print" | "download" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // A business on an exact client template has its A4 document drawn straight
+  // onto the client's own PDF page, so there is no HTML that represents it —
+  // preview the real PDF instead. Every other business keeps the HTML preview,
+  // which is deliberately independent of whether the PDF engine is available.
+  const usePdfPreview = format === "a4" && Boolean(activeBusiness?.custom_invoice_template);
+
   useEffect(() => {
     let cancelled = false;
+    let objectUrl: string | null = null;
     setLoading(true);
-    fetchPreviewHtml(format, thermalWidth)
-      .then((h) => {
-        if (!cancelled) setHtml(h);
-      })
+    setError(null);
+
+    const load = usePdfPreview
+      ? fetchPdfBlob(format, thermalWidth).then((blob) => {
+          if (cancelled) return;
+          objectUrl = URL.createObjectURL(blob);
+          setPdfUrl(objectUrl);
+          setHtml("");
+        })
+      : fetchPreviewHtml(format, thermalWidth).then((h) => {
+          if (cancelled) return;
+          setHtml(h);
+          setPdfUrl(null);
+        });
+
+    load
       .catch(() => {
         if (!cancelled) setError("Could not load the preview.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
+      // Blob URLs leak until revoked, and this effect re-runs on every format
+      // or width change.
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [format, thermalWidth, fetchPreviewHtml]);
+  }, [format, thermalWidth, fetchPreviewHtml, fetchPdfBlob, usePdfPreview]);
 
   async function handleDownload() {
     setError(null);
@@ -123,7 +147,11 @@ export default function PrintPreviewModal({
                 className="overflow-hidden rounded-md border border-line bg-surface shadow-raised"
                 style={format === "thermal" ? { width: thermalWidth === 58 ? 240 : 320, height: 700 } : { width: "100%", maxWidth: 720, aspectRatio: "1 / 1.35" }}
               >
-                <iframe title="Document preview" srcDoc={html} className="h-full w-full" style={{ border: "none" }} />
+                {pdfUrl ? (
+                  <iframe title="Document preview" src={pdfUrl} className="h-full w-full" style={{ border: "none" }} />
+                ) : (
+                  <iframe title="Document preview" srcDoc={html} className="h-full w-full" style={{ border: "none" }} sandbox="allow-same-origin" />
+                )}
               </div>
             </div>
           )}

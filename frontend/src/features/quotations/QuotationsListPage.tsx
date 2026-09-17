@@ -8,10 +8,10 @@ const PAGE_SIZE = 20;
 
 const STATUS_COLORS: Record<QuotationStatus, string> = {
   draft: "bg-wash-2 text-ink",
-  sent: "bg-info/10 text-info",
-  accepted: "bg-accent-green/10 text-accent-green",
-  rejected: "bg-danger/10 text-danger",
-  converted: "bg-link/10 text-link",
+  sent: "bg-info/20 text-info",
+  accepted: "bg-accent-green/20 text-accent-green",
+  rejected: "bg-danger/20 text-danger",
+  converted: "bg-link/20 text-link",
 };
 
 export default function QuotationsListPage() {

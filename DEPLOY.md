@@ -128,7 +128,7 @@ broken. Before sending the demo link:
 
 ## Verification checklist (do this after Steps 1–3)
 
-Login: `admin@example.com` / `admin123` (from the seed — same as local dev).
+Login: `MS_Software_Solutions` / `Invoicing@Hassas_2026` (from the seed — same as local dev).
 
 - [ ] Log in as admin.
 - [ ] Switch between Main and IIM in the business switcher — data is

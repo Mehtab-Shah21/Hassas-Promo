@@ -9,7 +9,9 @@ import SearchCombobox from "../../components/SearchCombobox";
 import { useBusiness } from "../../context/BusinessContext";
 import { useFeatureFlags } from "../../context/FeatureFlagsContext";
 import CustomerFormModal from "../customers/CustomerFormModal";
-import LineItemRow, { emptyLine, num, type LineItemState } from "../invoices/LineItemRow";
+import LineItemRow, { emptyLine, lineNet, num, type LineItemState } from "../invoices/LineItemRow";
+import { getErrorMessage } from "../../utils/errors";
+import { advanceOnEnter } from "../../utils/formNavigation";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -51,6 +53,7 @@ export default function QuotationCreatePage() {
       setEmployees([]);
       setEmployeeId("");
     }
+    if (customer) setError(null);
   }, [customer]);
 
   const fetchCustomers = useCallback(async (query: string) => {
@@ -65,13 +68,14 @@ export default function QuotationCreatePage() {
     setLines((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
   }
 
-  const subtotal = lines.reduce((sum, l) => sum + Math.max(num(l.qty) * num(l.unit_price) - num(l.discount), 0), 0);
-  const vatTotal = lines.reduce(
-    (sum, l) => sum + Math.max(num(l.qty) * num(l.unit_price) - num(l.discount), 0) * (l.vat_rate / 100),
-    0,
-  );
+  const subtotal = lines.reduce((sum, l) => sum + lineNet(l), 0);
+  const vatTotal = lines.reduce((sum, l) => sum + lineNet(l) * (num(l.vat_rate) / 100), 0);
   const govtFeeTotal = lines.reduce((sum, l) => sum + num(l.govt_fee) * num(l.qty), 0);
-  const grandTotalPreview = subtotal + vatTotal + govtFeeTotal;
+  const bankFeeTotal = lines.reduce((sum, l) => sum + num(l.bank_fee) * num(l.qty), 0);
+  const edrhFeeTotal = lines.reduce((sum, l) => sum + num(l.edrh_fee) * num(l.qty), 0);
+  const grandTotalPreview = subtotal + vatTotal + govtFeeTotal + bankFeeTotal + edrhFeeTotal;
+  const showFeeBreakdown = activeBusiness?.custom_invoice_template === "hassas";
+  const [autoReferences, setAutoReferences] = useState(false);
 
   async function handleSubmit() {
     if (!customer) {
@@ -91,8 +95,12 @@ export default function QuotationCreatePage() {
         qty: num(l.qty),
         unit_price: num(l.unit_price),
         govt_fee: num(l.govt_fee),
-        discount: num(l.discount),
-        vat_rate: l.vat_rate,
+        bank_fee: num(l.bank_fee),
+        edrh_fee: num(l.edrh_fee),
+        trans_no: showFeeBreakdown && autoReferences ? null : l.trans_no || null,
+        inv_no: showFeeBreakdown && autoReferences ? null : l.inv_no || null,
+        discount_pct: num(l.discount_pct),
+        vat_rate: num(l.vat_rate),
         save_as_service: l.save_as_service,
       }));
       const quotation = await createQuotation({
@@ -104,12 +112,12 @@ export default function QuotationCreatePage() {
         terms,
         show_bank_details: showBankDetails,
         coupon_code: couponCode || null,
+        auto_reference_numbers: showFeeBreakdown && autoReferences,
         items,
       });
       navigate(`/quotations/${quotation.id}`);
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(detail || "Could not create quotation.");
+      setError(getErrorMessage(err, "Could not create quotation."));
     } finally {
       setSaving(false);
     }
@@ -119,7 +127,9 @@ export default function QuotationCreatePage() {
     <div>
       <h1 className="mb-4 text-xl font-semibold text-ink">New Quotation</h1>
 
-      <div className="grid grid-cols-3 gap-6">
+      {/* onKeyDown, not a <form>: Enter walks to the next field rather than
+          submitting, so creating the quotation stays an explicit click. */}
+      <div className="grid grid-cols-3 gap-6" onKeyDown={advanceOnEnter}>
         <div className="col-span-2 space-y-6">
           <div className="rounded-lg border border-line bg-surface p-4">
             <div className="mb-3">
@@ -176,17 +186,40 @@ export default function QuotationCreatePage() {
           </div>
 
           <div className="rounded-lg border border-line bg-surface p-4">
-            <h2 className="mb-2 text-sm font-semibold text-ink">Line items</h2>
-            <table className="w-full text-sm">
+            <div className="mb-2 flex items-center justify-between gap-4">
+              <h2 className="text-sm font-semibold text-ink">Service Items</h2>
+              {showFeeBreakdown && (
+                <Toggle
+                  checked={autoReferences}
+                  onChange={setAutoReferences}
+                  label="Auto Trans No. & Inv No. (Inv No. = quotation number)"
+                />
+              )}
+            </div>
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm" style={showFeeBreakdown ? { minWidth: 900 } : undefined}>
               <thead className="text-left text-xs font-semibold uppercase text-muted">
                 <tr>
-                  <th className="px-2 py-1">Service / description</th>
+                  <th className="px-2 py-1">{showFeeBreakdown ? "Site name" : "Service / description"}</th>
                   <th className="px-2 py-1">Qty</th>
-                  <th className="px-2 py-1">Price</th>
+                  {showFeeBreakdown && (
+                    <>
+                      <th className="px-2 py-1">Trans No.</th>
+                      <th className="px-2 py-1">Inv No.</th>
+                    </>
+                  )}
+                  {!showFeeBreakdown && <th className="px-2 py-1">Price</th>}
                   <th className="px-2 py-1">Govt fee</th>
-                  <th className="px-2 py-1">Discount</th>
+                  {showFeeBreakdown && (
+                    <>
+                      <th className="px-2 py-1">Bank fee</th>
+                      <th className="px-2 py-1">Type fee</th>
+                    </>
+                  )}
+                  {showFeeBreakdown && <th className="px-2 py-1">E-Drh fee</th>}
+                  <th className="px-2 py-1">Discount %</th>
                   <th className="px-2 py-1">VAT %</th>
-                  <th className="px-2 py-1 text-right">Amount</th>
+                  <th className="px-2 py-1 text-right">Total</th>
                   <th></th>
                 </tr>
               </thead>
@@ -196,12 +229,15 @@ export default function QuotationCreatePage() {
                     key={line.key}
                     line={line}
                     defaultVat={defaultVat}
+                    showFeeBreakdown={showFeeBreakdown}
+                    autoReferences={showFeeBreakdown && autoReferences}
                     onChange={(updated) => updateLine(i, updated)}
                     onRemove={() => removeLine(i)}
                   />
                 ))}
               </tbody>
             </table>
+            </div>
             <button
               type="button"
               onClick={() => setLines((prev) => [...prev, emptyLine(defaultVat)])}
@@ -251,6 +287,18 @@ export default function QuotationCreatePage() {
                 <span>Govt. fees</span>
                 <span>{govtFeeTotal.toFixed(2)}</span>
               </div>
+              {showFeeBreakdown && (
+                <>
+                  <div className="flex justify-between">
+                    <span>Bank fees</span>
+                    <span>{bankFeeTotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>E-Drh fees</span>
+                    <span>{edrhFeeTotal.toFixed(2)}</span>
+                  </div>
+                </>
+              )}
               {isEnabled("coupons") && <p className="text-xs text-muted">Coupon discount is applied when you save.</p>}
               <div className="mt-2 flex justify-between border-t border-line pt-2 text-base font-semibold text-ink">
                 <span>Grand total</span>

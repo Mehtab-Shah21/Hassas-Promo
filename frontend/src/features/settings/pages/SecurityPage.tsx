@@ -2,9 +2,13 @@ import { useState, type FormEvent } from "react";
 import { apiClient } from "../../../api/client";
 import { useAuth } from "../../../context/AuthContext";
 import { Field, SaveButton, TextInput } from "../../../components/form/Field";
+import { getErrorMessage } from "../../../utils/errors";
 
 export default function SecurityPage() {
   const { user, refreshUser } = useAuth();
+  // Employees can't set their own password — a superadmin resets it for them
+  // (enforced server-side in /api/auth/change-password too).
+  const canChangePassword = user?.role !== "employee";
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -34,8 +38,8 @@ export default function SecurityPage() {
       setCurrentPassword("");
       setNewPassword("");
       setPasswordMessage("Password updated.");
-    } catch {
-      setPasswordError("Current password is incorrect.");
+    } catch (err: unknown) {
+      setPasswordError(getErrorMessage(err, "Could not update the password."));
     } finally {
       setPasswordSaving(false);
     }
@@ -74,15 +78,26 @@ export default function SecurityPage() {
     <div className="max-w-lg space-y-10">
       <div>
         <h2 className="text-lg font-semibold text-ink">Security</h2>
-        <p className="text-sm text-muted">Change your password, PIN, and session auto-lock timeout.</p>
+        <p className="text-sm text-muted">
+          {canChangePassword ? "Change your password, PIN, and session auto-lock timeout." : "Set your PIN and session auto-lock timeout."}
+        </p>
       </div>
 
+      {!canChangePassword ? (
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold text-ink">Password</h3>
+          <p className="text-sm text-muted">
+            Employee passwords are managed by a superadmin. If you've forgotten yours, ask them to reset it.
+          </p>
+        </div>
+      ) : (
       <form onSubmit={handlePasswordSubmit} className="space-y-3">
         <h3 className="text-sm font-semibold text-ink">Change password</h3>
         <Field label="Current password">
           <TextInput
             type="password"
             required
+            maxLength={128}
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
           />
@@ -92,6 +107,7 @@ export default function SecurityPage() {
             type="password"
             required
             minLength={6}
+            maxLength={128}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
           />
@@ -102,6 +118,7 @@ export default function SecurityPage() {
           {passwordMessage && <span className="text-sm text-accent-green">{passwordMessage}</span>}
         </div>
       </form>
+      )}
 
       <form onSubmit={handlePinSubmit} className="space-y-3">
         <h3 className="text-sm font-semibold text-ink">Set PIN (4–6 digits)</h3>
@@ -111,6 +128,7 @@ export default function SecurityPage() {
             inputMode="numeric"
             required
             pattern="[0-9]{4,6}"
+            maxLength={6}
             value={pin}
             onChange={(e) => setPin(e.target.value)}
           />

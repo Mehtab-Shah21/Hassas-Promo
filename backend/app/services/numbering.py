@@ -24,6 +24,17 @@ def reserve_invoice_number(db: Session, business: Business) -> str:
     return f"{prefix}{claimed:05d}"
 
 
+def auto_reference_numbers(document_number: str, line_index: int) -> tuple[str, str]:
+    """(trans_no, inv_no) for a HASSAS line whose references are auto-filled.
+
+    Inv No. is the document's own receipt number, as HASSAS asked. Trans No.
+    has no outside source to copy, so it is derived from that same number plus
+    the line's position: unique within the business (document numbers are),
+    stable on re-print, and traceable back to the receipt it belongs to.
+    """
+    return f"{document_number}-T{line_index:02d}", document_number
+
+
 def reserve_quotation_number(db: Session, business: Business) -> str:
     result = db.execute(
         update(Business)

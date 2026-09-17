@@ -1,4 +1,5 @@
 import os
+import secrets
 import sys
 from pathlib import Path
 
@@ -48,13 +49,51 @@ def _default_upload_dir() -> str:
     return str(upload_path)
 
 
+def _default_secret_key() -> str:
+    """A real per-install JWT signing secret, generated once and reused.
+
+    The hardcoded fallback this replaced ("dev-secret-key-change-in-
+    production") is committed to source control and public in the repo --
+    anyone who has ever seen this codebase can read it and forge a valid
+    access token for ANY user, including a superadmin, without ever knowing a
+    password. Every JWT this app issues (see core/security.create_access_token)
+    is only as secret as this key.
+
+    Only used when SECRET_KEY isn't set via environment/`.env` — an explicit
+    env var (e.g. the Render web-demo deployment) still wins, same precedence
+    pydantic-settings already gives every other field here. For everyone else
+    (the offline/LAN install this app ships as), a random 256-bit key is
+    generated on first run and persisted next to the database, so it survives
+    restarts but is unique per installation -- exactly the same pattern
+    _default_database_url()/_default_upload_dir() already use for "just works,
+    no manual setup" data storage.
+    """
+    key_path = _default_data_dir() / "secret.key"
+    try:
+        existing = key_path.read_text(encoding="utf-8").strip()
+        if existing:
+            return existing
+    except OSError:
+        pass
+    key = secrets.token_hex(32)
+    try:
+        key_path.write_text(key, encoding="utf-8")
+    except OSError:
+        # Can't persist (e.g. read-only filesystem) -- still return a real
+        # random key for this run rather than falling back to a known one;
+        # every existing login will need to sign in again next restart, which
+        # is a far smaller problem than an unauthenticated admin takeover.
+        pass
+    return key
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_name: str = "PRO Invoicing"
     database_url: str = Field(default_factory=_default_database_url)
     upload_dir: str = Field(default_factory=_default_upload_dir)
-    secret_key: str = "dev-secret-key-change-in-production"
+    secret_key: str = Field(default_factory=_default_secret_key)
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 12
     auto_lock_minutes: int = 15

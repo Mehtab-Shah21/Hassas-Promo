@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
+from app.middleware.body_size_limit import BodySizeLimitMiddleware
 from app.routers import (
     attendance,
     audit_log,
@@ -47,6 +48,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Rejects an oversized request before it's read into memory at all -- added
+# after add_middleware(CORS) so it runs FIRST (Starlette applies middleware
+# in reverse of registration order), otherwise a giant body would still get
+# buffered by CORS's own pass-through before this ever saw it.
+app.add_middleware(BodySizeLimitMiddleware)
 
 app.include_router(auth.router)
 app.include_router(businesses.router)
@@ -92,6 +98,17 @@ def _run_migrations_and_seed_for_web_demo() -> None:
     alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
     command.upgrade(alembic_cfg, "head")
     seed()
+
+
+@app.on_event("startup")
+def _start_automatic_backups() -> None:
+    """Background backup scheduler (SQLite installs only). It checks shortly
+    after startup and then periodically, so a PC that was switched off when a
+    backup was due catches up soon after the app next starts. See
+    services/backup.py."""
+    from app.services.backup import start_auto_backup_scheduler
+
+    start_auto_backup_scheduler()
 
 
 @app.get("/api/health")

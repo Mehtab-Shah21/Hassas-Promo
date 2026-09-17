@@ -11,7 +11,9 @@ instead of a raw stack trace.
 """
 
 from datetime import date
+from functools import lru_cache
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Sequence
 
 from jinja2 import Environment, FileSystemLoader
@@ -19,11 +21,59 @@ from jinja2 import Environment, FileSystemLoader
 from app.core.config import resource_dir, settings
 from app.models.business import Business
 from app.models.customer import Customer
+from app.services.arabic_render import arabic_label
 
 TEMPLATE_DIR = resource_dir() / "app" / "templates"
+ASSETS_DIR = TEMPLATE_DIR / "assets"
 UPLOAD_DIR = Path(settings.upload_dir)
 
 _env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)), autoescape=True)
+
+# Exact, fixed-layout client templates — selected via Business.custom_invoice_template,
+# completely bypassing the configurable Design Studio system below (colors/
+# fonts/layout presets don't apply to these; they're pixel-matched to a
+# supplied client design). See _render_custom_document_html.
+CUSTOM_TEMPLATES = {
+    "hassas": "hassas_document.html.jinja2",
+    "iim": "iim_document.html.jinja2",
+}
+
+
+@lru_cache(maxsize=1)
+def _asset_data_uri(filename: str) -> str:
+    """Bundled template images (logos) — fixed assets shipped with the app,
+    not user-uploaded, so they're embedded as data: URIs rather than routed
+    through the /uploads mechanism business.logo_path uses."""
+    import base64
+
+    data = (ASSETS_DIR / filename).read_bytes()
+    return f"data:image/png;base64,{base64.b64encode(data).decode()}"
+
+
+@lru_cache(maxsize=1)
+def _asset_size(filename: str) -> tuple[int, int]:
+    from PIL import Image
+
+    with Image.open(ASSETS_DIR / filename) as img:
+        return img.size
+
+
+# The Arabic header block (address / TRN / phone / email labels) is
+# identical fixed boilerplate across both exact client templates — see
+# arabic_render.py for why these are pre-rendered images, not real text.
+_AR_ADDRESS = "الراشدية – دبي"
+_AR_TRN_LABEL = "الرقم الضريبي"
+_AR_PHONE_LABEL = "هاتف"
+_AR_EMAIL_LABEL = "رسالة إلكترونية"
+
+
+def _header_arabic_labels() -> dict:
+    return {
+        "address": arabic_label(_AR_ADDRESS, display_height_px=11),
+        "trn_label": arabic_label(_AR_TRN_LABEL, display_height_px=11),
+        "phone_label": arabic_label(_AR_PHONE_LABEL, display_height_px=11),
+        "email_label": arabic_label(_AR_EMAIL_LABEL, display_height_px=11),
+    }
 
 DEFAULT_TEMPLATE_CONFIG = {
     "layout_preset": "classic",  # classic | modern | minimal
@@ -220,6 +270,7 @@ def render_document_html(
     items: Sequence,
     show_govt_fee: bool,
     show_bank_details: bool,
+    payment_method: str | None = None,
     subtotal: float,
     discount_total: float,
     coupon_code: str | None,
@@ -232,7 +283,35 @@ def render_document_html(
     config_override: dict | None = None,
     base_url: str | None = None,
     suppress_css_border: bool = False,
+    bank_fee_total: float = 0.0,
+    edrh_fee_total: float = 0.0,
 ) -> str:
+    if business.custom_invoice_template in CUSTOM_TEMPLATES:
+        return _render_custom_document_html(
+            template_key=business.custom_invoice_template,
+            doc_kind=doc_kind,
+            doc_type=doc_type,
+            number=number,
+            doc_date=doc_date,
+            due_date=due_date,
+            status=status,
+            business=business,
+            customer=customer,
+            employee=employee,
+            items=items,
+            subtotal=subtotal,
+            discount_total=discount_total,
+            vat_total=vat_total,
+            govt_fee_total=govt_fee_total,
+            bank_fee_total=bank_fee_total,
+            edrh_fee_total=edrh_fee_total,
+            grand_total=grand_total,
+            amount_paid=amount_paid,
+            notes=notes,
+            terms=terms,
+            show_bank_details=show_bank_details,
+            payment_method=payment_method,
+        )
     template = _env.get_template("document.html.jinja2")
     config = resolve_template_config(business, doc_kind, config_override)
     if suppress_css_border:
@@ -287,6 +366,107 @@ def render_document_html(
     )
 
 
+_AR_TITLE_INVOICE = "فاتورة ضريبية"
+# Not present in the source client template (only an invoice sample was
+# supplied) — a reasonable, standard Arabic rendering of "Quotation" used
+# so the same exact layout can serve both document kinds per the answered
+# question. Flagged here since it's the one piece of Arabic text in either
+# template that wasn't taken verbatim from a supplied design.
+_AR_TITLE_QUOTATION = "عرض سعر"
+
+_AR_ESTABLISHMENT_LABEL = "اسم المنشأة / رقم"
+_AR_PERSON_LABEL = "اسم المتعامل / رقم الهاتف"
+_AR_DATE_LABEL = "التاريخ"
+_AR_RECEIPT_LABEL = "رقم الإيصال"
+
+
+def _render_custom_document_html(
+    *,
+    template_key: str,
+    doc_kind: str,
+    doc_type: str,
+    number: str,
+    doc_date: date,
+    due_date: date | None,
+    status: str,
+    business: Business,
+    customer: Customer,
+    employee: Customer | None,
+    items: Sequence,
+    subtotal: float,
+    discount_total: float,
+    vat_total: float,
+    govt_fee_total: float,
+    bank_fee_total: float,
+    edrh_fee_total: float,
+    grand_total: float,
+    amount_paid: float,
+    notes: str | None,
+    terms: str | None,
+    show_bank_details: bool,
+    payment_method: str | None = None,
+) -> str:
+    template = _env.get_template(CUSTOM_TEMPLATES[template_key])
+    is_quotation = doc_kind == "quotation"
+    date_fmt = _py_date_format(business.date_format)
+
+    logo_filename = f"{template_key}_logo.png"
+    logo_w, logo_h = _asset_size(logo_filename)
+    max_logo_w = 150
+    scale = min(1.0, max_logo_w / logo_w)
+
+    context = dict(
+        doc_type=doc_type,
+        is_quotation=is_quotation,
+        number=number,
+        doc_date=doc_date.strftime(date_fmt),
+        due_date=due_date.strftime(date_fmt) if due_date else None,
+        status=status,
+        payment_method=payment_method,
+        business=business,
+        customer=customer,
+        employee=employee,
+        items=items,
+        subtotal=subtotal,
+        discount_total=discount_total,
+        vat_total=vat_total,
+        govt_fee_total=govt_fee_total,
+        bank_fee_total=bank_fee_total,
+        edrh_fee_total=edrh_fee_total,
+        grand_total=grand_total,
+        amount_paid=amount_paid,
+        notes=notes,
+        terms=terms,
+        show_bank_details=show_bank_details,
+        currency=_currency_symbol(business),
+        logo_uri=_asset_data_uri(logo_filename),
+        logo_width=round(logo_w * scale),
+        logo_height=round(logo_h * scale),
+        # The "VAT Percentage X%" line shows what was actually applied on
+        # this document, not the business's current default setting —
+        # those can differ (a since-changed default, or a line entered with
+        # an explicit override) and would otherwise show a misleading rate
+        # next to a correctly-computed vat_total.
+        effective_vat_rate=float(items[0].vat_rate) if items else float(business.default_vat_rate),
+    )
+
+    if template_key == "hassas":
+        context["ar"] = {
+            **_header_arabic_labels(),
+            "establishment_label": arabic_label(_AR_ESTABLISHMENT_LABEL, display_height_px=9, bold=True),
+            "person_label": arabic_label(_AR_PERSON_LABEL, display_height_px=9, bold=True),
+            "date_label": arabic_label(_AR_DATE_LABEL, display_height_px=9, bold=True),
+            "receipt_label": arabic_label(_AR_RECEIPT_LABEL, display_height_px=9, bold=True),
+        }
+        context["ar_title"] = arabic_label(
+            _AR_TITLE_QUOTATION if is_quotation else _AR_TITLE_INVOICE, display_height_px=22, bold=True
+        )
+    elif template_key == "iim":
+        context["ar"] = _header_arabic_labels()
+
+    return template.render(**context)
+
+
 def render_invoice_html(
     invoice,
     business: Business,
@@ -303,6 +483,7 @@ def render_invoice_html(
         due_date=invoice.due_date,
         due_label="Due Date",
         status=invoice.status.value if hasattr(invoice.status, "value") else invoice.status,
+        payment_method=invoice.payment_method.value if hasattr(invoice.payment_method, "value") else invoice.payment_method,
         business=business,
         customer=customer,
         employee=employee,
@@ -314,6 +495,8 @@ def render_invoice_html(
         coupon_code=coupon_code,
         vat_total=float(invoice.vat_total),
         govt_fee_total=float(invoice.govt_fee_total),
+        bank_fee_total=float(invoice.bank_fee_total),
+        edrh_fee_total=float(invoice.edrh_fee_total),
         grand_total=float(invoice.grand_total),
         amount_paid=float(invoice.amount_paid),
         notes=invoice.notes,
@@ -349,6 +532,8 @@ def render_quotation_html(
         coupon_code=coupon_code,
         vat_total=float(quotation.vat_total),
         govt_fee_total=float(quotation.govt_fee_total),
+        bank_fee_total=float(quotation.bank_fee_total),
+        edrh_fee_total=float(quotation.edrh_fee_total),
         grand_total=float(quotation.grand_total),
         amount_paid=0.0,
         notes=quotation.notes,
@@ -528,11 +713,27 @@ def render_thermal_sample_html(
 
 
 class _SampleItem:
-    def __init__(self, description: str, qty: float, unit_price: float, govt_fee: float, discount: float, vat_rate: float):
+    def __init__(
+        self,
+        description: str,
+        qty: float,
+        unit_price: float,
+        govt_fee: float,
+        discount: float,
+        vat_rate: float,
+        bank_fee: float = 0.0,
+        edrh_fee: float = 0.0,
+        trans_no: str | None = None,
+        inv_no: str | None = None,
+    ):
         self.description = description
         self.qty = qty
         self.unit_price = unit_price
         self.govt_fee = govt_fee
+        self.bank_fee = bank_fee
+        self.edrh_fee = edrh_fee
+        self.trans_no = trans_no
+        self.inv_no = inv_no
         self.discount = discount
         self.vat_rate = vat_rate
         net = qty * unit_price - discount
@@ -546,6 +747,7 @@ class _SampleCustomer:
     city = "Dubai"
     state = "Dubai"
     country = "UAE"
+    emirate = SimpleNamespace(value="Dubai")  # mimics the real Emirate enum's .value access
     phone_code = "+971"
     phone = "50 123 4567"
     email = "customer@example.com"
@@ -565,13 +767,21 @@ def render_sample_html(
     from datetime import date, timedelta
 
     items = [
-        _SampleItem("Visa Renewal Service", 1, 350.0, 500.0, 0.0, float(business.default_vat_rate)),
-        _SampleItem("Document Attestation", 2, 120.0, 0.0, 20.0, float(business.default_vat_rate)),
+        _SampleItem(
+            "Visa Renewal Service", 1, 350.0, 500.0, 0.0, float(business.default_vat_rate),
+            bank_fee=20.0, edrh_fee=10.0, trans_no="TX-1001", inv_no="IV-2001",
+        ),
+        _SampleItem(
+            "Document Attestation", 2, 120.0, 0.0, 20.0, float(business.default_vat_rate),
+            bank_fee=15.0, edrh_fee=5.0, trans_no="TX-1002", inv_no="IV-2002",
+        ),
     ]
     subtotal = sum(i.qty * i.unit_price - i.discount for i in items)
     vat_total = sum((i.qty * i.unit_price - i.discount) * (i.vat_rate / 100) for i in items)
     govt_fee_total = sum(i.govt_fee * i.qty for i in items)
-    grand_total = subtotal + vat_total + govt_fee_total
+    bank_fee_total = sum(i.bank_fee * i.qty for i in items)
+    edrh_fee_total = sum(i.edrh_fee * i.qty for i in items)
+    grand_total = subtotal + vat_total + govt_fee_total + bank_fee_total + edrh_fee_total
     is_quotation = doc_kind == "quotation"
 
     return render_document_html(
@@ -582,6 +792,7 @@ def render_sample_html(
         due_date=date.today() + timedelta(days=14),
         due_label="Valid Until" if is_quotation else "Due Date",
         status="sent",
+        payment_method="cash",
         business=business,
         customer=_SampleCustomer(),
         employee=None,
@@ -593,6 +804,8 @@ def render_sample_html(
         coupon_code=None,
         vat_total=round(vat_total, 2),
         govt_fee_total=round(govt_fee_total, 2),
+        bank_fee_total=round(bank_fee_total, 2),
+        edrh_fee_total=round(edrh_fee_total, 2),
         grand_total=round(grand_total, 2),
         amount_paid=0.0,
         notes=(business.default_quotation_notes if is_quotation else business.default_invoice_notes_credit) or "Thank you for your business.",
@@ -627,6 +840,9 @@ def resolve_page_border(business: Business, doc_kind: str, config_override: dict
     the same per-business/per-doc-type Design Studio config used for the
     HTML — kept as a tiny separate lookup since render_pdf only receives
     raw HTML, not the business/config that produced it."""
+    if business.custom_invoice_template in CUSTOM_TEMPLATES:
+        # Neither exact client design has a drawn page-frame border.
+        return False, 10.0
     config = resolve_template_config(business, doc_kind, config_override)
     return bool(config["show_border"]), MARGIN_MM.get(config["margins"], 6)
 

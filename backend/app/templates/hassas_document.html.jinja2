@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>{{ doc_type }} {{ number }}</title>
+<style>
+  {# Exact replica of the client-supplied HASSAS invoice/quotation design —
+     see services/pdf.py's _render_custom_document_html. This bypasses the
+     configurable Design Studio system entirely: colors (#3F4B7F navy,
+     #F1E1D3 beige — extracted directly from the source PDF's content
+     stream), fonts, and structure are all fixed, not user-configurable.
+     Arabic text is pre-rendered to images (see arabic_render.py) since
+     xhtml2pdf/reportlab cannot render Arabic glyphs at all — see that
+     module's docstring. #}
+  {# Explicit frames rather than a plain page margin: the thank-you band has
+     to sit at the foot of the page, not immediately under whatever content
+     happens to end last. A -pdf-frame-content frame is xhtml2pdf's static
+     frame — its content is lifted out of the normal flow and painted at fixed
+     coordinates on every page. A4 is 210mm x 297mm; content keeps the 20mm
+     side margins the design had (10mm @page + 10mm body). #}
+  @page {
+    size: A4;
+    margin: 0;
+    @frame content_frame { left: 20mm; top: 14mm; width: 170mm; height: 250mm; }
+    @frame footer_frame {
+      -pdf-frame-content: page_footer_band;
+      left: 20mm; top: 268mm; width: 170mm; height: 20mm;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; color: #222222; margin: 0; line-height: 1.4; }
+  table { border-collapse: collapse; }
+  p { margin: 0; }
+
+  {# The source design boxes the whole header block. border-radius is not
+     rendered by xhtml2pdf, so this is a square 1pt rule — the closest the
+     engine can get to the rounded box in the client's PDF. #}
+  table.header { width: 100%; margin-bottom: 12px; border: 1pt solid #333333; }
+  table.header td { vertical-align: middle; padding: 6px 8px; }
+  .hdr-left { width: 34%; font-size: 8pt; }
+  .hdr-left p { margin: 0 0 4px; }
+  .hdr-left b { display: inline-block; width: 42px; }
+  .hdr-center { width: 32%; text-align: center; }
+  .hdr-right { width: 34%; text-align: right; font-size: 8pt; }
+  .hdr-right p { margin: 0 0 4px; }
+  .hdr-right img { vertical-align: middle; }
+
+  .doc-title { font-size: 17pt; font-weight: bold; margin: 4px 0 12px; }
+  .doc-title img { vertical-align: middle; margin-left: 6px; }
+
+  table.info { width: 100%; margin-bottom: 6px; }
+  table.info td { border: 1pt solid #333333; padding: 5px 10px; font-size: 8.5pt; vertical-align: middle; }
+  td.info-label { width: 32%; font-weight: bold; }
+  td.info-value { width: 43%; }
+  td.info-ar { width: 25%; text-align: right; font-weight: bold; }
+
+  table.items { width: 100%; margin-top: 10px; table-layout: fixed; }
+  table.items th {
+    background: #F1E1D3; border: 1pt solid #333333; padding: 5px 3px;
+    font-size: 7.3pt; font-weight: bold; text-align: center;
+  }
+  table.items td {
+    border: 1pt solid #333333; padding: 6px 3px; font-size: 8pt;
+    text-align: center; word-wrap: break-word;
+  }
+  table.items td.site-name { text-align: left; padding-left: 6px; }
+
+  {# xhtml2pdf honours neither `margin-left: auto` nor a px width on a table,
+     so the totals block stretched the full page. An outer full-width table
+     with an empty spacer cell is the reliable way to right-align a block. #}
+  table.totals-wrap { width: 100%; margin-top: 12px; }
+  table.totals-wrap td.spacer { width: 55%; border: none; padding: 0; }
+  table.totals-wrap td.holder { width: 45%; border: none; padding: 0; }
+  table.totals { width: 100%; }
+  table.totals td { border: 1pt solid #333333; padding: 5px 10px; font-size: 8.5pt; }
+  table.totals td.t-label { background: #F1E1D3; font-weight: bold; width: 58%; }
+  table.totals td.t-value { width: 42%; text-align: right; }
+
+  .paid-line { margin-top: 12px; font-size: 8.5pt; }
+  .footer-address { font-size: 8pt; margin-top: 10px; }
+  .footer-address p { margin: 0 0 3px; }
+  .no-sig { text-align: right; font-size: 7.5pt; font-weight: bold; border-top: 1pt solid #333333; padding-top: 5px; margin-top: 4px; }
+
+  table.band { width: 100%; margin-top: 10px; }
+  table.band td { background: #3F4B7F; color: #ffffff; text-align: center; padding: 10px; font-size: 10.5pt; }
+</style>
+</head>
+<body>
+
+  <table class="header">
+    <tr>
+      <td class="hdr-left">
+        <p><b>Al Rashidiya</b> – Dubai</p>
+        <p><b>TRN</b> : {{ business.tax_id or '' }}</p>
+        <p><b>TEL</b> : {{ business.phone_code or '' }}{{ business.phone or '' }}</p>
+        <p><b>Email</b> : {{ business.email or '' }}</p>
+      </td>
+      <td class="hdr-center">
+        <img src="{{ logo_uri }}" width="{{ logo_width }}" height="{{ logo_height }}" />
+      </td>
+      <td class="hdr-right">
+        <p><img src="{{ ar.address.uri }}" width="{{ ar.address.width }}" height="{{ ar.address.height }}" /></p>
+        <p>{{ business.tax_id or '' }} <img src="{{ ar.trn_label.uri }}" width="{{ ar.trn_label.width }}" height="{{ ar.trn_label.height }}" /></p>
+        <p>{{ business.phone_code or '' }}{{ business.phone or '' }} <img src="{{ ar.phone_label.uri }}" width="{{ ar.phone_label.width }}" height="{{ ar.phone_label.height }}" /></p>
+        <p>{{ business.email or '' }} <img src="{{ ar.email_label.uri }}" width="{{ ar.email_label.width }}" height="{{ ar.email_label.height }}" /></p>
+      </td>
+    </tr>
+  </table>
+
+  <p class="doc-title">{{ doc_type }} - <img src="{{ ar_title.uri }}" width="{{ ar_title.width }}" height="{{ ar_title.height }}" /></p>
+
+  <table class="info">
+    <tr>
+      <td class="info-label">Establishment Name / Number</td>
+      <td class="info-value">{{ business.name }}{% if business.tax_id %} / {{ business.tax_id }}{% endif %}</td>
+      <td class="info-ar"><img src="{{ ar.establishment_label.uri }}" width="{{ ar.establishment_label.width }}" height="{{ ar.establishment_label.height }}" /></td>
+    </tr>
+    <tr>
+      <td class="info-label">Person Name / Phone Number</td>
+      <td class="info-value">{{ customer.name }}{% if customer.phone %} / {{ customer.phone_code or '' }}{{ customer.phone }}{% endif %}</td>
+      <td class="info-ar"><img src="{{ ar.person_label.uri }}" width="{{ ar.person_label.width }}" height="{{ ar.person_label.height }}" /></td>
+    </tr>
+  </table>
+
+  <table class="info">
+    <tr>
+      <td class="info-label">DATE :</td>
+      <td class="info-value">{{ doc_date }}</td>
+      <td class="info-ar"><img src="{{ ar.date_label.uri }}" width="{{ ar.date_label.width }}" height="{{ ar.date_label.height }}" /></td>
+    </tr>
+    <tr>
+      <td class="info-label">Receipt No :</td>
+      <td class="info-value">{{ number }}</td>
+      <td class="info-ar"><img src="{{ ar.receipt_label.uri }}" width="{{ ar.receipt_label.width }}" height="{{ ar.receipt_label.height }}" /></td>
+    </tr>
+  </table>
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th style="width: 3%;">#</th>
+        <th style="width: 20%;">Site Name</th>
+        <th style="width: 6%;">Qty.</th>
+        <th style="width: 10%;">Trans No.</th>
+        <th style="width: 10%;">Inv No.</th>
+        <th style="width: 10%;">Gov Fee</th>
+        <th style="width: 10%;">Bank Fee</th>
+        <th style="width: 10%;">Type Fee</th>
+        <th style="width: 10%;">E-Drh Fee</th>
+        <th style="width: 11%;">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      {# This template's Total column is the line's full fee breakdown
+         (Type/Gov/Bank/E-Drh fee, all × qty) plus VAT on the Type Fee
+         portion — not the same thing as item.line_total (net+VAT only,
+         the app-wide/generic-template meaning of that field; see
+         invoice_calc.py). Computed here rather than stored, so this
+         template-specific "Total" never drifts from what's actually
+         printed in each fee column above it. #}
+      {% set net = [(item.unit_price * item.qty) - item.discount, 0] | max %}
+      {% set vat = net * (item.vat_rate / 100) %}
+      {% set fees = (item.govt_fee + item.bank_fee + item.edrh_fee) * item.qty %}
+      {% set row_total = net + vat + fees %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td class="site-name">{{ item.description }}</td>
+        <td>{{ item.qty | int if item.qty == item.qty | int else item.qty }}</td>
+        {# An empty <td> collapses its whole column to ~4pt: xhtml2pdf ignores
+           table-layout:fixed and sizes columns from cell content, so a blank
+           Trans No./Inv No. squeezed both columns into a sliver and left the
+           table narrower than the page. A non-breaking space keeps the cell
+           non-empty and the declared width is then honoured exactly. The
+           entity is literal markup, not a Jinja expression, so autoescape
+           leaves it alone. #}
+        <td>{% if item.trans_no %}{{ item.trans_no }}{% else %}&nbsp;{% endif %}</td>
+        <td>{% if item.inv_no %}{{ item.inv_no }}{% else %}&nbsp;{% endif %}</td>
+        <td>{{ '%.2f' | format(item.govt_fee) }}</td>
+        <td>{{ '%.2f' | format(item.bank_fee) }}</td>
+        <td>{{ '%.2f' | format(item.unit_price) }}</td>
+        <td>{{ '%.2f' | format(item.edrh_fee) }}</td>
+        <td>{{ '%.2f' | format(row_total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="totals-wrap">
+    <tr>
+      <td class="spacer">&nbsp;</td>
+      <td class="holder">
+        <table class="totals">
+          <tr><td class="t-label">Sub – Total Invoice</td><td class="t-value">{{ '%.2f' | format(subtotal) }}</td></tr>
+          <tr><td class="t-label">VAT Percentage {{ '%.0f' | format(effective_vat_rate) }}%</td><td class="t-value">{{ '%.2f' | format(vat_total) }}</td></tr>
+          <tr><td class="t-label">Discount</td><td class="t-value">{{ '%.2f' | format(discount_total) }}</td></tr>
+          <tr><td class="t-label">Total Invoice</td><td class="t-value">{{ '%.2f' | format(grand_total) }}</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <div class="footer-address">
+    <p>Al Rashidiya – Dubai</p>
+    <p>TRN : {{ business.tax_id or '' }}</p>
+    <p>TEL : {{ business.phone_code or '' }}{{ business.phone or '' }}</p>
+    <p>Email : {{ business.email or '' }}</p>
+  </div>
+
+  {% if not is_quotation and payment_method %}
+  <p class="paid-line">Invoice paid: {{ payment_method | capitalize }}</p>
+  {% endif %}
+
+  <p class="no-sig">This Electronic Receipt Doesn't Require a stamp or Signature</p>
+
+  {# Pulled out of the flow into the footer frame declared in @page, so it
+     lands at the bottom of the sheet on every page.
+     Still a single-cell table rather than a styled <div>: a coloured
+     block-level div doesn't get the same flowable-height accounting in
+     xhtml2pdf and used to push itself onto a second, otherwise-blank page
+     (see document.html.jinja2's long comment on this same class of bug). #}
+  <div id="page_footer_band">
+    <table class="band"><tr><td>THANK YOU FOR CHOOSING {{ business.name | upper }}!</td></tr></table>
+  </div>
+
+</body>
+</html>

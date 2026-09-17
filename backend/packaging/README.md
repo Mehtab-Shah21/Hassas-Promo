@@ -66,10 +66,14 @@ deployment would need `pg_dump`/`pg_restore` wired in separately.
   baked into the production bundle when set (admin/dev build), which means
   the gate never shows for that build; an employee build is just the same
   `npm run build` with that env var *unset*.
-- **Backup & Restore** (Settings tab + `/api/backup/*`) — manual backup to
-  a folder the admin sets, list backups, restore with a confirmation gate.
-  **Verified end-to-end**: set folder → backup → list → restore, including a
-  path-traversal rejection test on the restore filename.
+- **Backup & Restore** (Settings tab + `/api/backup/*`, logic in
+  `app/services/backup.py`) — automatic backups on a schedule with catch-up
+  after startup and retention, manual "Back up now", download, restore from
+  the backup folder or from an uploaded file. Each backup is one .zip with a
+  consistent database snapshot, every uploaded file and a manifest. A restore
+  validates the file, saves a "before restore" backup of the current data,
+  restores in place without a restart, migrates older backups forward, and
+  signs everyone out. Defaults to a `backups` folder beside the database.
 
 ## What's NOT built / explicitly out of scope right now
 
@@ -88,9 +92,6 @@ deployment would need `pg_dump`/`pg_restore` wired in separately.
   (the web frontend works in any browser pointed at the server), Tauri is
   purely for a native-feeling desktop shell / installer experience.
 - **Code signing.** CLAUDE.md marks this optional. Not started.
-- **Automated backup scheduling.** Manual "Backup Now" works; recurring
-  backups need Windows Task Scheduler hitting the endpoint on a timer (exact
-  command below) rather than an in-app scheduler.
 
 ---
 
@@ -141,17 +142,10 @@ opened via `file://` / a simple `npx serve dist`. First launch shows the
 `ServerConfigGate` screen — enter the admin PC's LAN IP and port (e.g.
 `192.168.1.50:8000`).
 
-### 5. Scheduled backups (Task Scheduler, since there's no in-app cron)
+### 5. Backups
 
-```powershell
-$action = New-ScheduledTaskAction -Execute "curl.exe" -Argument "-X POST http://localhost:8000/api/backup/run -H \"Authorization: Bearer <a long-lived admin token>\""
-$trigger = New-ScheduledTaskTrigger -Daily -At 2am
-Register-ScheduledTask -TaskName "ProInvoicingBackup" -Action $action -Trigger $trigger
-```
-
-(A long-lived token isn't something the app currently issues — JWTs expire
-per `access_token_expire_minutes`. This would need either a dedicated
-service-account token flow or an API-key mechanism that doesn't exist yet
-if you want this to actually run unattended for months. Flagging rather
-than building — a real auth mechanism for unattended jobs is a design
-decision, not a quick add.)
+Nothing to schedule — the server backs itself up (Settings → Backup &
+Restore; on by default, once a day, keeping the latest 14 automatic
+backups). If the PC was off when a backup was due, one runs about 90 seconds
+after the server next starts. For protection against disk failure, point the
+backup folder at a USB drive, network share or cloud-synced folder.

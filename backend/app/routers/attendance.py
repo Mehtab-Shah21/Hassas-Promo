@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import require_active_business_id, require_admin, require_module_enabled
+from app.core.deps import require_active_business_id, require_manager, require_module_enabled
 from app.models.attendance import Attendance, AttendanceStatus
 from app.models.employee import Employee
 from app.schemas.attendance import (
@@ -36,7 +36,7 @@ def mark_attendance(
     payload: AttendanceMark,
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     existing = (
         db.query(Attendance)
@@ -80,7 +80,7 @@ def day_attendance(
     date_: date = Query(alias="date"),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     employees = _active_employees(db, business_id)
     records = {
@@ -105,7 +105,7 @@ def totals(
     date_to: date = Query(...),
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     employees = _active_employees(db, business_id)
     records = (
@@ -135,7 +135,7 @@ def totals(
 def today_strip(
     business_id: int = Depends(require_active_business_id),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     today = date.today()
     employees = _active_employees(db, business_id)

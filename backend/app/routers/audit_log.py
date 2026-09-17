@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
-from app.core.deps import require_admin
+from app.core.deps import require_manager
 from app.models.audit_log import AuditLog
 from app.models.user import User, UserRole
 from app.schemas.audit_log import AuditLogResponse, PaginatedAuditLog
@@ -54,7 +54,7 @@ def list_audit_log(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=500),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     q = _build_query(db, current_user, search, entity_type, action, date_from, date_to)
     total = q.count()
@@ -87,7 +87,7 @@ def export_audit_log(
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
     db: Session = Depends(get_db),
-    current_user=Depends(require_admin),
+    current_user=Depends(require_manager),
 ):
     q = _build_query(db, current_user, search, entity_type, action, date_from, date_to)
     entries = q.order_by(AuditLog.created_at.desc()).limit(5000).all()

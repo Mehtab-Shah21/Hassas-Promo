@@ -12,12 +12,15 @@ import {
 } from "../../api/quotations";
 import type { Customer, PaymentMethod, Quotation, QuotationStatus } from "../../api/types";
 import PrintPreviewModal from "../../components/PrintPreviewModal";
+import { useBusiness } from "../../context/BusinessContext";
 
 const STATUS_OPTIONS: QuotationStatus[] = ["draft", "sent", "accepted", "rejected"];
 
 export default function QuotationDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { activeBusiness } = useBusiness();
+  const showFeeBreakdown = activeBusiness?.custom_invoice_template === "hassas";
   const quotationId = Number(id);
   const [quotation, setQuotation] = useState<Quotation | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -76,7 +79,7 @@ export default function QuotationDetailPage() {
           </div>
           <div className="flex items-center gap-3">
             {quotation.status === "converted" ? (
-              <span className="rounded-full bg-link/10 px-3 py-1.5 text-sm font-medium text-link">
+              <span className="rounded-full bg-link/20 px-3 py-1.5 text-sm font-medium text-link">
                 Converted → Invoice #{quotation.converted_invoice_id}
               </span>
             ) : (
@@ -120,13 +123,23 @@ export default function QuotationDetailPage() {
           </div>
         </div>
 
-        <table className="mb-4 w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="mb-4 w-full text-sm" style={showFeeBreakdown ? { minWidth: 900 } : undefined}>
           <thead className="text-left text-xs font-semibold uppercase text-muted">
             <tr>
               <th className="py-1.5">Description</th>
               <th className="py-1.5">Qty</th>
               <th className="py-1.5">Price</th>
               <th className="py-1.5">Discount</th>
+              {showFeeBreakdown && (
+                <>
+                  <th className="py-1.5">Govt fee</th>
+                  <th className="py-1.5">Bank fee</th>
+                  <th className="py-1.5">E-Drh fee</th>
+                  <th className="py-1.5">Trans No.</th>
+                  <th className="py-1.5">Inv No.</th>
+                </>
+              )}
               <th className="py-1.5">VAT %</th>
               <th className="py-1.5 text-right">Total</th>
             </tr>
@@ -138,18 +151,34 @@ export default function QuotationDetailPage() {
                 <td className="py-2 text-muted">{item.qty}</td>
                 <td className="py-2 text-muted">{item.unit_price.toFixed(2)}</td>
                 <td className="py-2 text-muted">{item.discount.toFixed(2)}</td>
+                {showFeeBreakdown && (
+                  <>
+                    <td className="py-2 text-muted">{item.govt_fee.toFixed(2)}</td>
+                    <td className="py-2 text-muted">{item.bank_fee.toFixed(2)}</td>
+                    <td className="py-2 text-muted">{item.edrh_fee.toFixed(2)}</td>
+                    <td className="py-2 text-muted">{item.trans_no || "—"}</td>
+                    <td className="py-2 text-muted">{item.inv_no || "—"}</td>
+                  </>
+                )}
                 <td className="py-2 text-muted">{item.vat_rate.toFixed(2)}</td>
                 <td className="py-2 text-right text-muted">{item.line_total.toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
 
         <div className="ml-auto max-w-xs space-y-1 text-sm">
           <Row label="Subtotal" value={quotation.subtotal} />
           <Row label="Discount" value={-quotation.discount_total} />
           <Row label="VAT" value={quotation.vat_total} />
           <Row label="Govt. fees" value={quotation.govt_fee_total} />
+          {showFeeBreakdown && (
+            <>
+              <Row label="Bank fees" value={quotation.bank_fee_total} />
+              <Row label="E-Drh fees" value={quotation.edrh_fee_total} />
+            </>
+          )}
           <div className="flex justify-between border-t border-line pt-1 text-base font-semibold text-ink">
             <span>Grand total</span>
             <span>{quotation.grand_total.toFixed(2)}</span>

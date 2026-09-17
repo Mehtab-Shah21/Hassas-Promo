@@ -3,26 +3,36 @@ import { deactivateUser, listUsers } from "../../api/users";
 import type { AppUser } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
 import { useBusiness } from "../../context/BusinessContext";
+import PasswordModal from "./PasswordModal";
 import UserFormModal from "./UserFormModal";
 
 const ROLE_STYLES: Record<string, string> = {
-  superadmin: "bg-link/10 text-link",
-  admin: "bg-orange-50/10 text-orange-50",
+  superadmin: "bg-link/20 text-link",
+  admin: "bg-orange-50/20 text-orange-50",
+  manager: "bg-accent-green/20 text-accent-green",
   employee: "bg-wash-2 text-muted",
 };
 
+// Target roles only a superadmin (or the system owner) may manage — manager
+// is deliberately excluded, so a plain admin can create/edit/reset-password/
+// deactivate manager accounts too. Mirrors the backend's ELEVATED_ROLES in
+// routers/users.py exactly; keep the two in step.
 const ELEVATED = new Set(["admin", "superadmin"]);
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const { businesses } = useBusiness();
   const isSuperadmin = currentUser?.role === "superadmin";
+  const isOwner = !!currentUser?.is_system_owner;
   const businessName = (id: number | null) => businesses.find((b) => b.id === id)?.name ?? "—";
 
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<AppUser | null>(null);
+  const [resetting, setResetting] = useState<AppUser | null>(null);
+  const [changingOwn, setChangingOwn] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -37,11 +47,15 @@ export default function UsersPage() {
     load();
   }, []);
 
-  // Mirrors the server-side matrix in routers/users.py: a plain admin can
-  // only manage employee-role accounts, and never their own row.
+  // Mirrors the server-side matrix in routers/users.py: the system owner
+  // manages everyone; a superadmin manages admins and employees but not other
+  // superadmins; a plain admin only employees. Nobody manages their own row
+  // here — their own password is "Change password".
   function canManage(u: AppUser) {
     if (u.id === currentUser?.id) return false;
-    if (isSuperadmin) return true;
+    if (isOwner) return true;
+    if (u.is_system_owner) return false;
+    if (isSuperadmin) return u.role !== "superadmin";
     return !ELEVATED.has(u.role);
   }
 
@@ -57,18 +71,29 @@ export default function UsersPage() {
         <div>
           <h1 className="text-xl font-semibold text-ink">Users</h1>
           <p className="text-sm text-muted">
-            {isSuperadmin
-              ? "Manage every account, including other admins and superadmins."
-              : "You can create and manage employee accounts. Only a superadmin can manage admin or superadmin accounts."}
+            {isOwner
+              ? "System owner: manage every account, including creating superadmins and resetting their passwords."
+              : isSuperadmin
+                ? "Manage admin and employee accounts, including resetting forgotten passwords. Add new staff here too — with or without a login."
+                : "Add staff and manage manager/employee accounts for your company. Only a superadmin can manage admin accounts."}
           </p>
         </div>
         <button
           onClick={() => setShowAdd(true)}
           className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
         >
-          + Add user
+          + Add person
         </button>
       </div>
+
+      {notice && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-accent-green/40 bg-accent-green/10 px-4 py-2 text-sm text-accent-green">
+          <span>{notice}</span>
+          <button onClick={() => setNotice(null)} className="text-xs hover:underline">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
@@ -102,6 +127,9 @@ export default function UsersPage() {
                   <td className="px-4 py-2 font-medium text-ink">
                     {u.username}
                     {u.id === currentUser?.id && <span className="ml-2 text-xs text-muted">(you)</span>}
+                    {u.is_system_owner && (
+                      <span className="ml-2 rounded-full bg-link/20 px-2 py-0.5 text-xs font-medium text-link">System owner</span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-muted">{u.display_name ?? `${u.first_name} ${u.last_name ?? ""}`.trim()}</td>
                   <td className="px-4 py-2">
@@ -116,17 +144,25 @@ export default function UsersPage() {
                   <td className="px-4 py-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        u.is_active ? "bg-accent-green/10 text-accent-green" : "bg-wash-2 text-muted"
+                        u.is_active ? "bg-accent-green/20 text-accent-green" : "bg-wash-2 text-muted"
                       }`}
                     >
                       {u.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="whitespace-nowrap px-4 py-2 text-right">
+                    {u.id === currentUser?.id && (
+                      <button onClick={() => setChangingOwn(true)} className="text-link hover:underline">
+                        Change password
+                      </button>
+                    )}
                     {canManage(u) && (
                       <>
                         <button onClick={() => setEditing(u)} className="mr-3 text-link hover:underline">
                           Edit
+                        </button>
+                        <button onClick={() => setResetting(u)} className="mr-3 text-link hover:underline">
+                          Reset password
                         </button>
                         {u.is_active && (
                           <button onClick={() => handleDeactivate(u)} className="text-danger hover:underline">
@@ -149,6 +185,25 @@ export default function UsersPage() {
           onSaved={() => {
             setShowAdd(false);
             load();
+          }}
+        />
+      )}
+      {resetting && (
+        <PasswordModal
+          target={resetting}
+          onClose={() => setResetting(null)}
+          onDone={() => {
+            setNotice(`Password reset for ${resetting.username}.`);
+            setResetting(null);
+          }}
+        />
+      )}
+      {changingOwn && (
+        <PasswordModal
+          onClose={() => setChangingOwn(false)}
+          onDone={() => {
+            setNotice("Your password has been changed.");
+            setChangingOwn(false);
           }}
         />
       )}

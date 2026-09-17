@@ -63,7 +63,7 @@ frontend/         React 19 + Vite 8 + TS + Tailwind v4 + react-router-dom v7
                     page, nothing is a placeholder
 ```
 
-Login: **admin@example.com / admin123**. Run instructions at the bottom.
+Login: **MS_Software_Solutions / Invoicing@Hassas_2026**. Run instructions at the bottom.
 
 ---
 
@@ -213,4 +213,4 @@ cd frontend
 npm run dev
 ```
 
-Login: **admin@example.com / admin123**
+Login: **MS_Software_Solutions / Invoicing@Hassas_2026**

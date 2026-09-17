@@ -66,6 +66,33 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
   );
 }
 
+export function RadioGroup<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (value: T) => void;
+  options: { value: T; label: string }[];
+}) {
+  return (
+    <div className="inline-flex rounded-lg border border-line bg-bg p-1">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`rounded-md px-3.5 py-1.5 text-sm font-medium capitalize transition-colors ${
+            value === opt.value ? "bg-accent text-ink" : "text-muted hover:text-ink"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Toggle({
   checked,
   onChange,
