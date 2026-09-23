@@ -7,5 +7,9 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
+    // Allows this dev server to be reached through a Cloudflare Quick
+    // Tunnel (random *.trycloudflare.com hostname) for client demos --
+    // Vite's allowedHosts guard otherwise 403s any unrecognized Host header.
+    allowedHosts: [".trycloudflare.com"],
   },
 })

@@ -102,6 +102,37 @@ def effective_folder(row: BackupSettings) -> Path:
     return Path(row.backup_folder) if row.backup_folder else default_backup_folder()
 
 
+def effective_extra_folders(row: BackupSettings) -> list[Path]:
+    """Additional folders each backup is mirrored into (e.g. a second drive,
+    or a locally-synced Google Drive/OneDrive folder). Malformed/empty
+    storage quietly means "none configured" rather than an error — this is
+    read on every backup run, not just from Settings."""
+    if not row.extra_backup_folders:
+        return []
+    try:
+        raw = json.loads(row.extra_backup_folders)
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(raw, list):
+        return []
+    return [Path(p) for p in raw if isinstance(p, str) and p.strip()]
+
+
+def _mirror_to_extra_folders(final: Path, extra_folders: list[Path]) -> None:
+    """Best-effort copy of an already-written backup into each extra folder.
+
+    A mirror failing (e.g. a USB drive unplugged) doesn't undo or fail the
+    backup that already succeeded in the primary folder -- it's logged and
+    surfaced next time via the folder simply not having the latest file.
+    """
+    for folder in extra_folders:
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(final, folder / final.name)
+        except OSError:
+            logger.warning("could not mirror backup %s to %s", final.name, folder, exc_info=True)
+
+
 def check_folder_writable(folder: Path) -> None:
     """Raise OSError unless backups can actually be written to `folder`."""
     folder.mkdir(parents=True, exist_ok=True)
@@ -166,12 +197,15 @@ def _sqlite_copy(source: Path, destination: Path) -> None:
 # --- creating & listing -----------------------------------------------------
 
 
-def create_backup(kind: str, folder: Path) -> dict:
+def create_backup(kind: str, folder: Path, extra_folders: list[Path] | None = None) -> dict:
     db_path = sqlite_db_path()
     if db_path is None:
         raise BackupError("Backups are only available for the built-in database (SQLite).")
     with _lock:
-        return _create_backup_locked(kind, folder, db_path)
+        info = _create_backup_locked(kind, folder, db_path)
+        if extra_folders:
+            _mirror_to_extra_folders(folder / info["filename"], extra_folders)
+        return info
 
 
 def _create_backup_locked(kind: str, folder: Path, db_path: Path) -> dict:
@@ -395,6 +429,11 @@ def restore_from_file(backup_file: Path, safety_folder: Path) -> dict:
     # business data being restored — carry them across, or restoring an old
     # backup would quietly revert the backup folder and schedule with it.
     keep_settings = _current_settings_snapshot()
+    db_for_extra = SessionLocal()
+    try:
+        extra_folders = effective_extra_folders(get_or_create_settings(db_for_extra))
+    finally:
+        db_for_extra.close()
 
     with _lock:
         with tempfile.TemporaryDirectory() as tmp:
@@ -402,6 +441,8 @@ def restore_from_file(backup_file: Path, safety_folder: Path) -> dict:
             _validate_database(database)
 
             safety = _create_backup_locked("pre-restore", safety_folder, db_path)
+            if extra_folders:
+                _mirror_to_extra_folders(safety_folder / safety["filename"], extra_folders)
 
             # Drop pooled connections so no stale handle or cached schema
             # survives, then copy the backup's pages into the live file.
@@ -461,7 +502,7 @@ def run_auto_backup_if_due(now: datetime | None = None) -> str | None:
             return None
         folder = effective_folder(row)
         try:
-            info = create_backup("auto", folder)
+            info = create_backup("auto", folder, effective_extra_folders(row))
             with _lock:
                 prune_auto_backups(folder, row.keep_auto_count)
         except Exception as exc:  # noqa: BLE001 - recorded and retried next check

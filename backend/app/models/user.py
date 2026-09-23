@@ -1,7 +1,7 @@
 import enum
 
 from sqlalchemy import Boolean, Enum, ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
 from app.models.mixins import TimestampMixin
@@ -49,6 +49,10 @@ class User(TimestampMixin, Base):
     business_id: Mapped[int | None] = mapped_column(
         ForeignKey("businesses.id"), nullable=True, index=True
     )
+    # Read-only convenience so the Users list can show WHO a login belongs to
+    # (the staff record's name) instead of an opaque id. Joined eagerly since
+    # every list of users wants it.
+    employee = relationship("Employee", foreign_keys=[employee_id], lazy="joined", viewonly=True)
     avatar_color: Mapped[str | None] = mapped_column(String(20))
     phone_code: Mapped[str | None] = mapped_column(String(10))
     phone: Mapped[str | None] = mapped_column(String(50))
@@ -59,3 +63,15 @@ class User(TimestampMixin, Base):
     # everyone else. Still role=superadmin, so the rest of the app treats it as
     # one. See routers/users.py for the permission matrix.
     is_system_owner: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Self-service recovery for a superadmin, who has nobody above them to
+    # reset their password (an admin/manager/employee just asks a superadmin).
+    # Hashed like a password, never stored or recoverable in plain text: the
+    # code is shown exactly once, when generated, and the holder of it can
+    # look their username back up and set a new password from the login
+    # screen. See routers/auth.py's recovery endpoints.
+    recovery_code_hash: Mapped[str | None] = mapped_column(String(255))
+
+    @property
+    def employee_name(self) -> str | None:
+        return self.employee.name if self.employee is not None else None

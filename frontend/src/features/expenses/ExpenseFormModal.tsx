@@ -5,11 +5,16 @@ import { listEmployees } from "../../api/employees";
 import { useBusiness } from "../../context/BusinessContext";
 import { currencyLabel } from "../../utils/currency";
 import { resolveAssetUrl } from "../../api/client";
-import { Field, ModalFooter, Select, TextArea, TextInput } from "../../components/form/Field";
+import { Field, ModalFooter, Select, TextArea, TextInput, Toggle } from "../../components/form/Field";
 import Modal from "../../components/Modal";
 import type { Employee, Expense, ExpenseType } from "../../api/types";
 import { getErrorMessage } from "../../utils/errors";
 
+// Adding an expense by hand is now only ever a one-off company expense:
+// salaries and overheads are set up once under Recurring / Fixed and appear
+// every month by themselves, so there is no type to choose and no chance of
+// hand-keying a cost that's already being generated. Editing an existing
+// entry still shows its type, including generated salary/overhead rows.
 const TYPE_OPTIONS: { value: ExpenseType; label: string }[] = [
   { value: "salary", label: "Salary" },
   { value: "overhead", label: "Overhead" },
@@ -33,13 +38,14 @@ export default function ExpenseFormModal({
   const isEdit = !!expense;
   const currency = currencyLabel(activeBusiness);
 
-  const [type, setType] = useState<ExpenseType>(expense?.type ?? "overhead");
+  const [type, setType] = useState<ExpenseType>(expense?.type ?? "company_expense");
   const [amount, setAmount] = useState(expense?.amount ?? "");
   const [description, setDescription] = useState(expense?.description ?? "");
   const [date, setDate] = useState(expense?.date ?? today());
   const [employeeId, setEmployeeId] = useState<number | "">(expense?.employee_id ?? "");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [file, setFile] = useState<File | null>(null);
+  const [isPaid, setIsPaid] = useState(expense?.is_paid ?? true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +84,8 @@ export default function ExpenseFormModal({
         description: description || null,
         date,
         employee_id: type === "salary" ? (employeeId as number) : null,
+        is_paid: isPaid,
+        paid_on: isPaid ? (expense?.paid_on ?? date) : null,
       };
       const saved = isEdit ? await updateExpense(expense!.id, payload) : await createExpense(payload);
       if (file) {
@@ -95,20 +103,33 @@ export default function ExpenseFormModal({
     <Modal title={isEdit ? "Edit expense" : "Add expense"} onClose={onClose} wide>
       <form onSubmit={handleSubmit}>
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Type" icon={Receipt}>
-              <Select value={type} onChange={(e) => setType(e.target.value as ExpenseType)}>
-                {TYPE_OPTIONS.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Date" icon={CalendarDays}>
-              <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-            </Field>
-          </div>
+          {isEdit ? (
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Type" icon={Receipt}>
+                <Select value={type} onChange={(e) => setType(e.target.value as ExpenseType)}>
+                  {TYPE_OPTIONS.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Date" icon={CalendarDays}>
+                <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              </Field>
+            </div>
+          ) : (
+            <>
+              <p className="rounded-md bg-wash-1 p-3 text-xs text-muted">
+                This is for a <span className="font-medium text-ink">one-off company expense</span>. Salaries and
+                overheads live under <span className="font-medium text-ink">Recurring / Fixed</span> — set one up
+                once and it's added to every month for you.
+              </p>
+              <Field label="Date" icon={CalendarDays}>
+                <TextInput type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              </Field>
+            </>
+          )}
 
           {type === "salary" && (
             <Field label="Employee" icon={Link2}>
@@ -144,7 +165,22 @@ export default function ExpenseFormModal({
             <TextArea rows={2} value={description ?? ""} onChange={(e) => setDescription(e.target.value)} />
           </Field>
 
-          <Field label="Attachment" hint="(optional — PDF)" icon={Paperclip}>
+          {/* A generated salary/overhead arrives as owed; this is how one
+              month gets settled without touching the recurring setup. */}
+          <Toggle
+            checked={isPaid}
+            onChange={setIsPaid}
+            label={isPaid ? "Paid" : "Not paid yet (counts as pending)"}
+          />
+
+          {isEdit && expense?.recurring_expense_id && (
+            <p className="rounded-md bg-wash-1 p-3 text-xs text-muted">
+              This entry was generated from a fixed monthly cost. Editing it changes{" "}
+              <span className="font-medium text-ink">this month only</span> — the monthly setup stays as it is.
+            </p>
+          )}
+
+          <Field label="Attachment" hint="(optional — receipt, invoice or payslip: PDF or image)" icon={Paperclip}>
             {expense?.attachment_path && !file && (
               <p className="mb-1.5 text-xs text-muted">
                 Current file:{" "}
@@ -156,7 +192,7 @@ export default function ExpenseFormModal({
             )}
             <input
               type="file"
-              accept="application/pdf"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="block w-full text-sm text-muted file:mr-3 file:rounded-md file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink hover:file:opacity-90"
             />

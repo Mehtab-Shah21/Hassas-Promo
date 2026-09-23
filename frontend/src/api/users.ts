@@ -1,5 +1,4 @@
 import { apiClient } from "./client";
-import type { EmployeePayload } from "./employees";
 import type { AppUser } from "./types";
 
 export async function listUsers(): Promise<AppUser[]> {
@@ -9,11 +8,10 @@ export async function listUsers(): Promise<AppUser[]> {
 
 // business_id is intentionally excluded — the backend always resolves it
 // from the currently active business (X-Business-Id), never from the
-// payload. new_employee creates the Employee row and this account together
-// in one request; mutually exclusive with employee_id (see UserFormModal).
+// payload. employee_id only ever LINKS to a staff record that already
+// exists; staff are added in Employees, not here.
 export type UserPayload = Partial<Omit<AppUser, "id" | "is_active" | "business_id" | "is_system_owner">> & {
   password?: string;
-  new_employee?: EmployeePayload;
 };
 
 export async function createUser(payload: UserPayload): Promise<AppUser> {

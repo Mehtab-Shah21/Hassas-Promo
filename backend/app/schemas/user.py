@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 
 from app.models.user import UserRole
-from app.schemas.employee import EmployeeCreate
 
 # String length caps mirror app/models/user.py's column lengths exactly (see
 # the note in schemas/auth.py for why this matters even though the DB is
@@ -12,19 +11,22 @@ from app.schemas.employee import EmployeeCreate
 
 class UserCreate(BaseModel):
     username: str = Field(max_length=50)
-    first_name: str = Field(max_length=100)
+    # A login is just credentials + role + (optionally) which staff record it
+    # belongs to. The person's name lives on that Employee, so these are no
+    # longer asked for: when omitted, the router fills them in from the linked
+    # employee's name, or the username if there is none. Still accepted so
+    # existing API callers keep working.
+    first_name: str | None = Field(default=None, max_length=100)
     last_name: str | None = Field(default=None, max_length=100)
     display_name: str | None = Field(default=None, max_length=150)
     email: EmailStr | None = Field(default=None, max_length=255)
     password: str = Field(min_length=6, max_length=128)
     role: UserRole = UserRole.employee
-    # Link this account to an already-existing, not-yet-linked Employee row.
-    # Mutually exclusive with new_employee — see routers/users.py.
+    # Optionally link this login to an existing, not-yet-linked staff record.
+    # Staff records themselves are created and managed in Employees, not
+    # here: the Users module administers logins only, so there is exactly one
+    # place a person is added to the business.
     employee_id: int | None = None
-    # Create the Employee row and this account together, in one request —
-    # the "add a person + optionally give them a login" flow from the Users
-    # page. Mutually exclusive with employee_id.
-    new_employee: EmployeeCreate | None = None
     # Which company this account belongs to is deliberately NOT a field
     # here: routers/users.py's create_user always resolves it from the
     # caller's active business (X-Business-Id header / current_user.
@@ -69,6 +71,9 @@ class UserResponse(BaseModel):
     phone: str | None
     is_active: bool
     is_system_owner: bool
+    # Name of the linked staff record (see User.employee_name), so the list can
+    # show who a login belongs to rather than an id.
+    employee_name: str | None = None
 
     model_config = {"from_attributes": True}
 

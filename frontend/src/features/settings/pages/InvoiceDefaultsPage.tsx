@@ -57,55 +57,67 @@ export default function InvoiceDefaultsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Default VAT rate (%)">
-          <TextInput
-            type="number"
-            step="1"
-            min="0"
-            max="100"
-            value={form.default_vat_rate}
-            onChange={(e) => setForm((f) => ({ ...f, default_vat_rate: e.target.value }))}
-          />
-        </Field>
-        <div className="flex items-end pb-2">
-          <Toggle
-            checked={form.show_govt_fee_on_invoice}
-            onChange={(checked) => setForm((f) => ({ ...f, show_govt_fee_on_invoice: checked }))}
-            label="Show government fee on printed invoice"
-          />
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-ink">Tax &amp; fees</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Default VAT rate (%)">
+            <TextInput
+              type="number"
+              step="1"
+              min="0"
+              max="100"
+              value={form.default_vat_rate}
+              onChange={(e) => setForm((f) => ({ ...f, default_vat_rate: e.target.value }))}
+            />
+          </Field>
+          <div className="flex items-end pb-2">
+            <Toggle
+              checked={form.show_govt_fee_on_invoice}
+              onChange={(checked) => setForm((f) => ({ ...f, show_govt_fee_on_invoice: checked }))}
+              label="Show government fee on printed invoice"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Default notes (cash invoices)">
-          <TextArea
-            rows={3}
-            value={form.default_invoice_notes_cash}
-            onChange={(e) => setForm((f) => ({ ...f, default_invoice_notes_cash: e.target.value }))}
-          />
-        </Field>
-        <Field label="Default terms (cash invoices)">
-          <TextArea
-            rows={3}
-            value={form.default_invoice_terms_cash}
-            onChange={(e) => setForm((f) => ({ ...f, default_invoice_terms_cash: e.target.value }))}
-          />
-        </Field>
-        <Field label="Default notes (credit invoices)">
-          <TextArea
-            rows={3}
-            value={form.default_invoice_notes_credit}
-            onChange={(e) => setForm((f) => ({ ...f, default_invoice_notes_credit: e.target.value }))}
-          />
-        </Field>
-        <Field label="Default terms (credit invoices)">
-          <TextArea
-            rows={3}
-            value={form.default_invoice_terms_credit}
-            onChange={(e) => setForm((f) => ({ ...f, default_invoice_terms_credit: e.target.value }))}
-          />
-        </Field>
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-ink">Cash invoices</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Default notes">
+            <TextArea
+              rows={3}
+              value={form.default_invoice_notes_cash}
+              onChange={(e) => setForm((f) => ({ ...f, default_invoice_notes_cash: e.target.value }))}
+            />
+          </Field>
+          <Field label="Default terms">
+            <TextArea
+              rows={3}
+              value={form.default_invoice_terms_cash}
+              onChange={(e) => setForm((f) => ({ ...f, default_invoice_terms_cash: e.target.value }))}
+            />
+          </Field>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-ink">Credit invoices</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Default notes">
+            <TextArea
+              rows={3}
+              value={form.default_invoice_notes_credit}
+              onChange={(e) => setForm((f) => ({ ...f, default_invoice_notes_credit: e.target.value }))}
+            />
+          </Field>
+          <Field label="Default terms">
+            <TextArea
+              rows={3}
+              value={form.default_invoice_terms_credit}
+              onChange={(e) => setForm((f) => ({ ...f, default_invoice_terms_credit: e.target.value }))}
+            />
+          </Field>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

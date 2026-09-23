@@ -24,6 +24,10 @@ class ExpenseCreate(BaseModel):
     description: str | None = Field(default=None, max_length=1000)
     date: datetime.date
     employee_id: int | None = None
+    # A hand-entered expense is normally recorded after the money has gone
+    # out, so it defaults to paid; a generated fixed cost starts unpaid (see
+    # services/recurring_expenses.py).
+    is_paid: bool = True
 
     @model_validator(mode="after")
     def _salary_requires_employee(self) -> "ExpenseCreate":
@@ -38,6 +42,11 @@ class ExpenseUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=1000)
     date: datetime.date | None = None
     employee_id: int | None = None
+    # Adjusting one generated month (a higher bill, a bonus, marking a salary
+    # as settled) is just editing that month's row -- it never touches the
+    # recurring definition it came from.
+    is_paid: bool | None = None
+    paid_on: datetime.date | None = None
 
 
 class ExpenseResponse(BaseModel):
@@ -51,6 +60,11 @@ class ExpenseResponse(BaseModel):
     employee_name: str | None = None
     attachment_path: str | None
     created_by: int
+    # Set when the system generated this row from a fixed monthly cost --
+    # drives the "Recurring" badge in the list.
+    recurring_expense_id: int | None = None
+    is_paid: bool = True
+    paid_on: datetime.date | None = None
 
     model_config = {"from_attributes": True}
 

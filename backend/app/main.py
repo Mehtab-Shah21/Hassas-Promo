@@ -2,9 +2,10 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.core.config import settings
+from app.core.config import frontend_dist_dir, settings
 from app.middleware.body_size_limit import BodySizeLimitMiddleware
 from app.routers import (
     attendance,
@@ -23,7 +24,9 @@ from app.routers import (
     notifications,
     quotations,
     reconciliation,
+    recurring_expenses,
     reports,
+    salary_deductions,
     services,
     users,
 )
@@ -72,6 +75,8 @@ app.include_router(reports.router)
 app.include_router(audit_log.router)
 app.include_router(design_studio.router)
 app.include_router(expenses.router)
+app.include_router(recurring_expenses.router)
+app.include_router(salary_deductions.router)
 app.include_router(backup.router)
 
 
@@ -114,3 +119,34 @@ def _start_automatic_backups() -> None:
 @app.get("/api/health")
 def health():
     return {"status": "ok", "app": settings.app_name}
+
+
+# Serves the built frontend (frontend/dist, bundled into the packaged
+# install as frontend_dist/ -- see config.frontend_dist_dir and
+# packaging/pro_invoicing.spec). Registered LAST so it never shadows an
+# /api/... or /uploads/... route above; in dev the directory doesn't exist
+# (the frontend runs separately via `npm run dev`), so this is a no-op then.
+_FRONTEND_DIR = frontend_dist_dir()
+if _FRONTEND_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=str(_FRONTEND_DIR / "assets")), name="frontend-assets")
+
+    # Tells the frontend (see api/client.ts's RUNTIME_URL) that this page is
+    # already being served by its own backend, so it should call the same
+    # origin it was loaded from -- whatever host/port that turns out to be --
+    # instead of needing a specific URL baked in at build time. Computed once
+    # at startup, not per-request, since index.html never changes at runtime.
+    from fastapi.responses import HTMLResponse
+
+    _INDEX_HTML = (_FRONTEND_DIR / "index.html").read_text(encoding="utf-8").replace(
+        "<head>", '<head><script>window.__PRO_INVOICING_SERVER_URL__ = "";</script>', 1
+    )
+
+    @app.get("/{full_path:path}")
+    def spa_fallback(full_path: str):
+        # A real static file (favicon, manifest, etc.) at the requested path
+        # wins; everything else is a client-side route, so hand back
+        # index.html and let the React router take it from there.
+        candidate = _FRONTEND_DIR / full_path
+        if full_path and candidate.is_file() and candidate.resolve().parent.is_relative_to(_FRONTEND_DIR.resolve()):
+            return FileResponse(candidate)
+        return HTMLResponse(_INDEX_HTML)

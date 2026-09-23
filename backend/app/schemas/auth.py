@@ -60,3 +60,31 @@ class ChangePasswordRequest(BaseModel):
 
 class SetAutoLockRequest(BaseModel):
     auto_lock_minutes: int = Field(ge=1, le=120)
+
+
+# --- Superadmin self-recovery ------------------------------------------------
+# A manager or employee who forgets their password asks a superadmin. A
+# superadmin has nobody above them, so they get a recovery code instead:
+# generated once, shown once, stored only as a hash.
+
+
+class RecoveryCodeResponse(BaseModel):
+    recovery_code: str
+
+
+class RecoveryStatusResponse(BaseModel):
+    has_recovery_code: bool
+
+
+class RecoverAccountRequest(BaseModel):
+    # Deliberately no username field: the point is that this still works for
+    # someone who has forgotten their username as well as their password --
+    # the code identifies the account, and the response tells them which
+    # username it belongs to.
+    recovery_code: str = Field(min_length=8, max_length=128)
+    new_password: str = Field(min_length=6, max_length=128)
+
+
+class RecoverAccountResponse(BaseModel):
+    username: str
+    message: str

@@ -22,6 +22,7 @@ from app.schemas.dashboard import (
 )
 from app.services.expenses import total_expenses as sum_expenses
 from app.services.reconciliation import build_reconciliation_query, totals_from_payments
+from app.services.recurring_expenses import generate_due_expenses, month_status, monthly_commitment
 
 
 def _last_n_months(n: int) -> list[tuple[date, date, str]]:
@@ -191,6 +192,11 @@ def dashboard_summary(
     sales_trend = _sales_trend(db, business_id)
     attendance_trend = _attendance_trend(db, business_id) if _module_enabled(db, business_id, "attendance") else []
 
+    # Opening the dashboard is also a cue to bring fixed monthly costs up to
+    # date, so the figures below can never be behind the calendar.
+    generate_due_expenses(db, business_id)
+    fixed_status = month_status(db, business_id)
+
     return DashboardSummary(
         period=period,
         total_sales=total_sales,
@@ -206,6 +212,9 @@ def dashboard_summary(
         active_users=active_users,
         total_expenses=float(expenses_total),
         net_revenue=float(net_revenue),
+        fixed_monthly_cost=monthly_commitment(db, business_id),
+        fixed_cost_paid_this_month=fixed_status["paid"],
+        fixed_cost_pending_this_month=fixed_status["pending"],
         sales_trend=sales_trend,
         attendance_trend=attendance_trend,
     )

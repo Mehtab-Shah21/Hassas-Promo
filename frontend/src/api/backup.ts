@@ -19,6 +19,7 @@ export interface BackupSettings {
   backup_folder: string;
   using_default_folder: boolean;
   default_folder: string;
+  extra_folders: string[];
   auto_enabled: boolean;
   auto_interval_hours: number;
   keep_auto_count: number;
@@ -32,6 +33,8 @@ export interface BackupSettings {
 export type BackupSettingsPatch = Partial<Pick<BackupSettings, "auto_enabled" | "auto_interval_hours" | "keep_auto_count">> & {
   /** An empty string switches back to the default folder. */
   backup_folder?: string;
+  /** Full replacement list each time (not a merge) — an empty array clears every extra folder. */
+  extra_folders?: string[];
 };
 
 export interface RestoreResult {

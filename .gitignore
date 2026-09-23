@@ -20,6 +20,16 @@ backend/backups/
 backend/uploads/*
 !backend/uploads/.gitkeep
 
+# Frontend production build, copied here for the packaged desktop server to
+# serve statically (see app/core/config.frontend_dist_dir) -- a build
+# artifact, not source; packaging/build_desktop.ps1 regenerates it.
+backend/frontend_dist/
+
+# Desktop packaging build output (backend/dist, frontend/dist already
+# covered by the unanchored dist/ rule below)
+backend/build/
+installer/Output/
+
 # Node
 node_modules/
 dist/
@@ -34,6 +44,10 @@ backend/.env
 # IDE
 .vscode/
 .idea/
+
+# Claude Code's own local project config (dev-server launch settings, lock
+# files) -- machine-specific tooling, not part of the application.
+.claude/
 
 # Logs
 *.log

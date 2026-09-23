@@ -5,10 +5,12 @@ from app.models.business import Business
 from app.models.coupon import Coupon
 from app.models.customer import Customer
 from app.models.employee import Employee
+from app.models.employee_document import EmployeeDocument
 from app.models.feature_flag import FeatureFlag
 from app.models.invoice import Invoice, InvoiceItem, Payment
 from app.models.notification import Notification, NotificationReminder
 from app.models.quotation import Quotation, QuotationItem
+from app.models.salary_deduction import SalaryDeduction
 from app.models.service import Service, ServiceCategory
 from app.models.user import User
 
@@ -20,6 +22,7 @@ __all__ = [
     "Coupon",
     "Customer",
     "Employee",
+    "EmployeeDocument",
     "FeatureFlag",
     "Invoice",
     "InvoiceItem",
@@ -28,6 +31,7 @@ __all__ = [
     "Payment",
     "Quotation",
     "QuotationItem",
+    "SalaryDeduction",
     "Service",
     "ServiceCategory",
     "User",

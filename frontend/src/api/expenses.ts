@@ -29,6 +29,9 @@ export interface ExpensePayload {
   description?: string | null;
   date: string;
   employee_id?: number | null;
+  /** Generated fixed costs start unpaid; a hand-entered one-off defaults to paid. */
+  is_paid?: boolean;
+  paid_on?: string | null;
 }
 
 export async function createExpense(payload: ExpensePayload): Promise<Expense> {

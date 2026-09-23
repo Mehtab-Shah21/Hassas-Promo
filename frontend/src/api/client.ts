@@ -2,6 +2,13 @@ import axios from "axios";
 
 const SERVER_URL_KEY = "server_url";
 const BUILD_TIME_URL = import.meta.env.VITE_API_URL as string | undefined;
+// Set by the packaged desktop server's own backend when it serves this page
+// (see app/main.py's spa_fallback) — an empty string means "this page is
+// already being served by the backend, use the same origin" whatever port
+// was chosen during installation, so the desktop server build works without
+// baking a specific port into the frontend at all. Undefined everywhere else
+// (dev, the web demo, a frontend-only client-PC install) — see below.
+const RUNTIME_URL = (window as { __PRO_INVOICING_SERVER_URL__?: string }).__PRO_INVOICING_SERVER_URL__;
 
 /**
  * Resolves the backend's address at request time, not at module-load time.
@@ -12,6 +19,7 @@ const BUILD_TIME_URL = import.meta.env.VITE_API_URL as string | undefined;
  * ServerConfigGate, and it's persisted here so every request uses it.
  */
 export function getServerUrl(): string {
+  if (RUNTIME_URL !== undefined) return RUNTIME_URL;
   return localStorage.getItem(SERVER_URL_KEY) || BUILD_TIME_URL || "http://localhost:8000";
 }
 
@@ -20,7 +28,7 @@ export function setServerUrl(url: string) {
 }
 
 export function hasConfiguredServerUrl(): boolean {
-  return Boolean(localStorage.getItem(SERVER_URL_KEY) || BUILD_TIME_URL);
+  return RUNTIME_URL !== undefined || Boolean(localStorage.getItem(SERVER_URL_KEY) || BUILD_TIME_URL);
 }
 
 export function clearServerUrl() {

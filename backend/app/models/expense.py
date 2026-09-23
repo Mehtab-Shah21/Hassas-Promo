@@ -1,7 +1,7 @@
 import enum
 from datetime import date
 
-from sqlalchemy import Date, Enum, ForeignKey, Numeric, String
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -33,3 +33,17 @@ class Expense(TimestampMixin, Base):
     employee_id: Mapped[int | None] = mapped_column(ForeignKey("employees.id"), nullable=True, index=True)
     attachment_path: Mapped[str | None] = mapped_column(String(500))
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+
+    # Set when this row was generated from a fixed monthly cost rather than
+    # typed in by hand -- drives the "Recurring" badge in the list and lets
+    # generation stay idempotent (one row per definition per month). Editing
+    # or attaching a receipt to this row never touches the definition.
+    recurring_expense_id: Mapped[int | None] = mapped_column(
+        ForeignKey("recurring_expenses.id"), nullable=True, index=True
+    )
+    # A generated cost starts as owed, not paid -- that's what makes "this
+    # month: X paid, Y still pending" (dashboard, employee salary status)
+    # meaningful. A manually recorded one-off defaults to paid, since it is
+    # normally entered after the money has already gone out.
+    is_paid: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    paid_on: Mapped[date | None] = mapped_column(Date, nullable=True)

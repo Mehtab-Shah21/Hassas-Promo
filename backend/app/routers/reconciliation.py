@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.db import get_db
 from app.core.deps import require_active_business_id, require_manager, require_module_enabled
 from app.models.customer import Customer
-from app.models.invoice import Invoice, Payment, PaymentMethod
+from app.models.invoice import ClearedStatus, Invoice, Payment, PaymentMethod
 from app.schemas.invoice import PaymentResponse, ReconciliationEntry, ReconciliationResponse
 from app.services.audit import write_audit_log
 from app.services.reconciliation import build_reconciliation_query, totals_from_payments

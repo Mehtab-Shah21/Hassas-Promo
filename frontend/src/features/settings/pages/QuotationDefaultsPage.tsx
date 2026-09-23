@@ -47,30 +47,37 @@ export default function QuotationDefaultsPage() {
         <h2 className="text-lg font-semibold text-ink">Quotation Defaults — {activeBusiness.name}</h2>
       </div>
 
-      <Field label="Default validity (days)">
-        <TextInput
-          type="number"
-          min="1"
-          value={form.default_quotation_validity_days}
-          onChange={(e) => setForm((f) => ({ ...f, default_quotation_validity_days: e.target.value }))}
-        />
-      </Field>
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-ink">Validity</h3>
+        <Field label="Default validity (days)">
+          <TextInput
+            type="number"
+            min="1"
+            value={form.default_quotation_validity_days}
+            onChange={(e) => setForm((f) => ({ ...f, default_quotation_validity_days: e.target.value }))}
+          />
+        </Field>
+      </div>
 
-      <Field label="Default notes">
-        <TextArea
-          rows={3}
-          value={form.default_quotation_notes}
-          onChange={(e) => setForm((f) => ({ ...f, default_quotation_notes: e.target.value }))}
-        />
-      </Field>
-
-      <Field label="Default terms">
-        <TextArea
-          rows={3}
-          value={form.default_quotation_terms}
-          onChange={(e) => setForm((f) => ({ ...f, default_quotation_terms: e.target.value }))}
-        />
-      </Field>
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-ink">Notes &amp; terms</h3>
+        <div className="space-y-4">
+          <Field label="Default notes">
+            <TextArea
+              rows={3}
+              value={form.default_quotation_notes}
+              onChange={(e) => setForm((f) => ({ ...f, default_quotation_notes: e.target.value }))}
+            />
+          </Field>
+          <Field label="Default terms">
+            <TextArea
+              rows={3}
+              value={form.default_quotation_terms}
+              onChange={(e) => setForm((f) => ({ ...f, default_quotation_terms: e.target.value }))}
+            />
+          </Field>
+        </div>
+      </div>
 
       <div className="flex items-center gap-3">
         <SaveButton saving={saving} />

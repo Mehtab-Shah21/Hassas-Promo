@@ -55,6 +55,13 @@ class DashboardSummary(BaseModel):
     # Decimal (see routers/dashboard.py) so the subtraction is exact money
     # math, not float/string arithmetic done client-side.
     net_revenue: float
+    # Fixed monthly costs (salaries + overheads set up to repeat). Always
+    # "right now" / "this month" regardless of the period toggle — a standing
+    # commitment isn't a period figure, and "still to pay this month" is only
+    # meaningful for the current month.
+    fixed_monthly_cost: float
+    fixed_cost_paid_this_month: float
+    fixed_cost_pending_this_month: float
     # Fixed windows for the dashboard's charts — independent of the KPI
     # cards' period toggle above, since a trend chart is only useful when
     # it always shows the same lookback regardless of what period is

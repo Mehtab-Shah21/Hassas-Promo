@@ -20,12 +20,16 @@ import {
   PanelLeftOpen,
   type LucideIcon,
 } from "lucide-react";
+import { resolveAssetUrl } from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import { acknowledgeNotification, snoozeNotification } from "../api/notifications";
 import { useAuth } from "../context/AuthContext";
 import { useBusiness } from "../context/BusinessContext";
 import { useFeatureFlags } from "../context/FeatureFlagsContext";
 import { useNotifications } from "../context/NotificationsContext";
+import { currencyLabel } from "../utils/currency";
+import { DeductionActions, deductionWorking, monthYear, shortDate } from "../features/employees/DeductionControls";
+import type { SalaryAlert } from "../api/types";
 import { isAdminOrAbove, isManagerOrAbove, isSuperadmin } from "../utils/roles";
 
 interface NavItem {
@@ -47,7 +51,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/quotations", label: "Quotations", icon: FileClock, flag: "quotations" },
   { to: "/coupons", label: "Coupons", icon: Ticket, flag: "coupons" },
   { to: "/notifications", label: "Notifications", icon: Bell, flag: "notifications" },
-  { to: "/attendance", label: "Attendance", icon: CalendarCheck, minRole: "manager", flag: "attendance" },
+  { to: "/employees", label: "Employees", icon: CalendarCheck, minRole: "manager", flag: "attendance" },
   { to: "/reconciliation", label: "Reconciliation", icon: Landmark, minRole: "manager", flag: "reconciliation" },
   { to: "/reports", label: "Reports", icon: BarChart3, minRole: "manager", flag: "reports" },
   { to: "/expenses", label: "Expenses", icon: Receipt, minRole: "manager" },
@@ -67,9 +71,82 @@ function readStoredCollapsed(): boolean {
   }
 }
 
+/**
+ * A salary that has reached its pay date, in the bell. The absence deduction
+ * (if any) is decided right here -- confirmed or waived -- and the alert stays
+ * until the salary is marked paid.
+ */
+function SalaryAlertItem({
+  alert,
+  onChanged,
+  onOpenExpenses,
+}: {
+  alert: SalaryAlert;
+  onChanged: () => void;
+  onOpenExpenses: () => void;
+}) {
+  const { activeBusiness } = useBusiness();
+  const currency = currencyLabel(activeBusiness);
+  const d = alert.deduction;
+  const due =
+    alert.days_since_pay_date <= 0
+      ? "due today"
+      : `due ${alert.days_since_pay_date} day${alert.days_since_pay_date === 1 ? "" : "s"} ago`;
+
+  return (
+    <div className="border-b border-line px-3 py-2 last:border-b-0">
+      <p className="text-sm font-medium text-ink">
+        {alert.employee_name}{" "}
+        <span className="rounded-full bg-link/15 px-1.5 py-0.5 text-[10px] font-medium text-link">Salary</span>
+      </p>
+      <p className="text-xs text-muted">
+        {monthYear(d.period_start)} · pay date {shortDate(alert.pay_date)} · {due}
+      </p>
+
+      {d.status === "none" && (
+        <p className="mt-1 text-xs text-muted">
+          No absences — {currency} {d.gross_amount.toFixed(2)} is ready to pay.
+        </p>
+      )}
+      {d.status === "pending" && (
+        <div className="mt-1 text-xs text-muted">
+          <p>{deductionWorking(d, currency)}</p>
+          <p className="font-medium text-ink">
+            Deduct {currency} {d.amount.toFixed(2)} → pay {currency} {d.net_amount.toFixed(2)}
+          </p>
+        </div>
+      )}
+      {d.status === "confirmed" && (
+        <p className="mt-1 text-xs text-muted">
+          Deduction of {currency} {d.amount.toFixed(2)} confirmed — pay {currency} {d.net_amount.toFixed(2)}.
+        </p>
+      )}
+      {d.status === "waived" && (
+        <p className="mt-1 text-xs text-muted">
+          Deduction waived — pay {currency} {d.net_amount.toFixed(2)}.
+        </p>
+      )}
+
+      <div className="mt-1.5 flex flex-wrap items-start gap-2">
+        <DeductionActions expenseId={alert.expense_id} deduction={d} isPaid={false} onChanged={onChanged} />
+        {d.status !== "pending" && (
+          <button
+            type="button"
+            onClick={onOpenExpenses}
+            className="rounded-md border border-line px-2 py-1 text-xs hover:bg-wash-1"
+          >
+            Go to Expenses
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function NotificationBell() {
   const navigate = useNavigate();
-  const { activeNotifications, badgeCount, refresh } = useNotifications();
+  const { activeNotifications, salaryAlerts, bellCount, refresh } = useNotifications();
+  const { isEnabled } = useFeatureFlags();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -96,15 +173,19 @@ function NotificationBell() {
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          // a pay date may have arrived since the last check
+          if (!open) refresh();
+          setOpen((o) => !o);
+        }}
         aria-label="Notifications"
         title="Notifications"
         className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted hover:bg-wash-1 hover:text-ink"
       >
         <Bell size={16} />
-        {badgeCount > 0 && (
+        {bellCount > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-bg">
-            {badgeCount > 9 ? "9+" : badgeCount}
+            {bellCount > 9 ? "9+" : bellCount}
           </span>
         )}
       </button>
@@ -112,7 +193,18 @@ function NotificationBell() {
         <div className="absolute right-0 z-30 mt-2 w-80 rounded-md border border-line bg-surface shadow-floating">
           <div className="border-b border-line px-3 py-2 text-sm font-semibold text-ink">Notifications</div>
           <div className="max-h-80 overflow-y-auto">
-            {activeNotifications.length === 0 ? (
+            {salaryAlerts.map((alert) => (
+              <SalaryAlertItem
+                key={`salary-${alert.expense_id}`}
+                alert={alert}
+                onChanged={refresh}
+                onOpenExpenses={() => {
+                  setOpen(false);
+                  navigate("/expenses");
+                }}
+              />
+            ))}
+            {activeNotifications.length === 0 && salaryAlerts.length === 0 ? (
               <p className="px-3 py-4 text-center text-sm text-muted">Nothing active right now.</p>
             ) : (
               activeNotifications.map((n) => (
@@ -140,15 +232,17 @@ function NotificationBell() {
               ))
             )}
           </div>
-          <button
-            onClick={() => {
-              setOpen(false);
-              navigate("/notifications");
-            }}
-            className="block w-full border-t border-line px-3 py-2 text-center text-sm font-medium text-link hover:bg-wash-1"
-          >
-            View all
-          </button>
+          {isEnabled("notifications") && (
+            <button
+              onClick={() => {
+                setOpen(false);
+                navigate("/notifications");
+              }}
+              className="block w-full border-t border-line px-3 py-2 text-center text-sm font-medium text-link hover:bg-wash-1"
+            >
+              View all
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -173,11 +267,11 @@ export default function AppShell() {
   // Superadmin spans every company and owns the switcher; a non-superadmin
   // has exactly one company in `businesses` already (the server itself
   // only ever returns their own — see routers/businesses.py), so there is
-  // nothing to filter for them. The "iim" flag only matters for superadmin:
-  // a reseller install that doesn't use IIM can hide it from the switcher.
-  const visibleBusinesses = isSuperadmin(user?.role)
-    ? businesses.filter((b) => b.name !== "IIM" || isEnabled("iim"))
-    : businesses;
+  // nothing to filter for them either. Both companies always appear: the
+  // install-wide switch that used to hide IIM was removed, since turning a
+  // whole company off from a settings page is too destructive to sit behind
+  // a single toggle.
+  const visibleBusinesses = businesses;
   const visibleItems = NAV_ITEMS.filter(
     (item) => {
       const roleOk =
@@ -195,7 +289,20 @@ export default function AppShell() {
         }`}
       >
         <div className={`flex items-center border-b border-line ${collapsed ? "justify-center py-4" : "justify-between px-5 py-5"}`}>
-          {!collapsed && <span className="truncate text-lg font-semibold text-ink">PRO Invoicing</span>}
+          {!collapsed && (
+            <span className="flex min-w-0 items-center gap-2">
+              {activeBusiness?.logo_path && (
+                <img
+                  src={resolveAssetUrl(activeBusiness.logo_path)!}
+                  alt=""
+                  className="h-6 w-6 shrink-0 rounded object-contain"
+                />
+              )}
+              <span className="truncate text-lg font-semibold text-ink">
+                {activeBusiness?.name ?? "PRO Invoicing"}
+              </span>
+            </span>
+          )}
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
@@ -245,7 +352,14 @@ export default function AppShell() {
             );
           })}
         </nav>
-        <div className="border-t border-line p-3 text-xs text-muted">{!collapsed && "v0.1 — foundation"}</div>
+        <div className="border-t border-line p-3 text-xs text-muted">
+          {!collapsed && (
+            <>
+              <div>v0.1 — foundation</div>
+              <div>MS Software Solutions</div>
+            </>
+          )}
+        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -271,9 +385,8 @@ export default function AppShell() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            {isEnabled("notifications") && <NotificationBell />}
+            {(isEnabled("notifications") || isEnabled("attendance")) && <NotificationBell />}
             <ThemeToggle />
-            <span className="text-sm text-muted">{user?.display_name ?? user?.username}</span>
             <span className="rounded-full bg-beige px-2 py-0.5 text-xs font-medium capitalize text-beige-ink">
               {user?.role}
             </span>

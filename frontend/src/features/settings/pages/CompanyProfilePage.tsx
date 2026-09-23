@@ -16,15 +16,11 @@ export default function CompanyProfilePage() {
     if (!activeBusiness) return;
     setForm({
       name: activeBusiness.name ?? "",
-      legal_name: activeBusiness.legal_name ?? "",
       tax_id: activeBusiness.tax_id ?? "",
-      cr_no: activeBusiness.cr_no ?? "",
       phone_code: activeBusiness.phone_code ?? "",
       phone: activeBusiness.phone ?? "",
       email: activeBusiness.email ?? "",
-      website: activeBusiness.website ?? "",
       address_line1: activeBusiness.address_line1 ?? "",
-      address_line2: activeBusiness.address_line2 ?? "",
       city: activeBusiness.city ?? "",
       state: activeBusiness.state ?? "",
       postal_code: activeBusiness.postal_code ?? "",
@@ -94,14 +90,8 @@ export default function CompanyProfilePage() {
         <Field label="Business name">
           <TextInput value={form.name ?? ""} onChange={set("name")} required />
         </Field>
-        <Field label="Legal name">
-          <TextInput value={form.legal_name ?? ""} onChange={set("legal_name")} />
-        </Field>
         <Field label="Tax ID">
           <TextInput value={form.tax_id ?? ""} onChange={set("tax_id")} />
-        </Field>
-        <Field label="CR No.">
-          <TextInput value={form.cr_no ?? ""} onChange={set("cr_no")} />
         </Field>
         <Field label="Phone code">
           <TextInput value={form.phone_code ?? ""} onChange={set("phone_code")} placeholder="+971" maxLength={10} />
@@ -115,24 +105,18 @@ export default function CompanyProfilePage() {
         <Field label="Email">
           <TextInput type="email" value={form.email ?? ""} onChange={set("email")} />
         </Field>
-        <Field label="Website">
-          <TextInput value={form.website ?? ""} onChange={set("website")} />
-        </Field>
       </div>
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-ink">Address</h3>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Address line 1" className="col-span-2">
+          <Field label="Address" className="col-span-2">
             <TextInput value={form.address_line1 ?? ""} onChange={set("address_line1")} />
-          </Field>
-          <Field label="Address line 2" className="col-span-2">
-            <TextInput value={form.address_line2 ?? ""} onChange={set("address_line2")} />
           </Field>
           <Field label="City">
             <TextInput value={form.city ?? ""} onChange={set("city")} />
           </Field>
-          <Field label="State / Emirate">
+          <Field label="Emirate">
             <TextInput value={form.state ?? ""} onChange={set("state")} />
           </Field>
           <Field label="Postal code">

@@ -43,6 +43,16 @@ def _default_database_url() -> str:
     return f"sqlite:///{db_path.as_posix()}"
 
 
+def frontend_dist_dir() -> Path:
+    """The built frontend (frontend/dist), bundled read-only alongside
+    app/templates and alembic/ in a packaged install (see pro_invoicing.spec)
+    so one process serves both the API and the UI -- no separate web server
+    or Electron/Node runtime needed on the end-user PC. In dev this simply
+    doesn't exist (the frontend runs via `npm run dev` on its own port
+    instead), so app/main.py only mounts it when the directory is present."""
+    return resource_dir() / "frontend_dist"
+
+
 def _default_upload_dir() -> str:
     upload_path = _default_data_dir() / "uploads"
     upload_path.mkdir(parents=True, exist_ok=True)

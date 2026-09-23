@@ -1,3 +1,4 @@
+import json
 import shutil
 import tempfile
 from datetime import timedelta
@@ -45,6 +46,7 @@ def _settings_response(row: BackupSettings) -> BackupSettingsResponse:
         backup_folder=str(backups.effective_folder(row)),
         using_default_folder=row.backup_folder is None,
         default_folder=str(backups.default_backup_folder()),
+        extra_folders=[str(p) for p in backups.effective_extra_folders(row)],
         auto_enabled=row.auto_enabled,
         auto_interval_hours=row.auto_interval_hours,
         keep_auto_count=row.keep_auto_count,
@@ -87,6 +89,18 @@ def update_settings(
             row.backup_folder = folder
         else:
             row.backup_folder = None
+
+    if "extra_folders" in data:
+        folders = [f.strip() for f in (data["extra_folders"] or []) if f.strip()]
+        for f in folders:
+            try:
+                backups.check_folder_writable(Path(f))
+            except OSError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail=f"Backups can't be written to '{f}': {exc}"
+                ) from exc
+        row.extra_backup_folders = json.dumps(folders) if folders else None
+
     for key in ("auto_enabled", "auto_interval_hours", "keep_auto_count"):
         if data.get(key) is not None:
             setattr(row, key, data[key])
@@ -105,7 +119,7 @@ def run_backup(db: Session = Depends(get_db), current_user=Depends(require_super
     _require_sqlite()
     row = backups.get_or_create_settings(db)
     try:
-        info = backups.create_backup("manual", backups.effective_folder(row))
+        info = backups.create_backup("manual", backups.effective_folder(row), backups.effective_extra_folders(row))
     except (backups.BackupError, OSError) as exc:
         backups.record_result(row, ok=False, error=str(exc))
         db.commit()

@@ -11,8 +11,18 @@
 import sys
 from pathlib import Path
 
+from PyInstaller.utils.hooks import collect_submodules
+
 block_cipher = None
 backend_dir = Path(SPECPATH)  # noqa: F821  (PyInstaller injects SPECPATH)
+
+# reportlab.graphics.barcode.widgets imports each barcode format module
+# (code128, qr, ...) dynamically by name string, and xhtml2pdf pulls in a
+# few of its own submodules the same way -- PyInstaller's static analysis
+# can't see either, so both need to be collected explicitly or the PDF
+# renderer breaks only once packaged (see packaging/README.md's flagged risk,
+# confirmed for real: "No module named 'reportlab.graphics.barcode.code128'").
+_dynamic_hidden_imports = collect_submodules("reportlab.graphics.barcode") + collect_submodules("xhtml2pdf")
 
 a = Analysis(
     [str(backend_dir / "run_server.py")],
@@ -22,6 +32,7 @@ a = Analysis(
         (str(backend_dir.parent / "app" / "templates"), "app/templates"),
         (str(backend_dir.parent / "alembic"), "alembic"),
         (str(backend_dir.parent / "alembic.ini"), "."),
+        (str(backend_dir.parent / "frontend_dist"), "frontend_dist"),
     ],
     hiddenimports=[
         "uvicorn.logging",
@@ -35,7 +46,7 @@ a = Analysis(
         "uvicorn.lifespan",
         "uvicorn.lifespan.on",
         "passlib.handlers.bcrypt",
-    ],
+    ] + _dynamic_hidden_imports,
     hookspath=[],
     runtime_hooks=[],
     excludes=[],
@@ -61,4 +72,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=str(backend_dir / "app_icon.ico"),
 )

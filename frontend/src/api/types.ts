@@ -37,6 +37,8 @@ export interface AppUser {
   // can create or reset a superadmin. Only ever returned to that account
   // itself — the server hides it from everyone else.
   is_system_owner: boolean;
+  /** Name of the linked staff record, if this login belongs to one. */
+  employee_name: string | null;
 }
 
 export interface Business {
@@ -286,17 +288,94 @@ export interface Employee {
   role: string | null;
   phone_code: string | null;
   phone: string | null;
+  email: string | null;
   base_salary: number | null;
+  emirates_id: string | null;
+  emirates_id_attachment_path: string | null;
+  passport_no: string | null;
+  passport_attachment_path: string | null;
   is_active: boolean;
 }
 
-export type AttendanceStatus = "present" | "absent" | "leave";
+/** One extra file attached to an employee beyond Emirates ID / passport — a license, a permit, anything named. */
+export interface EmployeeDocumentRecord {
+  id: number;
+  name: string;
+  file_path: string;
+  created_at: string;
+}
+
+export interface EmployeeSalaryEntry {
+  id: number;
+  amount: string;
+  date: string;
+  is_paid: boolean;
+  paid_on: string | null;
+  description: string | null;
+  recurring_expense_id: number | null;
+  /** The absence deduction on this payment. */
+  deduction: DeductionSummary | null;
+}
+
+/** One salary payment's absence deduction, with the working shown. */
+export interface DeductionSummary {
+  /** none = nothing to deduct; pending = waiting for an admin; confirmed / waived = decided */
+  status: "none" | "pending" | "confirmed" | "waived";
+  period_start: string;
+  period_end: string;
+  covered_days: number;
+  absent_days: number;
+  half_days: number;
+  /** absent x 1 + half day x 0.5 */
+  deduction_days: number;
+  daily_rate: number;
+  gross_amount: number;
+  amount: number;
+  net_amount: number;
+  pay_date: string;
+  can_decide: boolean;
+  decided_at: string | null;
+  decided_by_name: string | null;
+}
+
+/** A salary that has reached its pay date and is still unpaid (admins' bell). */
+export interface SalaryAlert {
+  expense_id: number;
+  employee_id: number;
+  employee_name: string;
+  description: string | null;
+  pay_date: string;
+  days_since_pay_date: number;
+  deduction: DeductionSummary;
+}
+
+/** Everything about one person: record, login, attendance, salary standing. */
+export interface EmployeeDetail {
+  employee: Employee;
+  user_id: number | null;
+  username: string | null;
+  user_role: string | null;
+  present_days: number;
+  absent_days: number;
+  half_days: number;
+  leave_days: number;
+  recurring_salary_amount: number | null;
+  total_paid: number;
+  total_pending: number;
+  salary_entries: EmployeeSalaryEntry[];
+  documents: EmployeeDocumentRecord[];
+}
+
+export type AttendanceStatus = "present" | "absent" | "half_day" | "leave";
 
 export interface DayAttendanceEntry {
   employee_id: number;
   employee_name: string;
   status: AttendanceStatus | null;
   note: string | null;
+  /** "HH:MM:SS" from the server; null until recorded. */
+  check_in: string | null;
+  check_out: string | null;
 }
 
 export type ExpenseType = "salary" | "overhead" | "company_expense";
@@ -317,6 +396,40 @@ export interface Expense {
   employee_name: string | null;
   attachment_path: string | null;
   created_by: number;
+  /** Set when the system generated this row from a fixed monthly cost. */
+  recurring_expense_id: number | null;
+  is_paid: boolean;
+  paid_on: string | null;
+}
+
+/** A salary or overhead defined once that the system generates every month. */
+export interface RecurringExpense {
+  id: number;
+  business_id: number;
+  type: ExpenseType;
+  label: string;
+  amount: number;
+  employee_id: number | null;
+  employee_name: string | null;
+  day_of_month: number;
+  /** Salaries: day of the month the pay goes out (admins are alerted then). null = last day of the month. */
+  pay_day: number | null;
+  /** Real dates (any day). A start on the 15th charges the 15th to month-end in month one. */
+  start_date: string;
+  /** Inclusive last day, or null to keep going every month. */
+  end_date: string | null;
+  is_active: boolean;
+  created_by: number;
+  generated_count: number;
+}
+
+export interface FixedCostSummary {
+  monthly_commitment: number;
+  active_count: number;
+  generated_total: number;
+  paid: number;
+  pending: number;
+  entry_count: number;
 }
 
 export interface PaginatedExpenses {
@@ -337,7 +450,10 @@ export interface EmployeeTotals {
   employee_name: string;
   present: number;
   absent: number;
+  half_day: number;
   leave: number;
+  /** Time in the office over the range, from days with both an arrival and a departure. */
+  hours_worked: number;
 }
 
 export type ReminderUnit = "day" | "week" | "month";
@@ -396,6 +512,10 @@ export interface DashboardSummary {
   // net_revenue = total_sales - total_expenses, computed backend-side in
   // Decimal (see routers/dashboard.py) — never recompute this client-side.
   net_revenue: number;
+  /** Fixed monthly costs — always "right now"/"this month", not period-scoped. */
+  fixed_monthly_cost: number;
+  fixed_cost_paid_this_month: number;
+  fixed_cost_pending_this_month: number;
   sales_trend: SalesTrendPoint[];
   attendance_trend: AttendanceTrendPoint[];
 }

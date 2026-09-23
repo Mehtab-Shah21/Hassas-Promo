@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import AdminOnlyRoute from "./components/AdminOnlyRoute";
 import FeatureGate from "./components/FeatureGate";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -7,7 +7,7 @@ import { BusinessProvider } from "./context/BusinessContext";
 import { FeatureFlagsProvider } from "./context/FeatureFlagsContext";
 import { NotificationsProvider } from "./context/NotificationsContext";
 import LoginPage from "./features/auth/LoginPage";
-import AttendancePage from "./features/attendance/AttendancePage";
+import EmployeesPage from "./features/employees/EmployeesPage";
 import CouponsPage from "./features/coupons/CouponsPage";
 import CustomerDetailPage from "./features/customers/CustomerDetailPage";
 import CustomersListPage from "./features/customers/CustomersListPage";
@@ -116,15 +116,18 @@ function App() {
           }
         />
         <Route
-          path="attendance"
+          path="employees"
           element={
             <AdminOnlyRoute minRole="manager">
-              <FeatureGate flag="attendance" label="Attendance">
-                <AttendancePage />
+              <FeatureGate flag="attendance" label="Employees">
+                <EmployeesPage />
               </FeatureGate>
             </AdminOnlyRoute>
           }
         />
+        {/* The module was renamed Attendance -> Employees; keep the old path
+            working so a bookmark or an old link doesn't 404. */}
+        <Route path="attendance" element={<Navigate to="/employees" replace />} />
         <Route
           path="reconciliation"
           element={

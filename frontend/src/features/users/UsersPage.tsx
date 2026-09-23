@@ -72,17 +72,17 @@ export default function UsersPage() {
           <h1 className="text-xl font-semibold text-ink">Users</h1>
           <p className="text-sm text-muted">
             {isOwner
-              ? "System owner: manage every account, including creating superadmins and resetting their passwords."
+              ? "System owner: manage every login, including creating superadmins and resetting their passwords."
               : isSuperadmin
-                ? "Manage admin and employee accounts, including resetting forgotten passwords. Add new staff here too — with or without a login."
-                : "Add staff and manage manager/employee accounts for your company. Only a superadmin can manage admin accounts."}
+                ? "Manage login accounts and reset forgotten passwords. Staff records live in Employees — a login can be linked to one there."
+                : "Manage manager/employee logins for your company. Only a superadmin can manage admin accounts. Staff records live in Employees."}
           </p>
         </div>
         <button
           onClick={() => setShowAdd(true)}
           className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
         >
-          + Add person
+          + Add user
         </button>
       </div>
 
@@ -100,10 +100,9 @@ export default function UsersPage() {
           <thead className="bg-wash-1 text-left text-xs font-semibold uppercase text-ink">
             <tr>
               <th className="px-4 py-2">Username</th>
-              <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Role</th>
               {isSuperadmin && <th className="px-4 py-2">Company</th>}
-              <th className="px-4 py-2">Linked employee</th>
+              <th className="px-4 py-2">Linked</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2"></th>
             </tr>
@@ -111,13 +110,13 @@ export default function UsersPage() {
           <tbody className="divide-y divide-line">
             {loading ? (
               <tr>
-                <td colSpan={isSuperadmin ? 7 : 6} className="px-4 py-8 text-center text-muted">
+                <td colSpan={isSuperadmin ? 6 : 5} className="px-4 py-8 text-center text-muted">
                   Loading...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={isSuperadmin ? 7 : 6} className="px-4 py-8 text-center text-muted">
+                <td colSpan={isSuperadmin ? 6 : 5} className="px-4 py-8 text-center text-muted">
                   No users yet.
                 </td>
               </tr>
@@ -131,7 +130,6 @@ export default function UsersPage() {
                       <span className="ml-2 rounded-full bg-link/20 px-2 py-0.5 text-xs font-medium text-link">System owner</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-muted">{u.display_name ?? `${u.first_name} ${u.last_name ?? ""}`.trim()}</td>
                   <td className="px-4 py-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${ROLE_STYLES[u.role]}`}>
                       {u.role}
@@ -140,7 +138,7 @@ export default function UsersPage() {
                   {isSuperadmin && (
                     <td className="px-4 py-2 text-muted">{u.role === "superadmin" ? "All" : businessName(u.business_id)}</td>
                   )}
-                  <td className="px-4 py-2 text-muted">{u.employee_id ? `#${u.employee_id}` : "—"}</td>
+                  <td className="px-4 py-2 text-muted">{u.employee_name ?? "—"}</td>
                   <td className="px-4 py-2">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${

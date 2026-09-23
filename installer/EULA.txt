@@ -1,0 +1,67 @@
+PRO INVOICING - END USER LICENSE AGREEMENT
+
+Version: 1.1.0
+Effective date: 2026-09-18
+
+Licensor: MS Software Solutions
+
+IMPORTANT - PLEASE READ CAREFULLY: This End User License Agreement ("EULA")
+is a legal agreement between you (either an individual or a single legal
+entity, hereinafter the "Licensee" or "you") and MS Software Solutions
+("Licensor", "we", or "us") for the use of the PRO Invoicing software
+product (the "Software").
+
+By downloading, installing, copying, or otherwise using PRO Invoicing, you
+agree to be bound by the terms of this EULA. If you do not agree to the
+terms of this EULA, do not install or use the Software.
+
+1. LICENSE GRANT
+Subject to your compliance with this EULA, Licensor grants you a
+non-exclusive, non-transferable, revocable license to install and use the
+Software on computers you own or control, solely for your own internal
+business purposes.
+
+2. RESTRICTIONS
+You may not: (a) copy, modify, or create derivative works of the Software
+except as expressly permitted; (b) reverse engineer, decompile, or
+disassemble the Software except to the extent applicable law expressly
+permits this despite this limitation; (c) rent, lease, lend, sell,
+sublicense, or otherwise transfer the Software to any third party without
+Licensor's prior written consent; (d) remove or alter any proprietary
+notices on the Software.
+
+3. OWNERSHIP
+The Software is licensed, not sold. Licensor retains all right, title, and
+interest in and to the Software, including all intellectual property rights
+therein.
+
+4. DATA
+The Software stores your business data (customers, invoices, users, and
+related records) locally, in a database on the computer designated as the
+Server / Standalone installation. Licensor does not host, transmit, or have
+access to this data. You are solely responsible for backing up and securing
+your own data, including any credentials used to access the Software.
+
+5. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+6. LIMITATION OF LIABILITY
+IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+7. TERM AND TERMINATION
+This EULA is effective until terminated. Your rights under this EULA will
+terminate automatically without notice if you fail to comply with any of
+its terms. Upon termination, you must cease all use of the Software and
+uninstall it from all computers.
+
+8. ENTIRE AGREEMENT
+This EULA constitutes the entire agreement between you and Licensor
+regarding the Software and supersedes all prior agreements and
+understandings, whether written or oral, relating to its subject matter.
+
+By clicking "I accept the agreement", you acknowledge that you have read,
+understood, and agree to be bound by the terms of this EULA.

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Clock, Download, FolderOpen, RotateCcw, ShieldAlert, ShieldCheck, Upload } from "lucide-react";
+import { Clock, Download, FolderOpen, Plus, RotateCcw, ShieldAlert, ShieldCheck, Trash2, Upload } from "lucide-react";
 import {
   downloadBackup,
   getBackupSettings,
@@ -56,8 +56,11 @@ export default function BackupPage() {
   const [keepCount, setKeepCount] = useState("14");
   const [folder, setFolder] = useState("");
 
+  const [extraFolders, setExtraFolders] = useState<string[]>([]);
+
   const [savingAuto, setSavingAuto] = useState(false);
   const [savingFolder, setSavingFolder] = useState(false);
+  const [savingExtraFolders, setSavingExtraFolders] = useState(false);
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +75,7 @@ export default function BackupPage() {
     setIntervalHours(s.auto_interval_hours);
     setKeepCount(String(s.keep_auto_count));
     setFolder(s.using_default_folder ? "" : s.backup_folder);
+    setExtraFolders(s.extra_folders);
     setBackups(await listBackups());
   }
 
@@ -113,6 +117,21 @@ export default function BackupPage() {
       show(null, getErrorMessage(err, "Could not use that folder."));
     } finally {
       setSavingFolder(false);
+    }
+  }
+
+  async function handleSaveExtraFolders(e: FormEvent) {
+    e.preventDefault();
+    setSavingExtraFolders(true);
+    try {
+      const cleaned = extraFolders.map((f) => f.trim()).filter(Boolean);
+      await updateBackupSettings({ extra_folders: cleaned });
+      show("Additional backup folders saved.", null);
+      await load();
+    } catch (err: unknown) {
+      show(null, getErrorMessage(err, "Could not use one of those folders."));
+    } finally {
+      setSavingExtraFolders(false);
     }
   }
 
@@ -267,6 +286,49 @@ export default function BackupPage() {
           download a backup regularly and keep it elsewhere.
         </p>
         <SaveButton saving={savingFolder} label="Save folder" />
+      </form>
+
+      <form onSubmit={handleSaveExtraFolders} className="space-y-3 rounded-lg border border-line bg-surface p-4">
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+          <FolderOpen size={14} className="opacity-70" /> Additional backup folders
+        </h3>
+        <p className="text-xs text-muted">
+          Every backup is also copied into each folder below, in addition to the main folder above. To back up to
+          Google Drive or OneDrive, install its desktop app and add its local sync folder here (e.g.{" "}
+          <span className="font-medium text-ink">C:\Users\you\Google Drive\Backups</span>) — anything saved there
+          uploads on its own once Google Drive or OneDrive syncs it. Useful for a second internal or external drive too.
+        </p>
+        <div className="space-y-2">
+          {extraFolders.map((f, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <TextInput
+                value={f}
+                onChange={(e) =>
+                  setExtraFolders((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
+                }
+                placeholder="C:\Users\you\Google Drive\Backups"
+              />
+              <button
+                type="button"
+                onClick={() => setExtraFolders((prev) => prev.filter((_, idx) => idx !== i))}
+                aria-label="Remove folder"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted hover:bg-wash-1 hover:text-danger"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setExtraFolders((prev) => [...prev, ""])}
+          className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-sm font-medium text-ink hover:bg-wash-1"
+        >
+          <Plus size={14} /> Add another folder
+        </button>
+        <div>
+          <SaveButton saving={savingExtraFolders} label="Save additional folders" />
+        </div>
       </form>
 
       <div className="flex items-center gap-3">

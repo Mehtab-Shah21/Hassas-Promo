@@ -21,5 +21,14 @@ class Employee(TimestampMixin, Base):
     role: Mapped[str | None] = mapped_column(String(100))
     phone_code: Mapped[str | None] = mapped_column(String(10))
     phone: Mapped[str | None] = mapped_column(String(50))
+    email: Mapped[str | None] = mapped_column(String(255))
     base_salary: Mapped[float | None] = mapped_column(Numeric(12, 2))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    # Identity documents. The number is typed in; the scan/photo is uploaded
+    # separately (see routers/employees.py) and stored as an /uploads path,
+    # exactly like a business logo or an expense receipt.
+    emirates_id: Mapped[str | None] = mapped_column(String(50))
+    emirates_id_attachment_path: Mapped[str | None] = mapped_column(String(500))
+    passport_no: Mapped[str | None] = mapped_column(String(50))
+    passport_attachment_path: Mapped[str | None] = mapped_column(String(500))

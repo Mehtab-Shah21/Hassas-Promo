@@ -121,25 +121,11 @@ def create_user(
     if payload.email and db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already in use")
 
-    if payload.employee_id is not None and payload.new_employee is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Pass either employee_id or new_employee, not both",
-        )
-
+    # Staff records are created in Employees, never here -- this module
+    # administers logins only. All this does is optionally point the new
+    # login at a person who already exists.
     employee_id = payload.employee_id
-    if payload.new_employee is not None:
-        # "Add a person" from the Users page: create their staff record and
-        # this login together, in the account's own company. If the account
-        # create below fails, the Employee row is left behind unlinked —
-        # same recoverable shape as any other partial-form-submit failure
-        # elsewhere in the app (e.g. invoice creation after "+ New
-        # customer"), not silently rolled back.
-        employee = Employee(business_id=target_business_id, **payload.new_employee.model_dump())
-        db.add(employee)
-        db.flush()
-        employee_id = employee.id
-    elif employee_id is not None:
+    if employee_id is not None:
         if db.query(User).filter(User.employee_id == employee_id).first():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="That employee is already linked to a user account"
@@ -152,11 +138,19 @@ def create_user(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="That employee belongs to a different company"
             )
 
+    # No name is asked for: it's the linked staff member's name, or the
+    # username for a login with no staff record (an admin-only account).
+    linked_employee = db.get(Employee, employee_id) if employee_id is not None else None
+    person_name = (linked_employee.name if linked_employee else None) or payload.username
+    first_name = payload.first_name or person_name
+
     user = User(
         username=payload.username,
-        first_name=payload.first_name,
+        first_name=first_name,
         last_name=payload.last_name,
-        display_name=payload.display_name or f"{payload.first_name} {payload.last_name or ''}".strip(),
+        display_name=payload.display_name or (
+            f"{first_name} {payload.last_name}".strip() if payload.first_name else person_name
+        ),
         email=payload.email,
         password_hash=hash_password(payload.password),
         role=payload.role,
@@ -237,6 +231,17 @@ def update_user(
         user.password_hash = hash_password(password)
     for field, value in data.items():
         setattr(user, field, value)
+
+    # A login's displayed name follows who it belongs to: linking (or
+    # re-linking) a staff record adopts that person's name, unlinking falls
+    # back to the username. Only when the caller didn't set a name explicitly.
+    name_given = any(k in data for k in ("first_name", "last_name", "display_name"))
+    if not name_given and ("employee_id" in data or "username" in data):
+        linked = db.get(Employee, user.employee_id) if user.employee_id is not None else None
+        person_name = linked.name if linked else user.username
+        user.first_name = person_name
+        user.last_name = None
+        user.display_name = person_name
     if role_changed:
         description = f"Changed {user.username}'s role to {user.role.value}"
     elif password:

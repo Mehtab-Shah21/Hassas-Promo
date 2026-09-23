@@ -1,16 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  CalendarCheck,
-  CreditCard,
-  FileText,
-  LineChart,
-  Receipt,
-  TrendingUp,
-  Users,
-  Wallet,
-  type LucideIcon,
-} from "lucide-react";
+import { CalendarCheck, CreditCard, FileText, LineChart, type LucideIcon, Receipt, Repeat, TrendingUp, Users, Wallet } from "lucide-react";
 import { getDashboardSummary } from "../../api/dashboard";
 import type { DashboardSummary } from "../../api/types";
 import { useAuth } from "../../context/AuthContext";
@@ -139,6 +129,32 @@ function AdminDashboard({
               value={summary.net_revenue}
               sub="Sales − expenses, this period"
               accent={summary.net_revenue < 0 ? "text-danger" : "text-accent-green"}
+            />
+          </div>
+
+          {/* Fixed monthly costs. Always "this month" regardless of the period
+              toggle above — a standing commitment isn't a period figure, and
+              "still to pay" only means anything for the current month. */}
+          <SectionHeading icon={Repeat} title="Fixed monthly costs" sub="Salaries & overheads that repeat" />
+          <div className="mb-6 grid grid-cols-3 gap-4">
+            <KpiCard
+              label="Committed every month"
+              value={summary.fixed_monthly_cost}
+              sub="Salaries + overheads"
+              onClick={() => navigate("/expenses")}
+            />
+            <KpiCard
+              label="Paid this month"
+              value={summary.fixed_cost_paid_this_month}
+              accent="text-accent-green"
+              onClick={() => navigate("/expenses")}
+            />
+            <KpiCard
+              label="Still pending this month"
+              value={summary.fixed_cost_pending_this_month}
+              accent={summary.fixed_cost_pending_this_month > 0 ? "text-orange-50" : undefined}
+              sub={summary.fixed_cost_pending_this_month > 0 ? "Not marked paid yet" : "All settled"}
+              onClick={() => navigate("/expenses")}
             />
           </div>
 

@@ -10,6 +10,7 @@ from app.core.db import get_db
 from app.core.deps import require_active_business_id, require_manager
 from app.models.employee import Employee
 from app.models.expense import Expense, ExpenseType
+from app.models.salary_deduction import SalaryDeduction
 from app.schemas.expense import (
     ExpenseCreate,
     ExpenseResponse,
@@ -19,11 +20,20 @@ from app.schemas.expense import (
 )
 from app.services.audit import write_audit_log
 from app.services.expenses import build_expense_query, expenses_by_type, total_expenses
+from app.services.recurring_expenses import generate_due_expenses
+from app.services.salary_deductions import is_deductible, summarize
 
 router = APIRouter(prefix="/api/expenses", tags=["expenses"], dependencies=[Depends(require_manager)])
 
 UPLOAD_DIR = Path(settings.upload_dir)
-ALLOWED_ATTACHMENT_TYPES = {"application/pdf"}
+# Receipts and payslips arrive as often as a phone photo as a scanned PDF, so
+# every expense -- salary, overhead or one-off -- accepts either.
+ALLOWED_ATTACHMENT_TYPES = {
+    "application/pdf": ".pdf",
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
 MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
 
 
@@ -39,6 +49,9 @@ def _to_response(expense: Expense, employee_names: dict[int, str]) -> ExpenseRes
         employee_name=employee_names.get(expense.employee_id) if expense.employee_id else None,
         attachment_path=expense.attachment_path,
         created_by=expense.created_by,
+        recurring_expense_id=expense.recurring_expense_id,
+        is_paid=expense.is_paid,
+        paid_on=expense.paid_on,
     )
 
 
@@ -53,6 +66,10 @@ def list_expenses(
     db: Session = Depends(get_db),
     current_user=Depends(require_manager),
 ):
+    # Any fixed monthly costs due since this list was last opened are created
+    # first, so the month's salaries and overheads are simply already there.
+    generate_due_expenses(db, business_id)
+
     q = build_expense_query(db, business_id, date_from, date_to, type)
     total = q.count()
     items = q.order_by(Expense.date.desc(), Expense.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
@@ -104,6 +121,8 @@ def create_expense(
         date=payload.date,
         employee_id=payload.employee_id,
         created_by=current_user.id,
+        is_paid=payload.is_paid,
+        paid_on=payload.date if payload.is_paid else None,
     )
     db.add(expense)
     db.flush()
@@ -141,6 +160,17 @@ def update_expense(
         if not employee or employee.business_id != business_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Employee not found")
 
+    # A salary can't be marked paid while an absence deduction is still
+    # waiting for an admin to confirm or waive it -- otherwise the full amount
+    # goes out and the deduction is silently lost.
+    if data.get("is_paid") is True and not expense.is_paid and new_type == ExpenseType.salary and is_deductible(expense):
+        if summarize(db, expense)["status"] == "pending":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This salary has an absence deduction waiting for an admin to confirm or waive it. "
+                "Decide it first, then mark the salary as paid",
+            )
+
     for field, value in data.items():
         setattr(expense, field, value)
     write_audit_log(
@@ -174,6 +204,8 @@ def delete_expense(
         description=f"Deleted {expense.type.value} expense of {expense.amount}",
     )
     attachment_path = expense.attachment_path
+    # its deduction decision (if any) goes with it
+    db.query(SalaryDeduction).filter(SalaryDeduction.expense_id == expense.id).delete()
     db.delete(expense)
     db.commit()
 
@@ -196,14 +228,17 @@ def upload_attachment(
     expense = db.get(Expense, expense_id)
     if not expense or expense.business_id != business_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
-    if file.content_type not in ALLOWED_ATTACHMENT_TYPES:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Attachment must be a PDF")
+    extension = ALLOWED_ATTACHMENT_TYPES.get(file.content_type or "")
+    if extension is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Attachment must be a PDF or an image (JPG, PNG, WebP)"
+        )
     contents = file.file.read(MAX_ATTACHMENT_BYTES + 1)
     if len(contents) > MAX_ATTACHMENT_BYTES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Attachment must be under 10MB")
 
     old_path = expense.attachment_path
-    filename = f"expense-{expense_id}-{uuid.uuid4().hex}.pdf"
+    filename = f"expense-{expense_id}-{uuid.uuid4().hex}{extension}"
     (UPLOAD_DIR / filename).write_bytes(contents)
     expense.attachment_path = f"/uploads/{filename}"
     db.commit()

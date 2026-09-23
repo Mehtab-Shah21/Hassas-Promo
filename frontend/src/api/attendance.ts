@@ -8,8 +8,18 @@ export async function getDayAttendance(date: string): Promise<DayAttendanceEntry
   return res.data.entries;
 }
 
-export async function markAttendance(employeeId: number, date: string, status: AttendanceStatus, note?: string): Promise<void> {
-  await apiClient.post("/api/attendance/mark", { employee_id: employeeId, date, status, note: note || null });
+/**
+ * Set a day's status and/or arrival and departure times. Only what's passed is
+ * sent: omitting `times` leaves any recorded times alone (tapping "Present"
+ * again must not wipe them), while passing null for one clears it.
+ */
+export async function markAttendance(
+  employeeId: number,
+  date: string,
+  status: AttendanceStatus,
+  times?: { check_in?: string | null; check_out?: string | null },
+): Promise<void> {
+  await apiClient.post("/api/attendance/mark", { employee_id: employeeId, date, status, ...times });
 }
 
 export async function getAttendanceTotals(dateFrom: string, dateTo: string): Promise<EmployeeTotals[]> {

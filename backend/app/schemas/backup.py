@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 
 class BackupSettingsResponse(BaseModel):
@@ -10,6 +11,9 @@ class BackupSettingsResponse(BaseModel):
     backup_folder: str
     using_default_folder: bool
     default_folder: str
+    # Additional folders each backup is also mirrored into (e.g. a second
+    # drive, or a locally-synced Google Drive/OneDrive folder).
+    extra_folders: list[str]
     auto_enabled: bool
     auto_interval_hours: int
     keep_auto_count: int
@@ -26,6 +30,10 @@ class BackupSettingsUpdate(BaseModel):
     # An empty string switches back to the default folder. Length mirrors
     # BackupSettings.backup_folder's column (well above any real path).
     backup_folder: str | None = Field(default=None, max_length=500)
+    # Full replacement list each time (not a merge) -- an empty list clears
+    # every extra folder. Each path capped the same as backup_folder; at
+    # most 10 is far more than any real desktop setup needs.
+    extra_folders: list[Annotated[str, StringConstraints(max_length=500)]] | None = Field(default=None, max_length=10)
     auto_enabled: bool | None = None
     auto_interval_hours: int | None = Field(default=None, ge=1, le=720)
     keep_auto_count: int | None = Field(default=None, ge=1, le=365)

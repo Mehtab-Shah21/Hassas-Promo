@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Receipt, Repeat } from "lucide-react";
 import { deleteExpense, listExpenses } from "../../api/expenses";
 import { resolveAssetUrl } from "../../api/client";
 import { useBusiness } from "../../context/BusinessContext";
@@ -6,6 +7,7 @@ import { currencyLabel } from "../../utils/currency";
 import type { Expense, ExpenseType } from "../../api/types";
 import Modal from "../../components/Modal";
 import ExpenseFormModal from "./ExpenseFormModal";
+import RecurringExpensesTab from "./RecurringExpensesTab";
 
 const PAGE_SIZE = 20;
 
@@ -25,6 +27,9 @@ export default function ExpensesPage() {
   const { activeBusiness } = useBusiness();
   const currency = currencyLabel(activeBusiness);
 
+  // Two distinct jobs, deliberately separated: the ledger of what has been
+  // spent, and the standing list of what repeats every month.
+  const [tab, setTab] = useState<"list" | "recurring">("list");
   const [items, setItems] = useState<Expense[]>([]);
   const [total, setTotal] = useState(0);
   const [totalAmount, setTotalAmount] = useState("0.00");
@@ -83,14 +88,39 @@ export default function ExpensesPage() {
           <h1 className="text-xl font-semibold text-ink">Expenses</h1>
           <p className="text-sm text-muted">{activeBusiness?.name}</p>
         </div>
+        {tab === "list" && (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
+          >
+            + Add expense
+          </button>
+        )}
+      </div>
+
+      <div className="mb-5 flex gap-1 rounded-lg border border-line bg-surface p-1 text-sm">
         <button
-          onClick={() => setShowAdd(true)}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-ink hover:opacity-90 transition-opacity"
+          onClick={() => setTab("list")}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 font-medium transition-colors ${
+            tab === "list" ? "bg-accent text-ink" : "text-muted hover:bg-wash-1"
+          }`}
         >
-          + Add expense
+          <Receipt size={15} /> All expenses
+        </button>
+        <button
+          onClick={() => setTab("recurring")}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 font-medium transition-colors ${
+            tab === "recurring" ? "bg-accent text-ink" : "text-muted hover:bg-wash-1"
+          }`}
+        >
+          <Repeat size={15} /> Recurring / Fixed
         </button>
       </div>
 
+      {tab === "recurring" ? (
+        <RecurringExpensesTab onChanged={load} />
+      ) : (
+        <>
       <div className="mb-4 rounded-lg border border-line bg-surface p-4">
         <p className="text-xs font-medium uppercase text-muted">Total (matching filters below)</p>
         <p className="mt-1 text-2xl font-semibold text-ink">
@@ -172,9 +202,26 @@ export default function ExpensesPage() {
                 >
                   <td className="whitespace-nowrap px-4 py-2 text-muted">{exp.date}</td>
                   <td className="px-4 py-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_STYLES[exp.type]}`}>
-                      {TYPE_LABELS[exp.type]}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_STYLES[exp.type]}`}>
+                        {TYPE_LABELS[exp.type]}
+                      </span>
+                      {/* Instantly separates what the system added from what
+                          someone typed in by hand. */}
+                      {exp.recurring_expense_id && (
+                        <span
+                          title="Added automatically from a fixed monthly cost"
+                          className="rounded-full bg-link/15 px-2 py-0.5 text-[11px] font-medium text-link"
+                        >
+                          Recurring
+                        </span>
+                      )}
+                      {!exp.is_paid && (
+                        <span className="rounded-full bg-orange-50/20 px-2 py-0.5 text-[11px] font-medium text-orange-50">
+                          Pending
+                        </span>
+                      )}
+                    </div>
                   </td>
                   {/* Kept to one line so long descriptions don't blow up row
                       height; the full text is in the details dialog. */}
@@ -193,7 +240,7 @@ export default function ExpensesPage() {
                         rel="noreferrer"
                         className="text-xs text-link hover:underline"
                       >
-                        PDF
+                        File
                       </a>
                     )}
                   </td>
@@ -235,6 +282,8 @@ export default function ExpensesPage() {
           </div>
         </div>
       )}
+        </>
+      )}
 
       {showAdd && (
         <ExpenseFormModal
@@ -271,7 +320,7 @@ export default function ExpensesPage() {
                   rel="noreferrer"
                   className="text-link hover:underline"
                 >
-                  Open PDF
+                  Open file
                 </a>
               ) : (
                 <span className="text-muted">None</span>

@@ -17,16 +17,21 @@ DEFAULT_MODULE_FLAGS = [
     ("quotations", "Quotations"),
     ("coupons", "Coupons"),
     ("notifications", "Notifications"),
-    ("attendance", "Attendance"),
+    # Key stays "attendance" (existing rows/installs key off it); the label is
+    # what Settings > Modules shows, and the module is now Employees, with
+    # attendance as one tab inside it.
+    ("attendance", "Employees"),
     ("reconciliation", "Reconciliation"),
     ("reports", "Reports"),
     ("design_studio", "Design Studio"),
 ]
 # Global, install-wide flags (business_id is NULL) — not a module within a
-# business, so not part of the per-business set above.
-DEFAULT_GLOBAL_FLAGS = [
-    ("iim", "IIM Business"),
-]
+# business, so not part of the per-business set above. The "iim" flag that
+# used to live here (an install-wide switch that hid the IIM company
+# entirely) was removed: shutting a whole company off from a settings toggle
+# is not something anyone should be one misclick away from, and both
+# companies are part of this install by definition.
+DEFAULT_GLOBAL_FLAGS: list[tuple[str, str]] = []
 
 
 def seed() -> None:
