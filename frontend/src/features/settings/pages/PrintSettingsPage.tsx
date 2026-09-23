@@ -40,9 +40,8 @@ export default function PrintSettingsPage() {
       <div>
         <h2 className="text-lg font-semibold text-ink">Print & Paper — {activeBusiness.name}</h2>
         <p className="text-sm text-muted">
-          Hardware/printer settings. This is which thermal receipt roll is loaded in this
-          business's printer — the receipt's design (logo, text, which lines show) is set
-          separately in Design Studio's Thermal Receipt tab.
+          Hardware/printer settings. This is only which thermal receipt roll is loaded in this
+          business's printer, not the receipt's own layout or content.
         </p>
       </div>
 

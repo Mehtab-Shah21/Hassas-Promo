@@ -43,7 +43,9 @@ export default function FeatureFlagsPage() {
 
   if (loading) return <p className="text-sm text-muted">Loading...</p>;
 
-  const moduleFlags = flags.filter((f) => f.business_id !== null);
+  // design_studio has no page to switch on/off anymore -- keep it out of the
+  // list rather than offering a toggle for something that isn't reachable.
+  const moduleFlags = flags.filter((f) => f.business_id !== null && f.key !== "design_studio");
   const globalFlags = flags.filter((f) => f.business_id === null);
 
   return (

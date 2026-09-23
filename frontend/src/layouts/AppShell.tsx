@@ -13,7 +13,6 @@ import {
   Landmark,
   BarChart3,
   ScrollText,
-  Palette,
   Receipt,
   Settings as SettingsIcon,
   PanelLeftClose,
@@ -38,7 +37,7 @@ interface NavItem {
   icon: LucideIcon;
   // Omitted: visible to everyone (employee and up). "manager": operational
   // tier (attendance, reconciliation, reports, expenses, audit log).
-  // "admin": account/system administration (design studio, users, settings).
+  // "admin": account/system administration (users, settings).
   minRole?: "manager" | "admin";
   flag?: string;
 }
@@ -56,7 +55,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/reports", label: "Reports", icon: BarChart3, minRole: "manager", flag: "reports" },
   { to: "/expenses", label: "Expenses", icon: Receipt, minRole: "manager" },
   { to: "/audit-log", label: "Audit Log", icon: ScrollText, minRole: "manager" },
-  { to: "/design-studio", label: "Design Studio", icon: Palette, minRole: "admin", flag: "design_studio" },
   { to: "/users", label: "Users", icon: UserCog, minRole: "admin" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, minRole: "admin" },
 ];

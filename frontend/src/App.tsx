@@ -26,14 +26,12 @@ import UsersPage from "./features/users/UsersPage";
 import AppShell from "./layouts/AppShell";
 
 // Split out of the main bundle: each of these is reached far less often than
-// the daily invoicing/customer workflow above (Design Studio and the Settings
-// sub-pages are admin-only configuration screens, Reports/Audit Log are
-// periodic lookups) -- there's no reason their code, and DesignStudioPage's
-// especially, should be downloaded and parsed on every app load, including
-// the very first thing a new employee's browser has to fetch before they can
-// even sign in and create an invoice.
+// the daily invoicing/customer workflow above (the Settings sub-pages are
+// admin-only configuration screens, Reports/Audit Log are periodic lookups)
+// -- there's no reason their code should be downloaded and parsed on every
+// app load, including the very first thing a new employee's browser has to
+// fetch before they can even sign in and create an invoice.
 const AuditLogPage = lazy(() => import("./features/audit/AuditLogPage"));
-const DesignStudioPage = lazy(() => import("./features/design-studio/DesignStudioPage"));
 const ReportsPage = lazy(() => import("./features/reports/ReportsPage"));
 const SettingsShell = lazy(() => import("./features/settings/SettingsShell"));
 const BackupPage = lazy(() => import("./features/settings/pages/BackupPage"));
@@ -161,16 +159,6 @@ function App() {
           element={
             <AdminOnlyRoute minRole="manager">
               <AuditLogPage />
-            </AdminOnlyRoute>
-          }
-        />
-        <Route
-          path="design-studio"
-          element={
-            <AdminOnlyRoute>
-              <FeatureGate flag="design_studio" label="Design Studio">
-                <DesignStudioPage />
-              </FeatureGate>
             </AdminOnlyRoute>
           }
         />
